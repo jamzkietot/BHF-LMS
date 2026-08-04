@@ -1,0 +1,1792 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reports &amp; Analytics | BHF Certification Academy</title>
+    <meta name="description" content="Monitor overall system performance and learning analytics for BHF Certification Academy." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* =========================================================
+         Admin Dashboard v2 — sidebar layout (shared with admin.html,
+         manage-users.html, manage-instructors.html, manage-courses.html).
+         Scoped with the "adx-" prefix; colors reuse the existing CSS vars.
+      ========================================================= */
+      * { box-sizing: border-box; }
+      html, body { max-width: 100%; overflow-x: hidden; }
+      body { background: var(--bg); font-family: 'Inter', sans-serif; }
+
+      .adx-shell { display: flex; min-height: 100vh; }
+
+      /* ---------- Sidebar ---------- */
+      .adx-sidebar {
+        width: 264px; flex-shrink: 0; background: var(--accent-dark); color: #fff;
+        display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
+        z-index: 40; transition: transform 0.25s ease;
+      }
+      .adx-sidebar.is-superadmin { background: linear-gradient(180deg, #0f1b2e 0%, #13233a 100%); }
+      .adx-sidebar.is-superadmin .adx-nav a.is-active { background: rgba(255,255,255,0.25); color: #fff; }
+      .adx-sidebar.is-superadmin .adx-nav a:hover { background: rgba(255,255,255,0.12); color: #fff; }
+      .adx-brand { display: flex; align-items: center; gap: 0.65rem; padding: 1.4rem 1.3rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .adx-brand img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; }
+      .adx-brand-text strong { display: block; font-size: 0.95rem; line-height: 1.2; }
+      .adx-brand-text span { font-size: 0.68rem; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; }
+      .adx-nav { flex: 1; overflow-y: auto; padding: 0.85rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+      .adx-nav a {
+        display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 12px;
+        color: rgba(255,255,255,0.78); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .adx-nav a .adx-nav-icon { font-size: 1.05rem; width: 22px; text-align: center; }
+      .adx-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+      .adx-nav a.is-active { background: var(--accent); color: var(--accent-dark); }
+      .adx-nav-sub { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.2rem 0 0.35rem 1.1rem; }
+      .adx-nav-sub a { padding: 0.5rem 0.75rem; font-size: 0.78rem; color: rgba(255,255,255,0.72); }
+      .adx-sidebar-footer { padding: 0.85rem 1.3rem 1.3rem; border-top: 1px solid rgba(255,255,255,0.08); }
+      .adx-sidebar-footer a { display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.75); text-decoration: none; font-weight: 600; font-size: 0.88rem; padding: 0.5rem 0; }
+      .adx-sidebar-footer a:hover { color: #fff; }
+
+      /* ---------- Main column ---------- */
+      .adx-main { margin-left: 264px; flex: 1; min-width: 0; max-width: 100%; }
+      .adx-topbar {
+        position: sticky; top: 0; z-index: 30; background: #fff; border-bottom: 1px solid rgba(15,34,72,0.08);
+        display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.75rem;
+      }
+      .adx-topbar-left { display: flex; align-items: center; gap: 0.85rem; }
+      .adx-hamburger { display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--accent-dark); }
+      .adx-topbar h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--accent-dark); margin: 0; }
+      .adx-topbar-right { display: flex; align-items: center; gap: 1.1rem; }
+      .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(15,34,72,0.12);
+        background: var(--surface-3);
+        color: var(--accent-dark);
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+      .adx-topbar-right .theme-toggle:hover {
+        background: var(--surface-2);
+        border-color: rgba(15,34,72,0.2);
+      }
+      .adx-bell {
+        position: relative; width: 40px; height: 40px; border-radius: 12px; background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.08); display: grid; place-items: center; font-size: 1.1rem; cursor: pointer;
+        text-decoration: none; color: var(--accent-dark);
+      }
+      .adx-bell-count {
+        position: absolute; top: -4px; right: -4px; background: #E4483F; color: #fff; font-size: 0.62rem; font-weight: 700;
+        min-width: 17px; height: 17px; border-radius: 999px; display: grid; place-items: center; padding: 0 3px;
+      }
+      .adx-profile { display: flex; align-items: center; gap: 0.65rem; }
+      .adx-profile-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--accent-dark); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; }
+      .adx-profile-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.1; }
+      .adx-profile-role { font-size: 0.72rem; color: var(--muted); }
+
+      .adx-content { padding: 1.5rem 1.75rem 4rem; max-width: 1600px; }
+
+      .adx-breadcrumb { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.6rem; font-weight: 600; }
+      .adx-breadcrumb a { color: var(--cert-accent-dark); text-decoration: none; }
+      .adx-breadcrumb a:hover { text-decoration: underline; }
+
+      .adx-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+      .adx-page-head h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.3rem; font-size: 1.7rem; }
+      .adx-page-head p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+      /* ---------- Stat cards ---------- */
+      .adx-stats-grid { display: grid; grid-template-columns: repeat(6, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+      @media (max-width: 1300px) { .adx-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+      @media (max-width: 640px) { .adx-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      .adx-stat-card {
+        background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.06);
+        padding: 1.15rem 1.2rem; display: flex; flex-direction: column; gap: 0.45rem; min-width: 0;
+      }
+      .adx-stat-top { display: flex; align-items: center; justify-content: space-between; }
+      .adx-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 1.1rem; }
+      .adx-stat-value { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--accent-dark); line-height: 1; }
+      .adx-stat-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+      .adx-stat-trend { font-size: 0.72rem; font-weight: 700; }
+      .adx-stat-trend.is-up { color: #2BA84A; }
+      .adx-stat-trend.is-down { color: #E4483F; }
+      .adx-stat-trend.is-flat { color: var(--muted); }
+      .adx-stat-sub { font-size: 0.72rem; color: var(--muted); }
+
+      /* ---------- Generic cards / grids ---------- */
+      .adx-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+      .adx-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+      @media (max-width: 1150px) { .adx-grid-3 { grid-template-columns: 1fr 1fr; } }
+      @media (max-width: 960px) { .adx-grid-2, .adx-grid-3 { grid-template-columns: 1fr; } }
+      .adx-card {
+        background: #fff; border-radius: 22px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.05);
+        padding: 1.4rem 1.4rem 1.5rem; min-width: 0;
+      }
+      .adx-card h3 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.2rem; font-size: 1.1rem; }
+      .adx-card-sub { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem; }
+      .adx-card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+      .adx-card-head a, .adx-card-head button.adx-link-btn { font-size: 0.8rem; font-weight: 700; color: var(--cert-accent-dark); text-decoration: none; background: none; border: none; cursor: pointer; padding: 0; }
+      .adx-card-head a:hover, .adx-card-head button.adx-link-btn:hover { text-decoration: underline; }
+      .adx-badge { background: rgba(43,108,176,0.1); color: var(--cert-accent-dark); font-size: 0.72rem; font-weight: 700; padding: 0.3rem 0.7rem; border-radius: 999px; white-space: nowrap; }
+      .adx-chart-wrap { position: relative; height: 230px; }
+      .adx-empty { color: var(--muted); font-size: 0.88rem; padding: 0.6rem 0; }
+
+      .adx-select {
+        padding: 0.55rem 0.85rem; border: 1.5px solid var(--border); border-radius: 10px;
+        background: var(--surface-3); color: var(--text); font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+      }
+      .adx-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,213,0,0.15); }
+
+      /* ---------- Lists ---------- */
+      .adx-list { display: flex; flex-direction: column; gap: 0.55rem; }
+      .adx-list-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; padding: 0.7rem 0.85rem; border-radius: 14px; background: var(--surface-3); border: 1px solid rgba(15,34,72,0.05); }
+      .adx-list-item-title { font-weight: 700; color: var(--text); margin: 0 0 0.1rem; font-size: 0.86rem; }
+      .adx-list-item-meta { font-size: 0.75rem; color: var(--muted); margin: 0; }
+
+      /* ---------- Ranked rows (top courses / donut legends) ---------- */
+      .adx-course-row { margin-bottom: 0.95rem; }
+      .adx-course-row:last-child { margin-bottom: 0; }
+      .adx-course-row-head { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.35rem; gap: 0.5rem; }
+      .adx-course-row-head span:first-child { font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .adx-course-row-head span:last-child { color: var(--muted); font-size: 0.78rem; flex-shrink: 0; }
+      .adx-progress-track { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+      .adx-progress-fill { height: 100%; background: var(--cert-accent); border-radius: 999px; }
+      .adx-progress-fill.is-gold { background: var(--accent); }
+
+      .adx-rank-row { display: flex; align-items: center; gap: 0.65rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(15,34,72,0.06); font-size: 0.85rem; }
+      .adx-rank-row:last-child { border-bottom: none; }
+      .adx-rank-num { width: 20px; height: 20px; border-radius: 50%; background: var(--surface-3); color: var(--muted); font-weight: 700; font-size: 0.7rem; display: grid; place-items: center; flex-shrink: 0; }
+      .adx-rank-name { flex: 1; min-width: 0; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .adx-rank-pct { font-weight: 700; color: #2BA84A; font-size: 0.82rem; flex-shrink: 0; }
+
+      .adx-instructor-item { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(15,34,72,0.06); }
+      .adx-instructor-item:last-child { border-bottom: none; }
+      .adx-instructor-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(43,108,176,0.14); color: var(--cert-accent-dark); display: grid; place-items: center; font-weight: 700; flex-shrink: 0; font-size: 0.85rem; }
+      .adx-instructor-name { font-weight: 700; color: var(--text); font-size: 0.88rem; margin: 0; }
+      .adx-instructor-meta { font-size: 0.76rem; color: var(--muted); margin: 0; }
+      .adx-instructor-stat { margin-left: auto; text-align: right; font-size: 0.78rem; color: var(--cert-accent-dark); font-weight: 700; }
+
+      /* ---------- Donut legend ---------- */
+      .adx-donut-wrap { display: flex; align-items: center; gap: 1.2rem; }
+      .adx-donut-canvas-wrap { position: relative; width: 150px; height: 150px; flex-shrink: 0; }
+      .adx-donut-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+      .adx-donut-center strong { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--accent-dark); line-height: 1; }
+      .adx-donut-center span { font-size: 0.68rem; color: var(--muted); font-weight: 600; }
+      .adx-legend { display: flex; flex-direction: column; gap: 0.6rem; flex: 1; min-width: 0; }
+      .adx-legend-row { display: flex; align-items: center; gap: 0.55rem; font-size: 0.82rem; }
+      .adx-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+      .adx-legend-label { color: var(--text); font-weight: 600; flex: 1; }
+      .adx-legend-value { color: var(--muted); font-weight: 700; font-size: 0.78rem; }
+
+      /* ---------- Tables ---------- */
+      .adx-table-wrap { overflow-x: auto; }
+      .adx-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      .adx-table th { text-align: left; color: var(--muted); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.6rem; border-bottom: 2px solid rgba(15,34,72,0.08); white-space: nowrap; }
+      .adx-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid rgba(15,34,72,0.06); color: var(--text); vertical-align: middle; }
+      .adx-table tr:last-child td { border-bottom: none; }
+      .adx-table tr:hover td { background: var(--surface-3); }
+      .adx-status-pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(43,108,176,0.1); color: var(--cert-accent-dark); font-size: 0.72rem; font-weight: 700; text-transform: capitalize; }
+      .adx-status-pill.is-ok { background: rgba(43,168,74,0.14); color: #2BA84A; }
+      .adx-status-pill.is-bad { background: rgba(228,72,63,0.12); color: #b33a3a; }
+      .adx-status-pill.is-muted { background: rgba(15,34,72,0.08); color: var(--muted); }
+      .adx-status-pill.is-progress { background: rgba(255,159,10,0.15); color: #b3720a; }
+
+      /* ---------- Quick actions ---------- */
+      .adx-quick-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.85rem; }
+      @media (max-width: 640px) { .adx-quick-actions { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+      .adx-quick-action {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 0.5rem; padding: 1.05rem 1rem; border-radius: 16px;
+        background: var(--surface-3); border: 1px solid rgba(15,34,72,0.07); text-decoration: none; color: var(--accent-dark);
+        font-weight: 700; font-size: 0.85rem; cursor: pointer; text-align: left; font-family: inherit;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      }
+      .adx-quick-action:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(15,34,72,0.1); border-color: rgba(15,34,72,0.15); }
+      .adx-quick-action .adx-qa-icon { font-size: 1.25rem; }
+      .adx-qa-full { grid-column: 1 / -1; align-items: center; flex-direction: row; justify-content: center; background: var(--accent-dark); color: #fff; }
+      .adx-qa-full:hover { background: #16305C; }
+
+      /* ---------- Mobile sidebar toggle ---------- */
+      .adx-backdrop { display: none; position: fixed; inset: 0; background: rgba(6,14,32,0.45); z-index: 35; }
+      @media (max-width: 900px) {
+        .adx-hamburger { display: inline-flex; }
+        .adx-sidebar { transform: translateX(-100%); }
+        .adx-main { margin-left: 0; }
+        .adx-shell.adx-sidebar-open .adx-sidebar { transform: translateX(0); }
+        .adx-shell.adx-sidebar-open .adx-backdrop { display: block; }
+      }
+
+      /* =========================================================
+         Reports & Analytics — page-specific ("ra-" prefix)
+      ========================================================= */
+      .ra-toolbar { display: flex; align-items: center; gap: 0.7rem; flex-wrap: wrap; }
+      .ra-export-wrap { position: relative; }
+      .ra-export-menu {
+        display: none; position: absolute; top: calc(100% + 0.4rem); right: 0; background: #fff; border-radius: 14px;
+        border: 1px solid rgba(15,34,72,0.1); box-shadow: 0 16px 34px rgba(15,34,72,0.14); padding: 0.4rem; z-index: 20; min-width: 190px;
+      }
+      .ra-export-menu.is-open { display: block; }
+      .ra-export-menu button {
+        display: flex; align-items: center; gap: 0.55rem; width: 100%; padding: 0.55rem 0.7rem; border-radius: 9px; border: none;
+        background: none; text-align: left; font: inherit; font-size: 0.84rem; font-weight: 600; color: var(--text); cursor: pointer;
+      }
+      .ra-export-menu button:hover { background: var(--surface-3); }
+
+      .ra-tabs { display: flex; gap: 0.3rem; overflow-x: auto; border-bottom: 2px solid rgba(15,34,72,0.08); margin-bottom: 1.4rem; }
+      .ra-tab {
+        padding: 0.75rem 1.1rem; font-weight: 700; font-size: 0.86rem; color: var(--muted); background: none; border: none;
+        border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; font-family: inherit; margin-bottom: -2px;
+        transition: color 0.15s ease, border-color 0.15s ease;
+      }
+      .ra-tab:hover { color: var(--accent-dark); }
+      .ra-tab.is-active { color: var(--cert-accent-dark); border-bottom-color: var(--cert-accent-dark); }
+
+      .ra-panel { display: none; }
+      .ra-panel.is-active { display: block; }
+
+      .ra-mini-stats { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+      @media (max-width: 900px) { .ra-mini-stats { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+
+      .ra-search-row { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 1rem; flex-wrap: wrap; }
+      .ra-search-row input[type="text"] {
+        flex: 1; min-width: 200px; padding: 0.6rem 0.9rem; border: 1.5px solid var(--border); border-radius: 10px;
+        background: var(--surface-3); color: var(--text); font: inherit; font-size: 0.86rem;
+      }
+      .ra-search-row input[type="text"]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,213,0,0.15); }
+
+      .ra-avatar-cell { display: flex; align-items: center; gap: 0.5rem; }
+      .ra-avatar-cell .ra-mini-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(43,108,176,0.14); color: var(--cert-accent-dark); display: grid; place-items: center; font-weight: 700; font-size: 0.68rem; flex-shrink: 0; }
+
+      /* ---------- Dark Mode ---------- */
+      body[data-theme="dark"] {
+        --adx-surface: #0f1b2e;
+        --adx-surface-2: #16253d;
+        --adx-surface-3: #101c2a;
+        --adx-text: #f3f7ff;
+        --adx-muted: #9fb0c8;
+        --adx-border: rgba(255,255,255,0.12);
+        --adx-shadow: 0 18px 40px rgba(0,0,0,0.4);
+      }
+
+      body[data-theme="dark"] .adx-topbar {
+        background: var(--adx-surface);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-topbar h1 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(22,37,61,0.8);
+        color: #f3f7ff;
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle:hover {
+        background: rgba(30,45,70,0.95);
+      }
+
+      body[data-theme="dark"] .adx-bell {
+        background: rgba(16,28,42,0.8);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-name {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-role {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-stat-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-stat-value {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-stat-label,
+      body[data-theme="dark"] .adx-card-sub {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-card h3 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-empty {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-list-item {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-title {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-meta {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-table-wrap {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-table th {
+        color: var(--adx-muted);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-table td {
+        color: var(--adx-text);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] button,
+      body[data-theme="dark"] input,
+      body[data-theme="dark"] select,
+      body[data-theme="dark"] textarea {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-breadcrumb {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-page-head h2 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-page-head p {
+        color: var(--adx-muted);
+      }
+
+      /* ---------- Print (Export PDF) ---------- */
+      @media print {
+        .adx-sidebar, .adx-topbar, .adx-breadcrumb, .ra-toolbar, .ra-tabs > button:not(.is-active),
+        .ra-search-row, .adx-quick-actions, .adx-card-head a, .adx-card-head button { display: none !important; }
+        .adx-main { margin-left: 0 !important; }
+        body { background: #fff !important; }
+        .adx-card, .adx-stat-card { box-shadow: none !important; border: 1px solid #ddd !important; }
+        .ra-panel { display: block !important; }
+      }
+          /* ---------- Walk-in Registration Modal ---------- */
+      .walk-in-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .walk-in-modal.is-open {
+        display: flex;
+      }
+      .walk-in-modal-content {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 2rem;
+      }
+      body[data-theme="dark"] .walk-in-modal-content {
+        background: var(--adx-surface);
+        color: var(--adx-text);
+      }
+      .walk-in-modal h2 {
+        font-family: 'Playfair Display', serif;
+        color: var(--accent-dark);
+        margin: 0 0 1rem;
+        font-size: 1.4rem;
+      }
+      body[data-theme="dark"] .walk-in-modal h2 {
+        color: #f3f7ff;
+      }
+      .walk-in-form-group {
+        margin-bottom: 1rem;
+      }
+      .walk-in-form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      body[data-theme="dark"] .walk-in-form-group label {
+        color: var(--adx-text);
+      }
+      .walk-in-form-group input,
+      .walk-in-form-group select,
+      .walk-in-form-group textarea {
+        width: 100%;
+        padding: 0.7rem;
+        border: 1px solid rgba(15,34,72,0.15);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      body[data-theme="dark"] .walk-in-form-group input,
+      body[data-theme="dark"] .walk-in-form-group select,
+      body[data-theme="dark"] .walk-in-form-group textarea {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.12);
+        color: var(--adx-text);
+      }
+      .walk-in-form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .walk-in-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 600px) {
+        .walk-in-form-row { grid-template-columns: 1fr; }
+      }
+      .walk-in-modal-buttons {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1.5rem;
+      }
+      .walk-in-modal-buttons button {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+      .walk-in-modal-buttons .btn-primary {
+        background: var(--accent-dark);
+        color: #fff;
+      }
+      .walk-in-modal-buttons .btn-primary:hover {
+        filter: brightness(1.1);
+      }
+      .walk-in-modal-buttons .btn-secondary {
+        background: rgba(15,34,72,0.08);
+        color: var(--accent-dark);
+      }
+      .walk-in-modal-buttons .btn-secondary:hover {
+        background: rgba(15,34,72,0.12);
+      }
+      body[data-theme="dark"] .walk-in-modal-buttons .btn-secondary {
+        background: rgba(255,255,255,0.1);
+        color: #f3f7ff;
+      }
+      .walk-in-note {
+        background: rgba(43,108,176,0.08);
+        border-left: 4px solid var(--cert-accent-dark);
+        padding: 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+      }
+      body[data-theme="dark"] .walk-in-note {
+        background: rgba(43,108,176,0.15);
+        color: var(--adx-text);
+      }
+      .walk-in-loading {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+      }
+      .walk-in-loading.is-active {
+        display: block;
+      }
+      .walk-in-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(15,34,72,0.2);
+        border-top-color: var(--accent-dark);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      body[data-theme="dark"] .walk-in-spinner {
+        border-color: rgba(255,255,255,0.2);
+        border-top-color: #f3f7ff;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+</style>
+  </head>
+  <body data-page="reports-analytics">
+    <div class="adx-shell" id="adx-shell">
+      <div class="adx-backdrop" id="adx-backdrop"></div>
+
+      <!-- ============ Sidebar ============ -->
+      <aside class="adx-sidebar">
+        <a class="adx-brand" href="index.html" style="text-decoration:none;color:#fff;">
+          <img src="bhflogo.jpg" alt="BHF logo" />
+          <span class="adx-brand-text">
+            <strong>BHF</strong>
+            <span id="adx-brand-sub">TRAINING &amp; CERTIFICATE</span>
+          </span>
+        </a>
+        <nav class="adx-nav" aria-label="Admin sections">
+          <a href="admin.html" id="adx-nav-dashboard"><span class="adx-nav-icon">📊</span> Dashboard</a>
+          <a href="manage-users.html"><span class="adx-nav-icon">👥</span> User Management</a>
+          <a href="manage-instructors.html"><span class="adx-nav-icon">👩‍🏫</span> Instructor Management</a>
+          <a href="manage-courses.html"><span class="adx-nav-icon">📘</span> Course Management</a>
+          <a href="quiz-management.html"><span class="adx-nav-icon">📝</span> Quiz Management</a>
+          <a href="certificates.html"><span class="adx-nav-icon">🏆</span> Certificates</a>
+          <a href="reports-analytics.html" class="is-active"><span class="adx-nav-icon">📈</span> Reports &amp; Analytics</a>
+          <a href="calendar.html"><span class="adx-nav-icon">📅</span> Calendar</a>
+          <a href="index.html"><span class="adx-nav-icon">🏠</span> Browse Home</a>
+          <div class="adx-nav-sub">
+            <a href="login.html?from=admin"><span class="adx-nav-icon">🔐</span> Login Page</a>
+            <a href="signup.html?from=admin"><span class="adx-nav-icon">📝</span> Create Account</a>
+            <a href="#" id="open-walkin-modal"><span class="adx-nav-icon">🧑‍🎓</span> Walk-in Registration</a>
+          </div>
+        </nav>
+        <div class="adx-sidebar-footer">
+          <a href="login.html" id="nav-auth-link" class="login-link" style="display:none;"><span class="adx-nav-icon">🔑</span> Login</a>
+          <a href="login.html" id="logout-button"><span class="adx-nav-icon">🚪</span> Logout</a>
+        </div>
+      </aside>
+
+      <!-- ============ Main column ============ -->
+      <div class="adx-main">
+        <header class="adx-topbar">
+          <div class="adx-topbar-left">
+            <button class="adx-hamburger" id="adx-hamburger" type="button" aria-label="Toggle menu">☰</button>
+            <h1>Reports &amp; Analytics</h1>
+          </div>
+          <div class="adx-topbar-right">
+            <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙 Dark mode</button>
+            <a href="admin.html#adx-notifications" class="adx-bell" aria-label="Notifications" id="adx-bell-link">
+              🔔
+              <span class="adx-bell-count" id="adx-bell-count">0</span>
+            </a>
+            <div class="adx-profile">
+              <div class="adx-profile-avatar" id="adx-profile-avatar">A</div>
+              <div>
+                <p class="adx-profile-name" id="adx-profile-name">Admin</p>
+                <p class="adx-profile-role" id="adx-profile-role">Administrator</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="adx-content">
+          <p class="adx-breadcrumb"><a href="admin.html" id="adx-breadcrumb-dashboard">Dashboard</a> &nbsp;›&nbsp; Reports &amp; Analytics</p>
+
+          <div class="adx-page-head">
+            <div>
+              <h2>Reports &amp; Analytics</h2>
+              <p>Monitor overall system performance and learning analytics.</p>
+            </div>
+            <div class="ra-toolbar">
+              <select class="adx-select" id="ra-range" aria-label="Date range">
+                <option value="this-month">This Month</option>
+                <option value="last-month">Last Month</option>
+                <option value="last-3">Last 3 Months</option>
+                <option value="last-6">Last 6 Months</option>
+                <option value="this-year">This Year</option>
+                <option value="all">All Time</option>
+              </select>
+              <div class="ra-export-wrap">
+                <button class="btn btn-primary" id="ra-export-toggle" type="button">⬇ Export Report ▾</button>
+                <div class="ra-export-menu" id="ra-export-menu">
+                  <button type="button" id="ra-export-active-csv">📄 Export current tab (CSV)</button>
+                  <button type="button" id="ra-export-summary-csv">📊 Export summary (CSV)</button>
+                  <button type="button" id="ra-export-print">🖨️ Print / Save as PDF</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ Stat cards ============ -->
+          <div class="adx-stats-grid">
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">👥</div>
+                <span class="adx-stat-trend is-flat" id="ra-trend-users">—</span>
+              </div>
+              <div class="adx-stat-value" id="ra-stat-users">0</div>
+              <div class="adx-stat-label">Total Users</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,168,74,0.14); color:#2BA84A;">🎓</div>
+                <span class="adx-stat-trend is-flat" id="ra-trend-enrollments">—</span>
+              </div>
+              <div class="adx-stat-value" id="ra-stat-enrollments">0</div>
+              <div class="adx-stat-label">Active Enrollments</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(124,77,255,0.12); color:#6a3fd4;">📘</div>
+                <span class="adx-stat-trend is-flat" id="ra-trend-courses">—</span>
+              </div>
+              <div class="adx-stat-value" id="ra-stat-courses">0</div>
+              <div class="adx-stat-label">Courses</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">🏆</div>
+                <span class="adx-stat-trend is-flat" id="ra-trend-certificates">—</span>
+              </div>
+              <div class="adx-stat-value" id="ra-stat-certificates">0</div>
+              <div class="adx-stat-label">Certificates Issued</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(228,72,63,0.12); color:#b33a3a;">📝</div>
+                <span class="adx-stat-trend is-flat" id="ra-trend-quizzes">—</span>
+              </div>
+              <div class="adx-stat-value" id="ra-stat-quizzes">0</div>
+              <div class="adx-stat-label">Quizzes Taken</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">📊</div>
+                <span class="adx-stat-trend is-flat" id="ra-trend-completion">—</span>
+              </div>
+              <div class="adx-stat-value" id="ra-stat-completion">0%</div>
+              <div class="adx-stat-label">Average Completion Rate</div>
+            </div>
+          </div>
+
+          <!-- ============ Tabs ============ -->
+          <div class="ra-tabs" role="tablist" aria-label="Report sections">
+            <button class="ra-tab is-active" data-tab="overview" type="button">Overview</button>
+            <button class="ra-tab" data-tab="users" type="button">Users</button>
+            <button class="ra-tab" data-tab="courses" type="button">Courses</button>
+            <button class="ra-tab" data-tab="learning" type="button">Learning</button>
+            <button class="ra-tab" data-tab="certificates" type="button">Certificates</button>
+            <button class="ra-tab" data-tab="quizzes" type="button">Quizzes</button>
+            <button class="ra-tab" data-tab="instructors" type="button">Instructors</button>
+          </div>
+
+          <!-- ============ OVERVIEW ============ -->
+          <div class="ra-panel is-active" id="ra-panel-overview">
+            <div class="adx-grid-2">
+              <div class="adx-card">
+                <div class="adx-card-head"><h3>User Growth</h3><span class="adx-badge" id="ra-growth-badge">This Month</span></div>
+                <p class="adx-card-sub">New user sign-ups over the selected period.</p>
+                <div class="adx-chart-wrap"><canvas id="ra-user-growth-chart"></canvas></div>
+              </div>
+              <div class="adx-card">
+                <div class="adx-card-head"><h3>Enrollments Overview</h3><span class="adx-badge" id="ra-enroll-badge">This Month</span></div>
+                <p class="adx-card-sub">Total, active, and completed enrollments.</p>
+                <div class="adx-chart-wrap"><canvas id="ra-enrollments-chart"></canvas></div>
+              </div>
+            </div>
+
+            <div class="adx-grid-3">
+              <div class="adx-card">
+                <h3>Completion Rate</h3>
+                <p class="adx-card-sub">Enrollment outcomes, selected period.</p>
+                <div class="adx-donut-wrap">
+                  <div class="adx-donut-canvas-wrap">
+                    <canvas id="ra-completion-donut"></canvas>
+                    <div class="adx-donut-center"><strong id="ra-completion-center">0%</strong><span>Average</span></div>
+                  </div>
+                  <div class="adx-legend" id="ra-completion-legend"></div>
+                </div>
+              </div>
+              <div class="adx-card">
+                <h3>User Distribution by Role</h3>
+                <p class="adx-card-sub">All accounts on the platform.</p>
+                <div class="adx-donut-wrap">
+                  <div class="adx-donut-canvas-wrap"><canvas id="ra-role-donut"></canvas></div>
+                  <div class="adx-legend" id="ra-role-legend"></div>
+                </div>
+              </div>
+              <div class="adx-card">
+                <h3>Top Courses by Enrollments</h3>
+                <div id="ra-top-courses"></div>
+              </div>
+            </div>
+
+            <div class="adx-grid-2">
+              <div class="adx-card">
+                <h3>Best Performing Instructors</h3>
+                <p class="adx-card-sub">Ranked by student completion rate.</p>
+                <div id="ra-top-instructors"></div>
+              </div>
+              <div class="adx-card">
+                <h3>Top Courses by Completion Rate</h3>
+                <div id="ra-top-completion-courses"></div>
+              </div>
+            </div>
+
+            <div class="adx-grid-2">
+              <div class="adx-card" style="grid-column: 1 / -1;">
+                <div class="adx-card-head"><h3>Monthly Summary</h3></div>
+                <div class="adx-table-wrap">
+                  <table class="adx-table">
+                    <thead><tr><th>Month</th><th>Total Users</th><th>Enrollments</th><th>Courses</th><th>Certificates Issued</th><th>Quizzes Taken</th><th>Avg. Completion</th></tr></thead>
+                    <tbody id="ra-monthly-summary"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="adx-grid-2">
+              <div class="adx-card">
+                <div class="adx-card-head"><h3>Recent Activities</h3><a href="admin.html#adx-notifications">View All</a></div>
+                <div id="ra-activities" class="adx-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ USERS ============ -->
+          <div class="ra-panel" id="ra-panel-users">
+            <div class="ra-mini-stats">
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-users-total">0</div><div class="adx-stat-label">Total Users</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-users-students">0</div><div class="adx-stat-label">Students</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-users-instructors">0</div><div class="adx-stat-label">Instructors</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-users-admins">0</div><div class="adx-stat-label">Admins</div></div>
+            </div>
+            <div class="adx-card">
+              <div class="adx-card-head"><h3>All Users</h3><button class="adx-link-btn" id="ra-users-export">Export CSV</button></div>
+              <div class="ra-search-row"><input type="text" id="ra-users-search" placeholder="Search by name or email…" /></div>
+              <div class="adx-table-wrap">
+                <table class="adx-table">
+                  <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Joined</th><th>Enrollments</th><th>Certificates</th></tr></thead>
+                  <tbody id="ra-users-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ COURSES ============ -->
+          <div class="ra-panel" id="ra-panel-courses">
+            <div class="ra-mini-stats">
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-courses-total">0</div><div class="adx-stat-label">Total Courses</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-courses-published">0</div><div class="adx-stat-label">Published</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-courses-categories">0</div><div class="adx-stat-label">Categories</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-courses-avg-completion">0%</div><div class="adx-stat-label">Avg. Completion</div></div>
+            </div>
+            <div class="adx-card">
+              <div class="adx-card-head"><h3>All Courses</h3><button class="adx-link-btn" id="ra-courses-export">Export CSV</button></div>
+              <div class="ra-search-row"><input type="text" id="ra-courses-search" placeholder="Search by course or category…" /></div>
+              <div class="adx-table-wrap">
+                <table class="adx-table">
+                  <thead><tr><th>Course</th><th>Category</th><th>Instructor</th><th>Enrollments</th><th>Completion Rate</th><th>Status</th></tr></thead>
+                  <tbody id="ra-courses-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ LEARNING ============ -->
+          <div class="ra-panel" id="ra-panel-learning">
+            <div class="adx-grid-2">
+              <div class="adx-card">
+                <h3>Enrollment Trend</h3>
+                <p class="adx-card-sub">Enrollments over the selected period.</p>
+                <div class="adx-chart-wrap"><canvas id="ra-learning-chart"></canvas></div>
+              </div>
+              <div class="adx-card">
+                <h3>Learner Progress</h3>
+                <p class="adx-card-sub">Completed vs. in progress vs. not started.</p>
+                <div class="adx-donut-wrap">
+                  <div class="adx-donut-canvas-wrap"><canvas id="ra-learning-donut"></canvas></div>
+                  <div class="adx-legend" id="ra-learning-legend"></div>
+                </div>
+              </div>
+            </div>
+            <div class="adx-card">
+              <div class="adx-card-head"><h3>Course Completion Leaderboard</h3></div>
+              <div class="adx-table-wrap">
+                <table class="adx-table">
+                  <thead><tr><th>Course</th><th>Enrolled</th><th>Completed</th><th>In Progress</th><th>Completion Rate</th></tr></thead>
+                  <tbody id="ra-learning-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ CERTIFICATES ============ -->
+          <div class="ra-panel" id="ra-panel-certificates">
+            <div class="ra-mini-stats">
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-certs-total">0</div><div class="adx-stat-label">Total Issued</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-certs-period">0</div><div class="adx-stat-label">Issued (Selected Period)</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-certs-courses">0</div><div class="adx-stat-label">Courses with Certificates</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-certs-rate">0%</div><div class="adx-stat-label">Certification Rate</div></div>
+            </div>
+            <div class="adx-card">
+              <div class="adx-card-head"><h3>Issued Certificates</h3><button class="adx-link-btn" id="ra-certs-export">Export CSV</button></div>
+              <div class="ra-search-row"><input type="text" id="ra-certs-search" placeholder="Search by recipient or course…" /></div>
+              <div class="adx-table-wrap">
+                <table class="adx-table">
+                  <thead><tr><th>Recipient</th><th>Course</th><th>Code</th><th>Issued</th></tr></thead>
+                  <tbody id="ra-certs-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ QUIZZES ============ -->
+          <div class="ra-panel" id="ra-panel-quizzes">
+            <div class="ra-mini-stats">
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-quiz-questions">0</div><div class="adx-stat-label">Total Quiz Questions</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-quiz-taken">0</div><div class="adx-stat-label">Quizzes Taken</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-quiz-courses">0</div><div class="adx-stat-label">Courses with Quizzes</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-quiz-avg">0</div><div class="adx-stat-label">Avg. Questions / Course</div></div>
+            </div>
+            <div class="adx-card">
+              <p class="adx-card-sub" style="margin-bottom:1rem;">"Quizzes Taken" is derived from completed enrollments (a learner takes the final quiz to complete a course).</p>
+              <div class="adx-card-head"><h3>Quiz Performance by Course</h3><button class="adx-link-btn" id="ra-quizzes-export">Export CSV</button></div>
+              <div class="adx-table-wrap">
+                <table class="adx-table">
+                  <thead><tr><th>Course</th><th>Quiz Questions</th><th>Quizzes Taken</th><th>Pass / Completion Rate</th></tr></thead>
+                  <tbody id="ra-quizzes-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ INSTRUCTORS ============ -->
+          <div class="ra-panel" id="ra-panel-instructors">
+            <div class="ra-mini-stats">
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-instr-total">0</div><div class="adx-stat-label">Total Instructors</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-instr-courses">0</div><div class="adx-stat-label">Courses Taught</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-instr-students">0</div><div class="adx-stat-label">Students Reached</div></div>
+              <div class="adx-stat-card"><div class="adx-stat-value" id="ra-instr-avg-rate">0%</div><div class="adx-stat-label">Avg. Completion Rate</div></div>
+            </div>
+            <div class="adx-card">
+              <div class="adx-card-head"><h3>Instructor Performance</h3><button class="adx-link-btn" id="ra-instr-export">Export CSV</button></div>
+              <div class="adx-table-wrap">
+                <table class="adx-table">
+                  <thead><tr><th>Instructor</th><th>Courses</th><th>Students</th><th>Certificates Issued</th><th>Completion Rate</th></tr></thead>
+                  <tbody id="ra-instr-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+        <!-- ============ Walk-in Registration Modal ============ -->
+    <div id="walk-in-modal" class="walk-in-modal">
+      <div class="walk-in-modal-content">
+        <h2>📝 Walk-in Student Registration</h2>
+        
+        <div class="walk-in-note">
+          <strong>Note:</strong> A temporary password will be generated and sent to the student's email along with login credentials and certificate information.
+        </div>
+
+        <form id="walk-in-form" style="display: none;">
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-first-name">First Name *</label>
+              <input type="text" id="walk-in-first-name" placeholder="e.g., John" required />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-last-name">Last Name *</label>
+              <input type="text" id="walk-in-last-name" placeholder="e.g., Doe" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-email">Email Address *</label>
+            <input type="email" id="walk-in-email" placeholder="student@example.com" required />
+          </div>
+
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-phone">Phone Number</label>
+              <input type="tel" id="walk-in-phone" placeholder="+1 (555) 000-0000" />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-date">Registration Date *</label>
+              <input type="date" id="walk-in-date" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-course">Enroll in Course</label>
+            <select id="walk-in-course">
+              <option value="">-- Select a course (optional) --</option>
+            </select>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-notes">Additional Notes</label>
+            <textarea id="walk-in-notes" placeholder="Any additional information about the student..."></textarea>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label>
+              <input type="checkbox" id="walk-in-send-email" checked />
+              Send login credentials email to student
+            </label>
+          </div>
+
+          <div class="walk-in-modal-buttons">
+            <button type="button" class="btn-secondary" id="close-walkin-modal">Cancel</button>
+            <button type="submit" class="btn-primary">Create Account</button>
+          </div>
+        </form>
+
+        <div id="walk-in-loading" class="walk-in-loading">
+          <div class="walk-in-spinner"></div>
+          <p style="margin-top: 0.8rem; color: var(--muted);">Creating student account...</p>
+        </div>
+
+        <div id="walk-in-success" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+            <h3 style="margin: 0 0 0.5rem; color: #2BA84A;">Student Account Created!</h3>
+            <p id="walk-in-success-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="close-walkin-success" class="btn-primary" style="width: 100%; padding: 0.7rem;">Close</button>
+          </div>
+        </div>
+
+        <div id="walk-in-error" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: #E4483F;">❌</div>
+            <h3 style="margin: 0 0 0.5rem; color: #E4483F;">Registration Failed</h3>
+            <p id="walk-in-error-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="retry-walkin" class="btn-primary" style="width: 100%; padding: 0.7rem;">Try Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<script type="module" src="script.js"></script>
+    <script>
+      if (typeof updateHeaderAuthLink === 'function') { updateHeaderAuthLink(); }
+      // Mobile sidebar toggle
+      const adxShell = document.getElementById('adx-shell');
+      const adxHamburger = document.getElementById('adx-hamburger');
+      const adxBackdrop = document.getElementById('adx-backdrop');
+      adxHamburger?.addEventListener('click', () => adxShell.classList.toggle('adx-sidebar-open'));
+      adxBackdrop?.addEventListener('click', () => adxShell.classList.remove('adx-sidebar-open'));
+    </script>
+
+    <!-- This page's own module: guards the route, pulls live Firestore data,
+         computes analytics for every tab, and wires up exports. -->
+    <script type="module">
+      import { db } from "./firebase-init.js";
+      import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+      /* ---------- Role-aware "Super Admin" branding ----------
+         This page is shared between admin.html and superadmin.html.
+         When it's opened by/for a super admin, swap the sidebar brand
+         label, Dashboard link, notification bell, and profile block
+         over to the Super Admin look instead of the default Admin one,
+         so the top nav reflects who's actually signed in.
+
+         Applied in two passes:
+         1) Synchronously, right away, if the link we arrived on already
+            says ?from=superadmin — this is the normal case (clicked from
+            the Super Admin sidebar) and needs no waiting, so there's no
+            flash of the default Admin look before this runs.
+         2) After auth is ready, as a fallback for direct loads/refreshes
+            that don't carry the query param, based on the real role. */
+      const applySuperAdminBranding = () => {
+        const dashboardHref = "superadmin.html";
+        document.querySelector(".adx-sidebar")?.classList.add("is-superadmin");
+        const brandSub = document.getElementById("adx-brand-sub");
+        if (brandSub) brandSub.textContent = "SUPER ADMIN";
+        const navDash = document.getElementById("adx-nav-dashboard");
+        if (navDash) {
+          navDash.href = dashboardHref;
+          navDash.innerHTML = '<span class="adx-nav-icon">👑</span> Dashboard';
+        }
+        const breadcrumbDash = document.getElementById("adx-breadcrumb-dashboard");
+        if (breadcrumbDash) breadcrumbDash.href = dashboardHref;
+        const bellLink = document.getElementById("adx-bell-link");
+        if (bellLink) bellLink.href = `${dashboardHref}#adx-notifications`;
+        const profileAvatar = document.getElementById("adx-profile-avatar");
+        const profileName = document.getElementById("adx-profile-name");
+        const profileRole = document.getElementById("adx-profile-role");
+        if (profileAvatar) profileAvatar.textContent = "S";
+        if (profileName) profileName.textContent = "Super Admin";
+        if (profileRole) profileRole.textContent = "Master Administrator";
+      };
+
+      const cameFromSuperAdmin = new URLSearchParams(window.location.search).get("from") === "superadmin";
+      if (cameFromSuperAdmin) applySuperAdminBranding();
+
+      /* ---------- Route guard: admins only ---------- */
+      const isLocalPreview =
+        location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+      const currentAuthForBranding = (window.getAuth && window.getAuth()) || null;
+      if (!cameFromSuperAdmin && currentAuthForBranding?.role === "superadmin") {
+        applySuperAdminBranding();
+      }
+
+      if (window.authReadyPromise) await window.authReadyPromise;
+
+      if (!isLocalPreview) {
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+          window.location.href = "login.html";
+        } else if (!window.isAdmin || !window.isAdmin()) {
+          window.location.href = "dashboard.html";
+        }
+      }
+
+      if (!cameFromSuperAdmin) {
+        const currentAuthForBrandingAfter = (window.getAuth && window.getAuth()) || null;
+        if (currentAuthForBrandingAfter?.role === "superadmin") applySuperAdminBranding();
+      }
+
+      /* ---------- Helpers ---------- */
+      const escapeHtml = (str) =>
+        String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+      const fetchCollection = async (name) => {
+        try {
+          const snapshot = await getDocs(collection(db, name));
+          return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        } catch (error) {
+          console.error(`Failed to load "${name}" from Firestore`, error);
+          return [];
+        }
+      };
+
+      const initials = (name) => {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return "?";
+        return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+      };
+
+      const timeAgo = (isoString) => {
+        if (!isoString) return "—";
+        const then = new Date(isoString).getTime();
+        if (Number.isNaN(then)) return "—";
+        const diffMs = Date.now() - then;
+        const minutes = Math.floor(diffMs / 60000);
+        if (minutes < 1) return "just now";
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days}d ago`;
+        return new Date(isoString).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      };
+
+      const fmtDate = (iso) => {
+        if (!iso) return "—";
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      };
+
+      const notificationIcon = (type) => ({ enrollment: "📝", certificate: "🏆", exam: "📅" }[type] || "🔔");
+
+      /* ---------- Load all data in parallel ---------- */
+      const [courses, enrollments, certificates, instructors, users, notifications] = await Promise.all([
+        fetchCollection("courses"),
+        fetchCollection("enrollments"),
+        fetchCollection("certificates"),
+        fetchCollection("instructors"),
+        fetchCollection("users"),
+        fetchCollection("notifications")
+      ]);
+
+      const certifiedKey = (email, course) => `${(email || "").trim().toLowerCase()}::${course}`;
+      const certifiedMap = new Map(certificates.map((c) => [certifiedKey(c.email, c.course), c]));
+      const enrollmentStatus = (e) => {
+        if (certifiedMap.has(certifiedKey(e.email, e.course))) return "Completed";
+        if ((e.status || "").toLowerCase() === "not-started") return "Not Started";
+        return "In Progress";
+      };
+
+      /* =========================================================
+         Date-range filtering
+      ========================================================= */
+      const rangeSelect = document.getElementById("ra-range");
+
+      const getRangeBounds = (key) => {
+        const now = new Date();
+        let start, end;
+        if (key === "this-month") {
+          start = new Date(now.getFullYear(), now.getMonth(), 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        } else if (key === "last-month") {
+          start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          end = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (key === "last-3") {
+          start = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        } else if (key === "last-6") {
+          start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+          end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        } else if (key === "this-year") {
+          start = new Date(now.getFullYear(), 0, 1);
+          end = new Date(now.getFullYear() + 1, 0, 1);
+        } else {
+          start = new Date(2000, 0, 1);
+          end = new Date(now.getFullYear() + 1, 0, 1);
+        }
+        return { start, end };
+      };
+
+      const inRange = (iso, bounds) => {
+        if (!iso) return false;
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return false;
+        return d >= bounds.start && d < bounds.end;
+      };
+
+      /* =========================================================
+         CSV export helpers
+      ========================================================= */
+      const toCsvValue = (v) => {
+        const s = String(v ?? "");
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const buildCsv = (headers, rows) => [headers, ...rows].map((r) => r.map(toCsvValue).join(",")).join("\n");
+      const downloadCsv = (headers, rows, filename) => {
+        const blob = new Blob([buildCsv(headers, rows)], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      };
+
+      /* =========================================================
+         Charts registry (destroy + recreate on range change)
+      ========================================================= */
+      const chartRegistry = {};
+      const makeChart = (id, config) => {
+        const canvas = document.getElementById(id);
+        if (!canvas || !window.Chart) return;
+        if (chartRegistry[id]) chartRegistry[id].destroy();
+        chartRegistry[id] = new Chart(canvas, config);
+      };
+
+      const monthLabel = (d) => d.toLocaleDateString("en-US", { month: "short" });
+
+      /* =========================================================
+         MASTER RENDER — recomputes everything for the selected range
+      ========================================================= */
+      function render() {
+        const bounds = getRangeBounds(rangeSelect.value);
+        const rangeText = rangeSelect.options[rangeSelect.selectedIndex].text;
+        document.getElementById("ra-growth-badge").textContent = rangeText;
+        document.getElementById("ra-enroll-badge").textContent = rangeText;
+
+        const periodEnrollments = enrollments.filter((e) => inRange(e.enrolledAt, bounds));
+        const periodCertificates = certificates.filter((c) => inRange(c.date || c.issuedAt, bounds));
+        const periodUsers = users.filter((u) => inRange(u.createdAt, bounds));
+        const periodCourses = courses.filter((c) => inRange(c.createdAt, bounds));
+
+        /* previous equivalent period, for trend arrows */
+        const spanMs = bounds.end - bounds.start;
+        const prevBounds = { start: new Date(bounds.start.getTime() - spanMs), end: bounds.start };
+        const prevEnrollments = enrollments.filter((e) => inRange(e.enrolledAt, prevBounds));
+        const prevCertificates = certificates.filter((c) => inRange(c.date || c.issuedAt, prevBounds));
+        const prevUsers = users.filter((u) => inRange(u.createdAt, prevBounds));
+        const prevCourses = courses.filter((c) => inRange(c.createdAt, prevBounds));
+
+        const trend = (elId, current, previous) => {
+          const el = document.getElementById(elId);
+          if (!el) return;
+          if (previous > 0) {
+            const pct = ((current - previous) / previous) * 100;
+            el.textContent = `${pct >= 0 ? "↑" : "↓"} ${Math.abs(pct).toFixed(1)}%`;
+            el.className = `adx-stat-trend ${pct >= 0 ? "is-up" : "is-down"}`;
+          } else if (current > 0) {
+            el.textContent = "↑ New";
+            el.className = "adx-stat-trend is-up";
+          } else {
+            el.textContent = "—";
+            el.className = "adx-stat-trend is-flat";
+          }
+        };
+
+        /* ---------- Top stat cards ---------- */
+        const totalUsers = users.length;
+        document.getElementById("ra-stat-users").textContent = totalUsers;
+        trend("ra-trend-users", periodUsers.length, prevUsers.length);
+
+        const completedInPeriod = periodEnrollments.filter((e) => certifiedMap.has(certifiedKey(e.email, e.course))).length;
+        const activeInPeriod = periodEnrollments.length - completedInPeriod;
+        document.getElementById("ra-stat-enrollments").textContent = activeInPeriod >= 0 ? activeInPeriod : periodEnrollments.length;
+        trend("ra-trend-enrollments", periodEnrollments.length, prevEnrollments.length);
+
+        document.getElementById("ra-stat-courses").textContent = courses.length;
+        trend("ra-trend-courses", periodCourses.length, prevCourses.length);
+
+        document.getElementById("ra-stat-certificates").textContent = periodCertificates.length;
+        trend("ra-trend-certificates", periodCertificates.length, prevCertificates.length);
+
+        document.getElementById("ra-stat-quizzes").textContent = completedInPeriod;
+        trend("ra-trend-quizzes", completedInPeriod, prevEnrollments.filter((e) => certifiedMap.has(certifiedKey(e.email, e.course))).length);
+
+        const completionPct = periodEnrollments.length ? Math.round((completedInPeriod / periodEnrollments.length) * 100) : 0;
+        document.getElementById("ra-stat-completion").textContent = `${completionPct}%`;
+        const prevCompletedCount = prevEnrollments.filter((e) => certifiedMap.has(certifiedKey(e.email, e.course))).length;
+        const prevCompletionPct = prevEnrollments.length ? Math.round((prevCompletedCount / prevEnrollments.length) * 100) : 0;
+        trend("ra-trend-completion", completionPct, prevCompletionPct);
+
+        /* ---------- User Growth chart (daily, cumulative within range) ---------- */
+        const dayCount = Math.max(1, Math.round((bounds.end - bounds.start) / 86400000));
+        const dayLabels = [];
+        const dayKeys = [];
+        for (let i = 0; i < dayCount; i++) {
+          const d = new Date(bounds.start.getTime() + i * 86400000);
+          if (d >= new Date()) break;
+          dayKeys.push(d.toDateString());
+          dayLabels.push(d.getDate());
+        }
+        if (!dayKeys.length) { dayKeys.push(bounds.start.toDateString()); dayLabels.push(bounds.start.getDate()); }
+        const usersByDay = new Map();
+        users.forEach((u) => { if (u.createdAt) { const k = new Date(u.createdAt).toDateString(); usersByDay.set(k, (usersByDay.get(k) || 0) + 1); } });
+        let running = users.filter((u) => u.createdAt && new Date(u.createdAt) < bounds.start).length;
+        const growthSeries = dayKeys.map((k) => { running += usersByDay.get(k) || 0; return running; });
+
+        makeChart("ra-user-growth-chart", {
+          type: "line",
+          data: { labels: dayLabels, datasets: [{ label: "Total Users", data: growthSeries, borderColor: "#2B6CB0", backgroundColor: "rgba(43,108,176,0.12)", fill: true, tension: 0.35, pointRadius: 0 }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { title: { display: false } } } }
+        });
+
+        /* ---------- Enrollments Overview chart (daily: total / active / completed) ---------- */
+        const enrByDay = new Map(), compByDay = new Map();
+        enrollments.forEach((e) => { if (e.enrolledAt) { const k = new Date(e.enrolledAt).toDateString(); enrByDay.set(k, (enrByDay.get(k) || 0) + 1); } });
+        certificates.forEach((c) => { const iso = c.date || c.issuedAt; if (iso) { const k = new Date(iso).toDateString(); compByDay.set(k, (compByDay.get(k) || 0) + 1); } });
+        let runTotal = enrollments.filter((e) => e.enrolledAt && new Date(e.enrolledAt) < bounds.start).length;
+        let runComp = certificates.filter((c) => (c.date || c.issuedAt) && new Date(c.date || c.issuedAt) < bounds.start).length;
+        const totalSeries = [], compSeries = [], activeSeries = [];
+        dayKeys.forEach((k) => {
+          runTotal += enrByDay.get(k) || 0;
+          runComp += compByDay.get(k) || 0;
+          totalSeries.push(runTotal);
+          compSeries.push(runComp);
+          activeSeries.push(Math.max(runTotal - runComp, 0));
+        });
+
+        makeChart("ra-enrollments-chart", {
+          type: "line",
+          data: {
+            labels: dayLabels,
+            datasets: [
+              { label: "Total Enrollments", data: totalSeries, borderColor: "#2B6CB0", backgroundColor: "transparent", tension: 0.35, pointRadius: 0 },
+              { label: "Active", data: activeSeries, borderColor: "#2BA84A", backgroundColor: "transparent", tension: 0.35, pointRadius: 0 },
+              { label: "Completed", data: compSeries, borderColor: "#7C4DFF", backgroundColor: "transparent", tension: 0.35, pointRadius: 0 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+        });
+
+        /* ---------- Completion Rate donut ---------- */
+        const notStartedInPeriod = periodEnrollments.filter((e) => (e.status || "").toLowerCase() === "not-started" && !certifiedMap.has(certifiedKey(e.email, e.course))).length;
+        const inProgressInPeriod = Math.max(periodEnrollments.length - completedInPeriod - notStartedInPeriod, 0);
+        document.getElementById("ra-completion-center").textContent = `${completionPct}%`;
+        makeChart("ra-completion-donut", {
+          type: "doughnut",
+          data: { labels: ["Completed", "In Progress", "Not Started"], datasets: [{ data: [completedInPeriod, inProgressInPeriod, notStartedInPeriod], backgroundColor: ["#2BA84A", "#2B6CB0", "#FFD500"], borderWidth: 0 }] },
+          options: { responsive: true, maintainAspectRatio: false, cutout: "68%", plugins: { legend: { display: false } } }
+        });
+        document.getElementById("ra-completion-legend").innerHTML = [
+          ["#2BA84A", "Completed", completedInPeriod],
+          ["#2B6CB0", "In Progress", inProgressInPeriod],
+          ["#FFD500", "Not Started", notStartedInPeriod]
+        ].map(([color, label, val]) => `
+            <div class="adx-legend-row">
+              <span class="adx-legend-dot" style="background:${color};"></span>
+              <span class="adx-legend-label">${label}</span>
+              <span class="adx-legend-value">${val} (${periodEnrollments.length ? ((val / periodEnrollments.length) * 100).toFixed(1) : 0}%)</span>
+            </div>`).join("");
+
+        /* ---------- User Distribution by Role donut ---------- */
+        const studentCount = users.filter((u) => (u.role || "user") === "user").length;
+        const instructorCount = instructors.length;
+        const adminCount = users.filter((u) => (u.role || "").toLowerCase() === "admin").length;
+        const totalAccounts = Math.max(studentCount + instructorCount + adminCount, 1);
+        makeChart("ra-role-donut", {
+          type: "doughnut",
+          data: { labels: ["Students", "Instructors", "Admins"], datasets: [{ data: [studentCount, instructorCount, adminCount], backgroundColor: ["#2B6CB0", "#7C4DFF", "#FFD500"], borderWidth: 0 }] },
+          options: { responsive: true, maintainAspectRatio: false, cutout: "68%", plugins: { legend: { display: false } } }
+        });
+        document.getElementById("ra-role-legend").innerHTML = [
+          ["#2B6CB0", "Students", studentCount],
+          ["#7C4DFF", "Instructors", instructorCount],
+          ["#FFD500", "Admins", adminCount]
+        ].map(([color, label, val]) => `
+            <div class="adx-legend-row">
+              <span class="adx-legend-dot" style="background:${color};"></span>
+              <span class="adx-legend-label">${label}</span>
+              <span class="adx-legend-value">${val} (${((val / totalAccounts) * 100).toFixed(1)}%)</span>
+            </div>`).join("");
+
+        /* ---------- Top Courses by Enrollments ---------- */
+        const enrollCountByCourse = enrollments.reduce((map, e) => { const k = e.course || "Untitled course"; map[k] = (map[k] || 0) + 1; return map; }, {});
+        const topCourses = courses.map((c) => ({ title: c.title || "Untitled course", students: enrollCountByCourse[c.title] || 0 }))
+          .sort((a, b) => b.students - a.students).slice(0, 5);
+        const maxStudents = Math.max(1, ...topCourses.map((c) => c.students));
+        document.getElementById("ra-top-courses").innerHTML = topCourses.length
+          ? topCourses.map((c) => `
+              <div class="adx-course-row">
+                <div class="adx-course-row-head"><span>${escapeHtml(c.title)}</span><span>${c.students} enrollment${c.students === 1 ? "" : "s"}</span></div>
+                <div class="adx-progress-track"><div class="adx-progress-fill" style="width:${(c.students / maxStudents) * 100}%;"></div></div>
+              </div>`).join("")
+          : `<p class="adx-empty">No courses yet.</p>`;
+
+        /* ---------- Course completion rate (shared helper) ---------- */
+        const courseCompletionStats = courses.map((c) => {
+          const its = enrollments.filter((e) => e.course === c.title);
+          const done = its.filter((e) => certifiedMap.has(certifiedKey(e.email, e.course))).length;
+          return { title: c.title || "Untitled course", category: c.category || "—", instructor: c.instructorName || c.instructor || "—",
+            status: c.status || "draft", enrolled: its.length, completed: done, inProgress: its.length - done,
+            rate: its.length ? Math.round((done / its.length) * 100) : 0 };
+        });
+
+        /* ---------- Best Performing Instructors (Overview) ---------- */
+        const instructorStats = instructors.map((i) => {
+          const theirCourses = courses.filter((c) => c.instructorId === i.id || c.instructorName === i.name);
+          const theirTitles = new Set(theirCourses.map((c) => c.title));
+          const theirEnrollments = enrollments.filter((e) => theirTitles.has(e.course));
+          const theirCerts = certificates.filter((c) => theirTitles.has(c.course));
+          const rate = theirEnrollments.length ? Math.round((theirCerts.length / theirEnrollments.length) * 100) : 0;
+          return { name: i.name || i.email || "Instructor", courseCount: theirCourses.length, students: theirEnrollments.length, certs: theirCerts.length, rate };
+        }).sort((a, b) => b.rate - a.rate || b.students - a.students).slice(0, 5);
+
+        document.getElementById("ra-top-instructors").innerHTML = instructorStats.length
+          ? instructorStats.map((i, idx) => `
+              <div class="adx-rank-row">
+                <span class="adx-rank-num">${idx + 1}</span>
+                <span class="adx-rank-name">${escapeHtml(i.name)}</span>
+                <span class="adx-rank-pct">${i.rate}%</span>
+              </div>`).join("")
+          : `<p class="adx-empty">No instructors yet.</p>`;
+
+        /* ---------- Top Courses by Completion Rate ---------- */
+        const topByCompletion = [...courseCompletionStats].filter((c) => c.enrolled > 0).sort((a, b) => b.rate - a.rate).slice(0, 5);
+        document.getElementById("ra-top-completion-courses").innerHTML = topByCompletion.length
+          ? topByCompletion.map((c, idx) => `
+              <div class="adx-rank-row">
+                <span class="adx-rank-num">${idx + 1}</span>
+                <span class="adx-rank-name">${escapeHtml(c.title)}</span>
+                <span class="adx-rank-pct">${c.rate}%</span>
+              </div>`).join("")
+          : `<p class="adx-empty">Not enough enrollment data yet.</p>`;
+
+        /* ---------- Monthly Summary (last 5 months) ---------- */
+        const months = [];
+        const now = new Date();
+        for (let i = 4; i >= 0; i--) months.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+        document.getElementById("ra-monthly-summary").innerHTML = months.map((m) => {
+          const mStart = m, mEnd = new Date(m.getFullYear(), m.getMonth() + 1, 1);
+          const mUsers = users.filter((u) => u.createdAt && new Date(u.createdAt) < mEnd).length;
+          const mEnroll = enrollments.filter((e) => e.enrolledAt && new Date(e.enrolledAt) >= mStart && new Date(e.enrolledAt) < mEnd).length;
+          const mCourses = courses.filter((c) => !c.createdAt || new Date(c.createdAt) < mEnd).length;
+          const mCerts = certificates.filter((c) => (c.date || c.issuedAt) && new Date(c.date || c.issuedAt) >= mStart && new Date(c.date || c.issuedAt) < mEnd).length;
+          const mCompletedTotal = certificates.filter((c) => (c.date || c.issuedAt) && new Date(c.date || c.issuedAt) < mEnd).length;
+          const mEnrollTotal = enrollments.filter((e) => e.enrolledAt && new Date(e.enrolledAt) < mEnd).length;
+          const mAvg = mEnrollTotal ? Math.round((mCompletedTotal / mEnrollTotal) * 100) : 0;
+          return `<tr>
+              <td><strong>${m.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</strong></td>
+              <td>${mUsers}</td><td>${mEnroll}</td><td>${mCourses}</td><td>${mCerts}</td><td>${mCerts}</td><td>${mAvg}%</td>
+            </tr>`;
+        }).join("");
+
+        /* ---------- Recent Activities ---------- */
+        const sortedNotifications = [...notifications].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0, 6);
+        document.getElementById("ra-activities").innerHTML = sortedNotifications.length
+          ? sortedNotifications.map((n) => `
+              <div class="adx-list-item">
+                <div><p class="adx-list-item-title">${notificationIcon(n.type)} ${escapeHtml(n.message)}</p><p class="adx-list-item-meta">${timeAgo(n.createdAt)}</p></div>
+              </div>`).join("")
+          : `<p class="adx-empty">No recent activity yet.</p>`;
+
+        /* =========================================================
+           USERS TAB
+           "Total Users" here previously counted every account in the
+           users collection (admins + instructors + students), which
+           didn't match the "Total Users" stat on the Dashboard or
+           User Management pages — both of those only count accounts
+           with role "user" (students), since instructors/admins are
+           tracked separately. Using studentCount here (same filter)
+           keeps all three "Total Users" numbers in sync.
+        ========================================================= */
+        document.getElementById("ra-users-total").textContent = studentCount;
+        document.getElementById("ra-users-students").textContent = studentCount;
+        document.getElementById("ra-users-instructors").textContent = instructorCount;
+        document.getElementById("ra-users-admins").textContent = adminCount;
+
+        const usersRows = users.map((u) => {
+          const myEnrollments = enrollments.filter((e) => (e.email || "").toLowerCase() === (u.email || "").toLowerCase()).length;
+          const myCerts = certificates.filter((c) => (c.email || "").toLowerCase() === (u.email || "").toLowerCase()).length;
+          return { ...u, myEnrollments, myCerts };
+        });
+        const renderUsersTable = (list) => {
+          const body = document.getElementById("ra-users-table");
+          body.innerHTML = list.length ? list.map((u) => `
+              <tr>
+                <td><div class="ra-avatar-cell"><span class="ra-mini-avatar">${initials(u.name || u.email)}</span> ${escapeHtml(u.name || "—")}</div></td>
+                <td>${escapeHtml(u.email || "—")}</td>
+                <td><span class="adx-status-pill ${((u.role || "user") === "user") ? "" : "is-progress"}">${escapeHtml(u.role || "user")}</span></td>
+                <td>${fmtDate(u.createdAt)}</td>
+                <td>${u.myEnrollments}</td>
+                <td>${u.myCerts}</td>
+              </tr>`).join("") : `<tr><td colspan="6" class="adx-empty">No users found.</td></tr>`;
+        };
+        renderUsersTable(usersRows);
+        document.getElementById("ra-users-search").oninput = (e) => {
+          const q = e.target.value.toLowerCase();
+          renderUsersTable(usersRows.filter((u) => (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q)));
+        };
+
+        /* =========================================================
+           COURSES TAB
+        ========================================================= */
+        document.getElementById("ra-courses-total").textContent = courses.length;
+        document.getElementById("ra-courses-published").textContent = courses.filter((c) => (c.status || "").toLowerCase() === "published").length;
+        document.getElementById("ra-courses-categories").textContent = new Set(courses.map((c) => c.category).filter(Boolean)).size;
+        const overallAvgCompletion = courseCompletionStats.filter((c) => c.enrolled > 0);
+        document.getElementById("ra-courses-avg-completion").textContent = overallAvgCompletion.length
+          ? `${Math.round(overallAvgCompletion.reduce((s, c) => s + c.rate, 0) / overallAvgCompletion.length)}%` : "0%";
+
+        const renderCoursesTable = (list) => {
+          const body = document.getElementById("ra-courses-table");
+          body.innerHTML = list.length ? list.map((c) => `
+              <tr>
+                <td><strong>${escapeHtml(c.title)}</strong></td>
+                <td>${escapeHtml(c.category)}</td>
+                <td>${escapeHtml(c.instructor)}</td>
+                <td>${c.enrolled}</td>
+                <td>${c.rate}%</td>
+                <td><span class="adx-status-pill ${c.status === "published" ? "is-ok" : (c.status === "pending" ? "is-progress" : "is-muted")}">${escapeHtml(c.status)}</span></td>
+              </tr>`).join("") : `<tr><td colspan="6" class="adx-empty">No courses found.</td></tr>`;
+        };
+        renderCoursesTable(courseCompletionStats);
+        document.getElementById("ra-courses-search").oninput = (e) => {
+          const q = e.target.value.toLowerCase();
+          renderCoursesTable(courseCompletionStats.filter((c) => c.title.toLowerCase().includes(q) || c.category.toLowerCase().includes(q)));
+        };
+
+        /* =========================================================
+           LEARNING TAB
+        ========================================================= */
+        makeChart("ra-learning-chart", {
+          type: "bar",
+          data: { labels: dayLabels, datasets: [{ label: "Enrollments", data: dayKeys.map((k) => enrByDay.get(k) || 0), backgroundColor: "#2B6CB0", borderRadius: 4 }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+        });
+        makeChart("ra-learning-donut", {
+          type: "doughnut",
+          data: { labels: ["Completed", "In Progress", "Not Started"], datasets: [{ data: [completedInPeriod, inProgressInPeriod, notStartedInPeriod], backgroundColor: ["#2BA84A", "#2B6CB0", "#FFD500"], borderWidth: 0 }] },
+          options: { responsive: true, maintainAspectRatio: false, cutout: "68%", plugins: { legend: { display: false } } }
+        });
+        document.getElementById("ra-learning-legend").innerHTML = document.getElementById("ra-completion-legend").innerHTML;
+
+        document.getElementById("ra-learning-table").innerHTML = courseCompletionStats.length
+          ? [...courseCompletionStats].sort((a, b) => b.rate - a.rate).map((c) => `
+              <tr><td><strong>${escapeHtml(c.title)}</strong></td><td>${c.enrolled}</td><td>${c.completed}</td><td>${c.inProgress}</td><td>${c.rate}%</td></tr>`).join("")
+          : `<tr><td colspan="5" class="adx-empty">No learning data yet.</td></tr>`;
+
+        /* =========================================================
+           CERTIFICATES TAB
+        ========================================================= */
+        document.getElementById("ra-certs-total").textContent = certificates.length;
+        document.getElementById("ra-certs-period").textContent = periodCertificates.length;
+        document.getElementById("ra-certs-courses").textContent = new Set(certificates.map((c) => c.course).filter(Boolean)).size;
+        document.getElementById("ra-certs-rate").textContent = enrollments.length ? `${Math.round((certificates.length / enrollments.length) * 100)}%` : "0%";
+
+        const renderCertsTable = (list) => {
+          const body = document.getElementById("ra-certs-table");
+          body.innerHTML = list.length ? list.map((c) => `
+              <tr><td>${escapeHtml(c.name || c.email || "—")}</td><td>${escapeHtml(c.course || "—")}</td><td>${escapeHtml(c.code || "—")}</td><td>${fmtDate(c.date || c.issuedAt)}</td></tr>`).join("")
+            : `<tr><td colspan="4" class="adx-empty">No certificates issued yet.</td></tr>`;
+        };
+        const certsSorted = [...certificates].sort((a, b) => new Date(b.date || b.issuedAt || 0) - new Date(a.date || a.issuedAt || 0));
+        renderCertsTable(certsSorted);
+        document.getElementById("ra-certs-search").oninput = (e) => {
+          const q = e.target.value.toLowerCase();
+          renderCertsTable(certsSorted.filter((c) => (c.name || "").toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q) || (c.course || "").toLowerCase().includes(q)));
+        };
+
+        /* =========================================================
+           QUIZZES TAB
+        ========================================================= */
+        const quizByCourse = courses.map((c) => {
+          const modules = Array.isArray(c.modules) ? c.modules : [];
+          const moduleQuizCount = modules.reduce((s, m) => s + (Array.isArray(m.quiz) ? m.quiz.length : 0), 0);
+          const examQuestionCount = Array.isArray(c.questions) ? c.questions.length : 0;
+          const questionCount = moduleQuizCount + examQuestionCount;
+          const its = enrollments.filter((e) => e.course === c.title);
+          const taken = its.filter((e) => certifiedMap.has(certifiedKey(e.email, e.course))).length;
+          return { title: c.title || "Untitled course", questionCount, taken, enrolled: its.length,
+            rate: its.length ? Math.round((taken / its.length) * 100) : 0 };
+        });
+        const totalQuizQuestions = quizByCourse.reduce((s, c) => s + c.questionCount, 0);
+        document.getElementById("ra-quiz-questions").textContent = totalQuizQuestions;
+        document.getElementById("ra-quiz-taken").textContent = completedInPeriod;
+        const coursesWithQuizzes = quizByCourse.filter((c) => c.questionCount > 0).length;
+        document.getElementById("ra-quiz-courses").textContent = coursesWithQuizzes;
+        document.getElementById("ra-quiz-avg").textContent = courses.length ? Math.round(totalQuizQuestions / courses.length) : 0;
+
+        document.getElementById("ra-quizzes-table").innerHTML = quizByCourse.length
+          ? [...quizByCourse].sort((a, b) => b.taken - a.taken).map((c) => `
+              <tr><td><strong>${escapeHtml(c.title)}</strong></td><td>${c.questionCount}</td><td>${c.taken}</td><td>${c.rate}%</td></tr>`).join("")
+          : `<tr><td colspan="4" class="adx-empty">No quiz data yet.</td></tr>`;
+
+        /* =========================================================
+           INSTRUCTORS TAB
+        ========================================================= */
+        const instructorFull = instructors.map((i) => {
+          const theirCourses = courses.filter((c) => c.instructorId === i.id || c.instructorName === i.name);
+          const theirTitles = new Set(theirCourses.map((c) => c.title));
+          const theirEnrollments = enrollments.filter((e) => theirTitles.has(e.course));
+          const theirCerts = certificates.filter((c) => theirTitles.has(c.course));
+          const rate = theirEnrollments.length ? Math.round((theirCerts.length / theirEnrollments.length) * 100) : 0;
+          return { name: i.name || i.email || "Instructor", courseCount: theirCourses.length, students: theirEnrollments.length, certs: theirCerts.length, rate };
+        }).sort((a, b) => b.rate - a.rate || b.students - a.students);
+
+        document.getElementById("ra-instr-total").textContent = instructors.length;
+        document.getElementById("ra-instr-courses").textContent = instructorFull.reduce((s, i) => s + i.courseCount, 0);
+        document.getElementById("ra-instr-students").textContent = instructorFull.reduce((s, i) => s + i.students, 0);
+        document.getElementById("ra-instr-avg-rate").textContent = instructorFull.length
+          ? `${Math.round(instructorFull.reduce((s, i) => s + i.rate, 0) / instructorFull.length)}%` : "0%";
+
+        document.getElementById("ra-instr-table").innerHTML = instructorFull.length
+          ? instructorFull.map((i) => `
+              <tr>
+                <td><div class="ra-avatar-cell"><span class="ra-mini-avatar">${initials(i.name)}</span> ${escapeHtml(i.name)}</div></td>
+                <td>${i.courseCount}</td><td>${i.students}</td><td>${i.certs}</td><td>${i.rate}%</td>
+              </tr>`).join("")
+          : `<tr><td colspan="5" class="adx-empty">No instructors yet.</td></tr>`;
+
+        /* stash for exports */
+        window.__raData = { users: usersRows, courses: courseCompletionStats, enrollments, certificates: certsSorted,
+          quizzes: quizByCourse, instructors: instructorFull, periodEnrollments, periodCertificates, completionPct };
+      }
+
+      rangeSelect.addEventListener("change", render);
+      render();
+
+      /* =========================================================
+         Tabs
+      ========================================================= */
+      const tabs = document.querySelectorAll(".ra-tab");
+      const panels = document.querySelectorAll(".ra-panel");
+      let activeTab = "overview";
+      tabs.forEach((tab) => tab.addEventListener("click", () => {
+        activeTab = tab.dataset.tab;
+        tabs.forEach((t) => t.classList.toggle("is-active", t === tab));
+        panels.forEach((p) => p.classList.toggle("is-active", p.id === `ra-panel-${activeTab}`));
+      }));
+
+      /* =========================================================
+         Export menu + report downloads
+      ========================================================= */
+      const exportToggle = document.getElementById("ra-export-toggle");
+      const exportMenu = document.getElementById("ra-export-menu");
+      exportToggle.addEventListener("click", () => exportMenu.classList.toggle("is-open"));
+      document.addEventListener("click", (e) => { if (!e.target.closest(".ra-export-wrap")) exportMenu.classList.remove("is-open"); });
+
+      const reportExporters = {
+        users: () => downloadCsv(["Name", "Email", "Role", "Joined", "Enrollments", "Certificates"],
+          window.__raData.users.map((u) => [u.name || "", u.email || "", u.role || "user", u.createdAt || "", u.myEnrollments, u.myCerts]), "user-report.csv"),
+        courses: () => downloadCsv(["Course", "Category", "Instructor", "Enrolled", "Completed", "In Progress", "Completion Rate"],
+          window.__raData.courses.map((c) => [c.title, c.category, c.instructor, c.enrolled, c.completed, c.inProgress, `${c.rate}%`]), "course-report.csv"),
+        enrollments: () => downloadCsv(["Learner", "Email", "Course", "Status", "Enrolled"],
+          window.__raData.enrollments.map((e) => [e.name || "", e.email || "", e.course || "", enrollmentStatus(e), e.enrolledAt || ""]), "enrollment-report.csv"),
+        quizzes: () => downloadCsv(["Course", "Quiz Questions", "Quizzes Taken", "Completion Rate"],
+          window.__raData.quizzes.map((c) => [c.title, c.questionCount, c.taken, `${c.rate}%`]), "quiz-report.csv"),
+        certificates: () => downloadCsv(["Recipient", "Email", "Course", "Code", "Issued"],
+          window.__raData.certificates.map((c) => [c.name || "", c.email || "", c.course || "", c.code || "", c.date || c.issuedAt || ""]), "certificate-report.csv"),
+        instructors: () => downloadCsv(["Instructor", "Courses", "Students", "Certificates Issued", "Completion Rate"],
+          window.__raData.instructors.map((i) => [i.name, i.courseCount, i.students, i.certs, `${i.rate}%`]), "instructor-report.csv")
+      };
+      document.querySelectorAll("[data-report]").forEach((btn) => btn.addEventListener("click", () => reportExporters[btn.dataset.report]?.()));
+      document.getElementById("ra-users-export").addEventListener("click", reportExporters.users);
+      document.getElementById("ra-courses-export").addEventListener("click", reportExporters.courses);
+      document.getElementById("ra-certs-export").addEventListener("click", reportExporters.certificates);
+      document.getElementById("ra-quizzes-export").addEventListener("click", reportExporters.quizzes);
+      document.getElementById("ra-instr-export").addEventListener("click", reportExporters.instructors);
+
+      document.getElementById("ra-generate-custom").addEventListener("click", () => {
+        downloadCsv(
+          ["Metric", "Value"],
+          [
+            ["Total Users", document.getElementById("ra-stat-users").textContent],
+            ["Active Enrollments", document.getElementById("ra-stat-enrollments").textContent],
+            ["Courses", document.getElementById("ra-stat-courses").textContent],
+            ["Certificates Issued", document.getElementById("ra-stat-certificates").textContent],
+            ["Quizzes Taken", document.getElementById("ra-stat-quizzes").textContent],
+            ["Average Completion Rate", document.getElementById("ra-stat-completion").textContent]
+          ],
+          "custom-report-summary.csv"
+        );
+      });
+
+      document.getElementById("ra-export-active-csv").addEventListener("click", () => {
+        exportMenu.classList.remove("is-open");
+        (reportExporters[activeTab] || reportExporters.enrollments)();
+      });
+      document.getElementById("ra-export-summary-csv").addEventListener("click", () => {
+        exportMenu.classList.remove("is-open");
+        document.getElementById("ra-generate-custom").click();
+      });
+      document.getElementById("ra-export-print").addEventListener("click", () => {
+        exportMenu.classList.remove("is-open");
+        window.print();
+      });
+          /* ---------- Walk-in Registration Modal ---------- */
+      const walkinModal = document.getElementById("walk-in-modal");
+      const openWalkinBtn = document.getElementById("open-walkin-modal");
+      const closeWalkinBtn = document.getElementById("close-walkin-modal");
+      const walkinForm = document.getElementById("walk-in-form");
+      const walkinLoading = document.getElementById("walk-in-loading");
+      const walkinSuccess = document.getElementById("walk-in-success");
+      const walkinError = document.getElementById("walk-in-error");
+
+      const walkinDateInput = document.getElementById("walk-in-date");
+      if (walkinDateInput) {
+        walkinDateInput.valueAsDate = new Date();
+      }
+
+      // Populate course dropdown (fetched independently so this modal
+      // works the same on every admin page, not just the dashboard)
+      const walkinCourseSelect = document.getElementById("walk-in-course");
+      if (walkinCourseSelect) {
+        getDocs(collection(db, "courses"))
+          .then((snapshot) => {
+            snapshot.docs.forEach((docSnap) => {
+              const c = docSnap.data();
+              const option = document.createElement("option");
+              option.value = c.title || "Untitled course";
+              option.textContent = c.title || "Untitled course";
+              walkinCourseSelect.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Failed to load courses for walk-in form", error);
+          });
+      }
+
+      const openWalkinModal = () => {
+        walkinModal.classList.add("is-open");
+        walkinForm.style.display = "block";
+        walkinLoading.classList.remove("is-active");
+        walkinSuccess.style.display = "none";
+        walkinError.style.display = "none";
+        walkinForm.reset();
+        if (walkinDateInput) walkinDateInput.valueAsDate = new Date();
+      };
+
+      const closeWalkinModal = () => {
+        walkinModal.classList.remove("is-open");
+      };
+
+      openWalkinBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openWalkinModal();
+      });
+      closeWalkinBtn?.addEventListener("click", closeWalkinModal);
+      document.getElementById("close-walkin-success")?.addEventListener("click", closeWalkinModal);
+      document.getElementById("retry-walkin")?.addEventListener("click", () => {
+        walkinForm.style.display = "block";
+        walkinError.style.display = "none";
+        walkinLoading.classList.remove("is-active");
+      });
+
+      walkinModal?.addEventListener("click", (e) => {
+        if (e.target === walkinModal) closeWalkinModal();
+      });
+
+      walkinForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const firstName = document.getElementById("walk-in-first-name")?.value.trim();
+        const lastName = document.getElementById("walk-in-last-name")?.value.trim();
+        const email = document.getElementById("walk-in-email")?.value.trim();
+        const phone = document.getElementById("walk-in-phone")?.value.trim() || "";
+        const enrollmentCourse = document.getElementById("walk-in-course")?.value || "";
+        const notes = document.getElementById("walk-in-notes")?.value.trim() || "";
+        const sendEmail = document.getElementById("walk-in-send-email")?.checked ?? true;
+
+        if (!firstName || !lastName || !email) {
+          alert("Please fill in first name, last name, and email.");
+          return;
+        }
+
+        walkinForm.style.display = "none";
+        walkinLoading.classList.add("is-active");
+
+        try {
+          const result = await window.createWalkinStudent({
+            firstName,
+            lastName,
+            email,
+            phone,
+            enrollmentCourse,
+            notes,
+            sendEmail
+          });
+
+          walkinLoading.classList.remove("is-active");
+          walkinSuccess.style.display = "block";
+
+          const successMsg = `
+            <strong>✓ ${result.fullName}</strong> registered successfully!<br/>
+            Email: ${result.email}<br/>
+            Certificate ID: ${result.certificateCode}<br/>
+            ${result.enrollmentCourse ? `Course: ${result.enrollmentCourse}` : ""}
+          `;
+          document.getElementById("walk-in-success-message").innerHTML = successMsg;
+
+          console.log("Walk-in Student Account Created:", result);
+          window.showToast?.(`Walk-in student ${result.fullName} registered successfully!`, "success");
+        } catch (error) {
+          console.error("Walk-in registration failed:", error);
+          walkinLoading.classList.remove("is-active");
+          walkinError.style.display = "block";
+          document.getElementById("walk-in-error-message").textContent = error.message || "Registration failed. Please try again.";
+          window.showToast?.(error.message || "Registration failed", "error");
+        }
+      });
+
+</script>
+  </body>
+</html>

@@ -1,0 +1,1983 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard | BHF Certification Academy</title>
+    <meta name="description" content="Overview of users, courses, enrollments, certificates, and exams for BHF Certification Academy." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+    <style>
+      /* =========================================================
+         Admin Dashboard v2 — sidebar layout
+         Scoped with the "adx-" prefix so nothing here collides with
+         the shared design system in style.css. Colors reuse the
+         existing CSS variables (--accent-dark, --accent, --cert-accent, etc).
+      ========================================================= */
+      * { box-sizing: border-box; }
+      body { background: var(--bg); font-family: 'Inter', sans-serif; }
+
+      body[data-theme="dark"] {
+        --adx-surface: #0f1b2e;
+        --adx-surface-2: #16253d;
+        --adx-surface-3: #101c2a;
+        --adx-text: #f3f7ff;
+        --adx-muted: #9fb0c8;
+        --adx-border: rgba(255,255,255,0.12);
+        --adx-shadow: 0 18px 40px rgba(0,0,0,0.4);
+      }
+
+      body[data-theme="dark"] .adx-sidebar {
+        background: linear-gradient(180deg, #0f1b2e 0%, #13233a 100%);
+        border-right: 1px solid var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-topbar,
+      body[data-theme="dark"] .adx-stat-card,
+      body[data-theme="dark"] .adx-card,
+      body[data-theme="dark"] .adx-table-wrap,
+      body[data-theme="dark"] .adx-table,
+      body[data-theme="dark"] .adx-status-card,
+      body[data-theme="dark"] .adx-empty,
+      body[data-theme="dark"] .adx-date-pill,
+      body[data-theme="dark"] .adx-bell,
+      body[data-theme="dark"] .adx-profile {
+        background: var(--adx-surface);
+        color: var(--adx-text);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-topbar h1,
+      body[data-theme="dark"] .adx-stat-value,
+      body[data-theme="dark"] .adx-card h3,
+      body[data-theme="dark"] .adx-profile-name,
+      body[data-theme="dark"] .adx-status-brand strong {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-stat-label,
+      body[data-theme="dark"] .adx-card-sub,
+      body[data-theme="dark"] .adx-profile-role,
+      body[data-theme="dark"] .adx-status-brand span,
+      body[data-theme="dark"] .adx-date-pill span,
+      body[data-theme="dark"] .adx-table th,
+      body[data-theme="dark"] .adx-table td {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-table th,
+      body[data-theme="dark"] .adx-table td {
+        border-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-nav a {
+        color: rgba(255,255,255,0.76);
+      }
+
+      body[data-theme="dark"] .adx-nav a:hover {
+        background: rgba(255,255,255,0.09);
+      }
+
+      body[data-theme="dark"] .adx-nav a.is-active {
+        background: var(--accent);
+        color: var(--accent-dark);
+      }
+
+      .adx-shell {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      /* ---------- Sidebar ---------- */
+      .adx-sidebar {
+        width: 264px;
+        flex-shrink: 0;
+        background: var(--accent-dark);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 40;
+        transition: transform 0.25s ease;
+      }
+      .adx-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 1.4rem 1.3rem;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+      .adx-brand img {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        object-fit: cover;
+      }
+      .adx-brand-text strong {
+        display: block;
+        font-size: 0.95rem;
+        line-height: 1.2;
+      }
+      .adx-brand-text span {
+        font-size: 0.68rem;
+        color: rgba(255,255,255,0.6);
+        letter-spacing: 0.04em;
+      }
+      .adx-nav {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.85rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+      .adx-nav a {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.65rem 0.85rem;
+        border-radius: 12px;
+        color: rgba(255,255,255,0.78);
+        text-decoration: none;
+        font-size: 0.88rem;
+        font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .adx-nav a .adx-nav-icon { font-size: 1.05rem; width: 22px; text-align: center; }
+      .adx-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+      .adx-nav a.is-active {
+        background: var(--accent);
+        color: var(--accent-dark);
+      }
+      .adx-nav-sub {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+        margin: 0.2rem 0 0.35rem 1.1rem;
+      }
+      .adx-nav-sub a {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.78rem;
+        color: rgba(255,255,255,0.72);
+      }
+      .adx-sidebar-footer {
+        padding: 0.85rem 1.3rem 1.3rem;
+        border-top: 1px solid rgba(255,255,255,0.08);
+      }
+      .adx-sidebar-footer a {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        color: rgba(255,255,255,0.75);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.88rem;
+        padding: 0.5rem 0;
+      }
+      .adx-sidebar-footer a:hover { color: #fff; }
+
+      /* ---------- Main column ---------- */
+      .adx-main {
+        margin-left: 264px;
+        flex: 1;
+        min-width: 0;
+      }
+      .adx-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background: #fff;
+        border-bottom: 1px solid rgba(15,34,72,0.08);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.75rem;
+      }
+      .adx-topbar-left { display: flex; align-items: center; gap: 0.85rem; }
+      .adx-hamburger {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 1.3rem;
+        cursor: pointer;
+        color: var(--accent-dark);
+      }
+      .adx-topbar h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        color: var(--accent-dark);
+        margin: 0;
+      }
+      .adx-topbar-right { display: flex; align-items: center; gap: 1.1rem; }
+      .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(15,34,72,0.12);
+        background: var(--surface-3);
+        color: var(--accent-dark);
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+      .adx-topbar-right .theme-toggle:hover {
+        background: var(--surface-2);
+        border-color: rgba(15,34,72,0.2);
+      }
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle {
+        border-color: rgba(255,255,255,0.12);
+        background: rgba(22,37,61,0.8);
+        color: #f3f7ff;
+      }
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle:hover {
+        background: rgba(30,45,70,0.95);
+      }
+      .adx-bell {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.08);
+        display: grid;
+        place-items: center;
+        font-size: 1.1rem;
+        cursor: pointer;
+        text-decoration: none;
+        color: var(--accent-dark);
+      }
+      .adx-bell-count {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        background: #E4483F;
+        color: #fff;
+        font-size: 0.62rem;
+        font-weight: 700;
+        min-width: 17px;
+        height: 17px;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        padding: 0 3px;
+      }
+      .adx-profile { display: flex; align-items: center; gap: 0.65rem; }
+      .adx-profile-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: var(--accent-dark);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        font-size: 0.85rem;
+      }
+      .adx-profile-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.1; }
+      .adx-profile-role { font-size: 0.72rem; color: var(--muted); }
+
+      .adx-content { padding: 1.5rem 1.75rem 4rem; max-width: 1400px; }
+
+      /* ---------- Stat cards ---------- */
+      .adx-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.25rem;
+      }
+      @media (max-width: 1100px) { .adx-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      @media (max-width: 520px) { .adx-stats-grid { grid-template-columns: 1fr; } }
+      .adx-stat-card {
+        background: #fff;
+        border-radius: 20px;
+        border: 1px solid rgba(15,34,72,0.07);
+        box-shadow: 0 10px 26px rgba(15,34,72,0.06);
+        padding: 1.25rem 1.3rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .adx-stat-top { display: flex; align-items: center; justify-content: space-between; }
+      .adx-stat-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
+        font-size: 1.15rem;
+      }
+      .adx-stat-trend { font-size: 0.72rem; font-weight: 700; color: #2BA84A; }
+      .adx-stat-trend.is-flat { color: var(--muted); }
+      .adx-stat-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.9rem;
+        color: var(--accent-dark);
+        line-height: 1;
+      }
+      .adx-stat-label { font-size: 0.8rem; color: var(--muted); font-weight: 600; }
+
+      /* ---------- Generic cards / grids ---------- */
+      .adx-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.25rem;
+        margin-bottom: 1.25rem;
+      }
+      @media (max-width: 960px) { .adx-grid-2 { grid-template-columns: 1fr; } }
+      .adx-card {
+        background: #fff;
+        border-radius: 22px;
+        border: 1px solid rgba(15,34,72,0.07);
+        box-shadow: 0 10px 26px rgba(15,34,72,0.05);
+        padding: 1.4rem 1.4rem 1.5rem;
+      }
+      .adx-card h3 {
+        font-family: 'Playfair Display', serif;
+        color: var(--accent-dark);
+        margin: 0 0 0.2rem;
+        font-size: 1.1rem;
+      }
+      .adx-card-sub { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem; }
+      .adx-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.4rem;
+      }
+      .adx-badge {
+        background: rgba(43,108,176,0.1);
+        color: var(--cert-accent-dark);
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .adx-chart-wrap { position: relative; height: 230px; }
+      .adx-empty { color: var(--muted); font-size: 0.88rem; padding: 0.6rem 0; }
+
+      /* ---------- Lists ---------- */
+      .adx-list { display: flex; flex-direction: column; gap: 0.55rem; }
+      .adx-list-item {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.7rem 0.85rem;
+        border-radius: 14px;
+        background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.05);
+      }
+      .adx-list-item.is-unread { border-color: rgba(255,213,0,0.5); }
+      .adx-list-item-title { font-weight: 700; color: var(--text); margin: 0 0 0.1rem; font-size: 0.88rem; }
+      .adx-list-item-meta { font-size: 0.76rem; color: var(--muted); margin: 0; }
+      .adx-mark-read-btn {
+        border: none;
+        background: none;
+        color: var(--cert-accent-dark);
+        font-weight: 700;
+        font-size: 0.75rem;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      /* ---------- Top courses / instructors ---------- */
+      .adx-course-row { margin-bottom: 0.95rem; }
+      .adx-course-row:last-child { margin-bottom: 0; }
+      .adx-course-row-head { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.35rem; }
+      .adx-course-row-head span:first-child { font-weight: 700; color: var(--text); }
+      .adx-course-row-head span:last-child { color: var(--muted); font-size: 0.78rem; }
+      .adx-progress-track { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+      .adx-progress-fill { height: 100%; background: var(--cert-accent); border-radius: 999px; }
+
+      .adx-instructor-item {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid rgba(15,34,72,0.06);
+      }
+      .adx-instructor-item:last-child { border-bottom: none; }
+      .adx-instructor-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(43,108,176,0.14);
+        color: var(--cert-accent-dark);
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+        flex-shrink: 0;
+        font-size: 0.85rem;
+      }
+      .adx-instructor-name { font-weight: 700; color: var(--text); font-size: 0.88rem; margin: 0; }
+      .adx-instructor-meta { font-size: 0.76rem; color: var(--muted); margin: 0; }
+      .adx-instructor-stat { margin-left: auto; text-align: right; font-size: 0.78rem; color: var(--cert-accent-dark); font-weight: 700; }
+
+      /* ---------- Quick actions ---------- */
+      .adx-quick-actions {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.85rem;
+      }
+      @media (max-width: 640px) { .adx-quick-actions { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+      .adx-quick-action {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 1.05rem 1rem;
+        border-radius: 16px;
+        background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.07);
+        text-decoration: none;
+        color: var(--accent-dark);
+        font-weight: 700;
+        font-size: 0.85rem;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      }
+      .adx-quick-action:hover {
+        transform: translateY(-3px);
+        border-color: rgba(255,213,0,0.6);
+        box-shadow: 0 12px 24px rgba(15,34,72,0.1);
+      }
+      .adx-quick-action .adx-qa-icon { font-size: 1.25rem; }
+
+      /* ---------- System status ---------- */
+      .adx-status-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid rgba(15,34,72,0.06);
+        font-size: 0.85rem;
+      }
+      .adx-status-row:last-child { border-bottom: none; }
+      .adx-status-row span:first-child { color: var(--muted); font-weight: 600; }
+      .adx-status-ok { color: #2BA84A; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; }
+      .adx-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #2BA84A; display: inline-block; }
+      .adx-status-dot.is-bad { background: #E4483F; }
+      .adx-status-ok.is-bad { color: #E4483F; }
+
+      /* ---------- Tables ---------- */
+      .adx-table-wrap { overflow-x: auto; }
+      .adx-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      .adx-table th {
+        text-align: left;
+        color: var(--muted);
+        font-weight: 700;
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 0.5rem 0.6rem;
+        border-bottom: 2px solid rgba(15,34,72,0.08);
+      }
+      .adx-table td {
+        padding: 0.65rem 0.6rem;
+        border-bottom: 1px solid rgba(15,34,72,0.06);
+        color: var(--text);
+      }
+      .adx-table tr:last-child td { border-bottom: none; }
+      .adx-status-pill {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        background: rgba(43,108,176,0.1);
+        color: var(--cert-accent-dark);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: capitalize;
+      }
+      .adx-status-pill.is-ok { background: rgba(43,168,74,0.14); color: #2BA84A; }
+      .adx-status-pill.is-progress { background: rgba(43,108,176,0.1); color: var(--cert-accent-dark); }
+      .adx-status-pill.is-muted { background: rgba(15,34,72,0.08); color: var(--muted); }
+
+      /* ---------- Mobile sidebar toggle ---------- */
+      .adx-backdrop {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(6,14,32,0.45);
+        z-index: 35;
+      }
+      @media (max-width: 900px) {
+        .adx-hamburger { display: inline-flex; }
+        .adx-sidebar { transform: translateX(-100%); }
+        .adx-main { margin-left: 0; }
+        .adx-shell.adx-sidebar-open .adx-sidebar { transform: translateX(0); }
+        .adx-shell.adx-sidebar-open .adx-backdrop { display: block; }
+      }
+
+      /* ---------- Date pill (topbar) ---------- */
+      .adx-date-pill {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.08);
+        border-radius: 14px;
+        padding: 0.5rem 0.9rem;
+      }
+      .adx-date-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        background: var(--accent-dark);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 0.95rem;
+      }
+      .adx-date-pill strong { display: block; font-size: 0.82rem; color: var(--text); line-height: 1.15; }
+      .adx-date-pill span { display: block; font-size: 0.7rem; color: var(--muted); }
+
+      /* ---------- Welcome banner ---------- */
+      .adx-welcome {
+        margin-bottom: 1.25rem;
+      }
+      .adx-welcome h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.55rem;
+        color: var(--accent-dark);
+        margin: 0 0 0.2rem;
+      }
+      .adx-welcome p { color: var(--muted); margin: 0; font-size: 0.92rem; }
+
+      /* ---------- Stat card trend (up / down) ---------- */
+      .adx-stat-trend.is-up { color: #2BA84A; }
+      .adx-stat-trend.is-down { color: #E4483F; }
+
+      /* ---------- 3-column responsive grid ---------- */
+      .adx-grid-3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1.3fr;
+        gap: 1.25rem;
+        margin-bottom: 1.25rem;
+        align-items: stretch;
+      }
+      .adx-grid-3.is-bottom { grid-template-columns: 1.5fr 1fr 1fr; }
+      @media (max-width: 1100px) {
+        .adx-grid-3, .adx-grid-3.is-bottom { grid-template-columns: 1fr; }
+      }
+
+      /* ---------- Donut chart with side legend ---------- */
+      .adx-donut-wrap { display: flex; align-items: center; gap: 1.4rem; }
+      .adx-donut-canvas-box { position: relative; width: 150px; height: 150px; flex-shrink: 0; }
+      .adx-donut-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+      }
+      .adx-donut-center strong { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--accent-dark); line-height: 1; }
+      .adx-donut-center span { font-size: 0.7rem; color: var(--muted); font-weight: 600; }
+      .adx-donut-legend { flex: 1; display: flex; flex-direction: column; gap: 0.7rem; }
+      .adx-donut-legend-row { display: flex; align-items: center; gap: 0.55rem; font-size: 0.85rem; }
+      .adx-donut-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+      .adx-donut-legend-row strong { color: var(--text); }
+      .adx-donut-legend-row span { color: var(--muted); font-size: 0.78rem; margin-left: auto; }
+
+      /* ---------- Pending approvals ---------- */
+      .adx-icon-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        border: none;
+        display: inline-grid;
+        place-items: center;
+        cursor: pointer;
+        font-weight: 700;
+        margin-right: 0.35rem;
+      }
+      .adx-icon-btn.is-ok { background: rgba(43,168,74,0.14); color: #2BA84A; }
+      .adx-icon-btn.is-danger { background: rgba(228,72,63,0.12); color: #E4483F; }
+      .adx-icon-btn:hover { filter: brightness(0.95); }
+
+      /* ---------- Quick action icon chips ---------- */
+      .adx-quick-action { align-items: center; text-align: center; }
+      .adx-qa-chip {
+        width: 44px;
+        height: 44px;
+        border-radius: 13px;
+        display: grid;
+        place-items: center;
+        font-size: 1.2rem;
+      }
+
+      /* ---------- Notifications tall card ---------- */
+      .adx-notif-card { display: flex; flex-direction: column; }
+      .adx-notif-card .adx-list { flex: 1; overflow-y: auto; max-height: 340px; }
+
+      /* ---------- Walk-in Registration Modal ---------- */
+      .walk-in-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .walk-in-modal.is-open {
+        display: flex;
+      }
+      .walk-in-modal-content {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 2rem;
+      }
+      body[data-theme="dark"] .walk-in-modal-content {
+        background: var(--adx-surface);
+        color: var(--adx-text);
+      }
+      .walk-in-modal h2 {
+        font-family: 'Playfair Display', serif;
+        color: var(--accent-dark);
+        margin: 0 0 1rem;
+        font-size: 1.4rem;
+      }
+      body[data-theme="dark"] .walk-in-modal h2 {
+        color: #f3f7ff;
+      }
+      .walk-in-form-group {
+        margin-bottom: 1rem;
+      }
+      .walk-in-form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      body[data-theme="dark"] .walk-in-form-group label {
+        color: var(--adx-text);
+      }
+      .walk-in-form-group input,
+      .walk-in-form-group select,
+      .walk-in-form-group textarea {
+        width: 100%;
+        padding: 0.7rem;
+        border: 1px solid rgba(15,34,72,0.15);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      body[data-theme="dark"] .walk-in-form-group input,
+      body[data-theme="dark"] .walk-in-form-group select,
+      body[data-theme="dark"] .walk-in-form-group textarea {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.12);
+        color: var(--adx-text);
+      }
+      .walk-in-form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .walk-in-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 600px) {
+        .walk-in-form-row { grid-template-columns: 1fr; }
+      }
+      .walk-in-modal-buttons {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1.5rem;
+      }
+      .walk-in-modal-buttons button {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+      .walk-in-modal-buttons .btn-primary {
+        background: var(--accent-dark);
+        color: #fff;
+      }
+      .walk-in-modal-buttons .btn-primary:hover {
+        filter: brightness(1.1);
+      }
+      .walk-in-modal-buttons .btn-secondary {
+        background: rgba(15,34,72,0.08);
+        color: var(--accent-dark);
+      }
+      .walk-in-modal-buttons .btn-secondary:hover {
+        background: rgba(15,34,72,0.12);
+      }
+      body[data-theme="dark"] .walk-in-modal-buttons .btn-secondary {
+        background: rgba(255,255,255,0.1);
+        color: #f3f7ff;
+      }
+      .walk-in-note {
+        background: rgba(43,108,176,0.08);
+        border-left: 4px solid var(--cert-accent-dark);
+        padding: 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+      }
+      body[data-theme="dark"] .walk-in-note {
+        background: rgba(43,108,176,0.15);
+        color: var(--adx-text);
+      }
+      .walk-in-loading {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+      }
+      .walk-in-loading.is-active {
+        display: block;
+      }
+      .walk-in-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(15,34,72,0.2);
+        border-top-color: var(--accent-dark);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      body[data-theme="dark"] .walk-in-spinner {
+        border-color: rgba(255,255,255,0.2);
+        border-top-color: #f3f7ff;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+      /* ---------- System status footer logo ---------- */
+      .adx-status-brand {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(15,34,72,0.06);
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+      }
+      .adx-status-brand img { width: 34px; height: 34px; border-radius: 9px; object-fit: cover; }
+      .adx-status-brand strong { display: block; font-size: 0.82rem; color: var(--accent-dark); }
+      .adx-status-brand span { display: block; font-size: 0.68rem; color: var(--muted); }
+    </style>
+  </head>
+  <body data-page="admin-dashboard">
+    <div class="adx-shell" id="adx-shell">
+      <div class="adx-backdrop" id="adx-backdrop"></div>
+
+      <!-- ============ Sidebar ============ -->
+      <aside class="adx-sidebar">
+        <a class="adx-brand" href="index.html" style="text-decoration:none;color:#fff;">
+          <img src="bhflogo.jpg" alt="BHF logo" />
+          <span class="adx-brand-text">
+            <strong>BHF</strong>
+            <span>TRAINING &amp; CERTIFICATE</span>
+          </span>
+        </a>
+        <nav class="adx-nav" aria-label="Admin sections">
+          <a href="admin.html" class="is-active"><span class="adx-nav-icon">📊</span> Dashboard</a>
+          <a href="manage-users.html"><span class="adx-nav-icon">👥</span> User Management</a>
+          <a href="manage-instructors.html"><span class="adx-nav-icon">👩‍🏫</span> Instructor Management</a>
+          <a href="manage-courses.html"><span class="adx-nav-icon">📘</span> Course Management</a>
+          <a href="quiz-management.html"><span class="adx-nav-icon">📝</span> Quiz Management</a>
+          <a href="certificates.html"><span class="adx-nav-icon">🏆</span> Certificate Management</a>
+          <a href="reports-analytics.html"><span class="adx-nav-icon">📈</span> Reports &amp; Analytics</a>
+          <a href="calendar.html"><span class="adx-nav-icon">📅</span> Calendar</a>
+          <a href="index.html"><span class="adx-nav-icon">🏠</span> Browse Home</a>
+          <div class="adx-nav-sub">
+            <a href="login.html?from=admin"><span class="adx-nav-icon">🔐</span> Login Page</a>
+            <a href="signup.html?from=admin"><span class="adx-nav-icon">📝</span> Create Account</a>
+            <a href="#" id="open-walkin-modal"><span class="adx-nav-icon">🧑‍🎓</span> Walk-in Registration</a>
+          </div>
+        </nav>
+        <div class="adx-sidebar-footer">
+          <a href="login.html" id="nav-auth-link" class="login-link" style="display:none;"><span class="adx-nav-icon">🔑</span> Login</a>
+          <a href="login.html" id="logout-button"><span class="adx-nav-icon">🚪</span> Logout</a>
+        </div>
+      </aside>
+
+      <!-- ============ Main column ============ -->
+      <div class="adx-main">
+        <header class="adx-topbar">
+          <div class="adx-topbar-left">
+            <button class="adx-hamburger" id="adx-hamburger" type="button" aria-label="Toggle menu">☰</button>
+            <h1>Dashboard</h1>
+          </div>
+          <div class="adx-topbar-right">
+            <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙 Dark mode</button>
+            <div class="adx-date-pill">
+              <span class="adx-date-icon">📅</span>
+              <span>
+                <strong id="adx-today-date">—</strong>
+                <span id="adx-today-day">—</span>
+              </span>
+            </div>
+            <a href="#adx-notifications" class="adx-bell" aria-label="Notifications">
+              🔔
+              <span class="adx-bell-count" id="adx-bell-count">0</span>
+            </a>
+            <div class="adx-profile">
+              <div class="adx-profile-avatar">A</div>
+              <div>
+                <p class="adx-profile-name">Admin</p>
+                <p class="adx-profile-role">Administrator</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="adx-content">
+          <!-- ============ Welcome banner ============ -->
+          <div class="adx-welcome">
+            <h2>Welcome back, Admin! 👋</h2>
+            <p>Here's what's happening with your training system today.</p>
+          </div>
+
+          <!-- ============ Stat cards ============ -->
+          <div class="adx-stats-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">👥</div>
+                <span class="adx-stat-trend is-flat" id="adx-trend-users">—</span>
+              </div>
+              <div class="adx-stat-value" id="adx-stat-users">0</div>
+              <div class="adx-stat-label">Total Users</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,168,74,0.14); color:#2BA84A;">🧑‍🏫</div>
+                <span class="adx-stat-trend is-flat" id="adx-trend-instructors">—</span>
+              </div>
+              <div class="adx-stat-value" id="adx-stat-instructors">0</div>
+              <div class="adx-stat-label">Total Instructors</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(124,77,255,0.14); color:#7C4DFF;">📘</div>
+                <span class="adx-stat-trend is-flat" id="adx-trend-courses">—</span>
+              </div>
+              <div class="adx-stat-value" id="adx-stat-courses">0</div>
+              <div class="adx-stat-label">Total Courses</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">📝</div>
+                <span class="adx-stat-trend is-flat" id="adx-trend-quizzes">—</span>
+              </div>
+              <div class="adx-stat-value" id="adx-stat-quizzes">0</div>
+              <div class="adx-stat-label">Total Quizzes</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(255,167,38,0.18); color:#B45F06;">🏆</div>
+                <span class="adx-stat-trend is-flat" id="adx-trend-certificates">—</span>
+              </div>
+              <div class="adx-stat-value" id="adx-stat-certificates">0</div>
+              <div class="adx-stat-label">Certificates Issued</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(14,148,136,0.14); color:#0E9488;">🎓</div>
+                <span class="adx-stat-trend is-flat" id="adx-trend-enrollments">—</span>
+              </div>
+              <div class="adx-stat-value" id="adx-stat-enrollments">0</div>
+              <div class="adx-stat-label">Active Enrollments</div>
+            </div>
+          </div>
+
+          <!-- ============ Charts + Notifications ============ -->
+          <div class="adx-grid-3" id="adx-analytics">
+            <div class="adx-card">
+              <h3>Enrollment Overview</h3>
+              <p class="adx-card-sub">New enrollments over the last 6 months</p>
+              <div class="adx-chart-wrap"><canvas id="adx-enrollment-chart"></canvas></div>
+            </div>
+            <div class="adx-card">
+              <h3>Course Completion Rate</h3>
+              <p class="adx-card-sub">Certified vs. in progress vs. not yet started</p>
+              <div class="adx-donut-wrap">
+                <div class="adx-donut-canvas-box">
+                  <canvas id="adx-completion-chart"></canvas>
+                  <div class="adx-donut-center">
+                    <strong id="adx-donut-pct">0%</strong>
+                    <span>Completed</span>
+                  </div>
+                </div>
+                <div class="adx-donut-legend" id="adx-donut-legend"></div>
+              </div>
+            </div>
+            <div class="adx-card adx-notif-card" id="adx-notifications">
+              <div class="adx-card-head">
+                <h3 style="margin-bottom:0;">Notifications</h3>
+                <span class="adx-badge" id="adx-notif-badge">0 Unread</span>
+              </div>
+              <p class="adx-card-sub">Latest events across the academy</p>
+              <div style="margin-bottom:0.6rem;">
+                <button id="adx-notif-mark-all" class="btn btn-secondary" type="button">Mark all as read</button>
+              </div>
+              <div id="adx-notifications-list" class="adx-list">
+                <p class="adx-empty">Loading notifications…</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ Top Courses / Top Instructors / Recent Enrollments ============ -->
+          <div class="adx-grid-3">
+            <div class="adx-card">
+              <h3>Top Courses</h3>
+              <p class="adx-card-sub">Ranked by number of enrolled learners</p>
+              <div id="adx-top-courses">
+                <p class="adx-empty">Loading top courses…</p>
+              </div>
+            </div>
+            <div class="adx-card">
+              <h3>Top Instructors</h3>
+              <p class="adx-card-sub">Ranked by courses taught and students reached</p>
+              <div id="adx-top-instructors">
+                <p class="adx-empty">Loading top instructors…</p>
+              </div>
+            </div>
+            <div class="adx-card" id="adx-certificates">
+              <h3>Recent Enrollments</h3>
+              <p class="adx-card-sub">The latest learners to join a program</p>
+              <div id="adx-recent-enrollments" class="adx-table-wrap">
+                <p class="adx-empty">Loading recent enrollments…</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ Recent Certificates ============ -->
+          <div class="adx-card" style="margin-bottom:1.25rem;">
+            <h3>Recent Certificates</h3>
+            <p class="adx-card-sub">The latest certificates issued</p>
+            <div id="adx-recent-certificates" class="adx-table-wrap">
+              <p class="adx-empty">Loading recent certificates…</p>
+            </div>
+          </div>
+
+          <!-- ============ Course Completions (every user) ============ -->
+          <div class="adx-card" id="adx-completions-card" style="margin-bottom: 1.5rem;">
+            <h3>Course Completions</h3>
+            <p class="adx-card-sub">Every enrollment across all users, with completion status</p>
+            <div id="adx-all-completions" class="adx-table-wrap" style="max-height: 420px; overflow-y: auto;">
+              <p class="adx-empty">Loading course completions…</p>
+            </div>
+          </div>
+
+          <!-- ============ Pending Approvals / System Status ============ -->
+          <div class="adx-grid-3 is-bottom" id="adx-calendar">
+            <div class="adx-card">
+              <div class="adx-card-head">
+                <div>
+                  <h3>Pending Course Approvals</h3>
+                  <p class="adx-card-sub" style="margin-bottom:0;">Courses submitted by instructors awaiting your review</p>
+                </div>
+                <span class="adx-badge" id="adx-pending-badge">0 Pending</span>
+              </div>
+              <div id="adx-pending-approvals" class="adx-table-wrap">
+                <p class="adx-empty">Loading pending courses…</p>
+              </div>
+            </div>
+            <div class="adx-card">
+              <h3>System Status</h3>
+              <p class="adx-card-sub">Live connection &amp; data health</p>
+              <div class="adx-status-row">
+                <span>Firebase Connection</span>
+                <span class="adx-status-ok" id="adx-status-firebase"><span class="adx-status-dot"></span> Connected</span>
+              </div>
+              <div class="adx-status-row">
+                <span>Total Records Synced</span>
+                <span id="adx-status-records">0</span>
+              </div>
+              <div class="adx-status-row">
+                <span>Last Synced</span>
+                <span id="adx-status-synced">—</span>
+              </div>
+              <div class="adx-status-row">
+                <span>Server Time</span>
+                <span id="adx-status-time">—</span>
+              </div>
+              <div class="adx-status-row">
+                <span>System Version</span>
+                <span>v1.0.0</span>
+              </div>
+              <div class="adx-status-brand">
+                <img src="bhflogo.jpg" alt="BHF logo" />
+                <span>
+                  <strong>BHF</strong>
+                  <span>Training &amp; Certificate Management System</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Walk-in Registration Modal ============ -->
+    <div id="walk-in-modal" class="walk-in-modal">
+      <div class="walk-in-modal-content">
+        <h2>📝 Walk-in Student Registration</h2>
+        
+        <div class="walk-in-note">
+          <strong>Note:</strong> A temporary password will be generated and sent to the student's email along with login credentials and certificate information.
+        </div>
+
+        <form id="walk-in-form" style="display: none;">
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-first-name">First Name *</label>
+              <input type="text" id="walk-in-first-name" placeholder="e.g., John" required />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-last-name">Last Name *</label>
+              <input type="text" id="walk-in-last-name" placeholder="e.g., Doe" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-email">Email Address *</label>
+            <input type="email" id="walk-in-email" placeholder="student@example.com" required />
+          </div>
+
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-phone">Phone Number</label>
+              <input type="tel" id="walk-in-phone" placeholder="+1 (555) 000-0000" />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-date">Registration Date *</label>
+              <input type="date" id="walk-in-date" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-course">Enroll in Course</label>
+            <select id="walk-in-course">
+              <option value="">-- Select a course (optional) --</option>
+            </select>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-certificate-file">Upload Certificate (optional)</label>
+            <input type="file" id="walk-in-certificate-file" accept="image/*,.pdf" />
+            <p id="walk-in-certificate-note" style="margin: 0.4rem 0 0; font-size: 0.8rem; color: var(--muted);">If you already have the certificate file for this student, attach it now and it'll be marked "uploaded" right away instead of pending.</p>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-notes">Additional Notes</label>
+            <textarea id="walk-in-notes" placeholder="Any additional information about the student..."></textarea>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label>
+              <input type="checkbox" id="walk-in-send-email" checked />
+              Send login credentials email to student
+            </label>
+          </div>
+
+          <div class="walk-in-modal-buttons">
+            <button type="button" class="btn-secondary" id="close-walkin-modal">Cancel</button>
+            <button type="submit" class="btn-primary">Create Account</button>
+          </div>
+        </form>
+
+        <div id="walk-in-loading" class="walk-in-loading">
+          <div class="walk-in-spinner"></div>
+          <p style="margin-top: 0.8rem; color: var(--muted);">Creating student account...</p>
+        </div>
+
+        <div id="walk-in-success" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+            <h3 style="margin: 0 0 0.5rem; color: #2BA84A;">Student Account Created!</h3>
+            <p id="walk-in-success-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="close-walkin-success" class="btn-primary" style="width: 100%; padding: 0.7rem;">Close</button>
+          </div>
+        </div>
+
+        <div id="walk-in-error" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: #E4483F;">❌</div>
+            <h3 style="margin: 0 0 0.5rem; color: #E4483F;">Registration Failed</h3>
+            <p id="walk-in-error-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="retry-walkin" class="btn-primary" style="width: 100%; padding: 0.7rem;">Try Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- script.js manages auth/session (login pill, logout button) -->
+    <script type="module" src="script.js"></script>
+    <script>
+      if (typeof updateHeaderAuthLink === 'function') {
+        updateHeaderAuthLink();
+      }
+      // Mobile sidebar toggle
+      const adxShell = document.getElementById('adx-shell');
+      const adxHamburger = document.getElementById('adx-hamburger');
+      const adxBackdrop = document.getElementById('adx-backdrop');
+      adxHamburger?.addEventListener('click', () => adxShell.classList.toggle('adx-sidebar-open'));
+      adxBackdrop?.addEventListener('click', () => adxShell.classList.remove('adx-sidebar-open'));
+    </script>
+
+    <!-- This page's own module: guards the route, pulls live Firestore data,
+         and renders the stats, charts, lists, and tables. -->
+    <script type="module">
+      import { db } from "./firebase-init.js";
+      import {
+        collection,
+        getDocs,
+        doc,
+        setDoc,
+        updateDoc
+      } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+      /* ---------- Route guard: admins only ---------- */
+      const isLocalPreview =
+        location.protocol === "file:" ||
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1";
+
+      /* ---------- Helpers ---------- */
+      const escapeHtml = (str) =>
+        String(str ?? "").replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        }[c]));
+
+      const fetchCollection = async (name) => {
+        try {
+          const snapshot = await getDocs(collection(db, name));
+          return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+        } catch (error) {
+          console.error(`Failed to load "${name}" from Firestore`, error);
+          document.getElementById("adx-status-firebase").innerHTML =
+            '<span class="adx-status-dot is-bad"></span> Error';
+          document.getElementById("adx-status-firebase").classList.add("is-bad");
+          return [];
+        }
+      };
+
+      /* ---------- Load all data in parallel ----------
+         Kicked off immediately, in parallel with the auth check below,
+         instead of after it. This used to be: await authReadyPromise ->
+         await dataReadyPromise (itself several more Firestore round
+         trips, for data this page doesn't even use directly) -> only
+         THEN start these 7 reads — three fully serial network round
+         trips stacked on top of each other before a single stat card,
+         table, or chart could render. None of these reads depend on
+         auth state, so there's no reason to wait for it first. */
+      const dashboardDataPromise = Promise.all([
+        fetchCollection("courses"),
+        fetchCollection("enrollments"),
+        fetchCollection("certificates"),
+        fetchCollection("examSchedule"),
+        fetchCollection("notifications"),
+        fetchCollection("instructors"),
+        fetchCollection("users")
+      ]);
+
+      if (window.authReadyPromise) await window.authReadyPromise;
+
+      if (!isLocalPreview) {
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+          window.location.href = "login.html";
+        } else if (!window.isAdmin || !window.isAdmin()) {
+          window.location.href = "dashboard.html";
+        }
+      }
+
+      const timeAgo = (isoString) => {
+        if (!isoString) return "";
+        const then = new Date(isoString).getTime();
+        if (Number.isNaN(then)) return "";
+        const diffMs = Date.now() - then;
+        const minutes = Math.floor(diffMs / 60000);
+        if (minutes < 1) return "just now";
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days}d ago`;
+        return new Date(isoString).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      };
+
+      const notificationIcon = (type) => ({
+        enrollment: "📝",
+        certificate: "🏆",
+        exam: "📅"
+      }[type] || "🔔");
+
+      const initials = (name) => {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return "?";
+        return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+      };
+
+      const [courses, enrollments, certificates, examSchedule, notifications, instructors, users] = await dashboardDataPromise;
+
+      /* ---------- Pending Course Approvals ----------
+         Reuses the same "courses" collection and status field as
+         Course Management. Approving publishes the course; rejecting
+         marks it rejected — both write straight to Firestore. */
+      const pendingWrap = document.getElementById("adx-pending-approvals");
+      const pendingBadge = document.getElementById("adx-pending-badge");
+
+      const renderPendingApprovals = () => {
+        const pending = courses.filter((c) => (c.status || "").toLowerCase() === "pending");
+        if (pendingBadge) pendingBadge.textContent = `${pending.length} Pending`;
+        if (!pendingWrap) return;
+        pendingWrap.innerHTML = pending.length
+          ? `
+            <table class="adx-table">
+              <thead><tr><th>Course</th><th>Instructor</th><th>Submitted</th><th>Actions</th></tr></thead>
+              <tbody>
+                ${pending.map((c) => `
+                  <tr>
+                    <td><strong>${escapeHtml(c.title || "Untitled course")}</strong></td>
+                    <td>${escapeHtml(c.instructorName || c.instructor || "—")}</td>
+                    <td>${c.createdAt ? new Date(c.createdAt).toLocaleDateString("en-US") : "—"}</td>
+                    <td>
+                      <button class="adx-icon-btn is-ok" title="Approve" data-approve-course="${c.id}">✓</button>
+                      <button class="adx-icon-btn is-danger" title="Reject" data-reject-course="${c.id}">✕</button>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `
+          : `<p class="adx-empty">No courses awaiting approval. 🎉</p>`;
+
+        pendingWrap.querySelectorAll("[data-approve-course]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-approve-course");
+            try {
+              await updateDoc(doc(db, "courses", id), { status: "published" });
+              const c = courses.find((x) => x.id === id);
+              if (c) c.status = "published";
+              renderPendingApprovals();
+            } catch (error) {
+              console.error("Failed to approve course", error);
+            }
+          });
+        });
+        pendingWrap.querySelectorAll("[data-reject-course]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-reject-course");
+            try {
+              await updateDoc(doc(db, "courses", id), { status: "rejected" });
+              const c = courses.find((x) => x.id === id);
+              if (c) c.status = "rejected";
+              renderPendingApprovals();
+            } catch (error) {
+              console.error("Failed to reject course", error);
+            }
+          });
+        });
+      };
+      renderPendingApprovals();
+
+      /* ---------- Walk-in Registration Modal ---------- */
+      const walkinModal = document.getElementById("walk-in-modal");
+      const openWalkinBtn = document.getElementById("open-walkin-modal");
+      const closeWalkinBtn = document.getElementById("close-walkin-modal");
+      const walkinForm = document.getElementById("walk-in-form");
+      const walkinLoading = document.getElementById("walk-in-loading");
+      const walkinSuccess = document.getElementById("walk-in-success");
+      const walkinError = document.getElementById("walk-in-error");
+      
+      const todayInput = document.getElementById("walk-in-date");
+      if (todayInput) {
+        todayInput.valueAsDate = new Date();
+      }
+
+      // Populate course dropdown
+      const courseSelect = document.getElementById("walk-in-course");
+      if (courseSelect && courses.length) {
+        courses.forEach((c) => {
+          const option = document.createElement("option");
+          option.value = c.title || "Untitled course";
+          option.textContent = c.title || "Untitled course";
+          courseSelect.appendChild(option);
+        });
+      }
+
+      const openModal = () => {
+        walkinModal.classList.add("is-open");
+        walkinForm.style.display = "block";
+        walkinLoading.classList.remove("is-active");
+        walkinSuccess.style.display = "none";
+        walkinError.style.display = "none";
+        walkinForm.reset();
+        if (todayInput) todayInput.valueAsDate = new Date();
+      };
+
+      const closeModal = () => {
+        walkinModal.classList.remove("is-open");
+      };
+
+      openWalkinBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openModal();
+      });
+      closeWalkinBtn?.addEventListener("click", closeModal);
+      document.getElementById("close-walkin-success")?.addEventListener("click", closeModal);
+      document.getElementById("retry-walkin")?.addEventListener("click", () => {
+        walkinForm.style.display = "block";
+        walkinError.style.display = "none";
+        walkinLoading.classList.remove("is-active");
+      });
+
+      walkinModal?.addEventListener("click", (e) => {
+        if (e.target === walkinModal) closeModal();
+      });
+
+      // Certificates are stored as a base64 data URI directly in the
+      // Firestore document (see certificates.html), so any attached image
+      // gets shrunk/re-encoded as JPEG client-side to stay well under
+      // Firestore's 1MB document limit. PDFs are left as-is and just have
+      // to already be under the cap.
+      const WALKIN_MAX_FILE_BYTES = 700 * 1024; // ~700KB
+      const walkinReadFileAsDataUrl = (f) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error("Failed to read file"));
+        reader.readAsDataURL(f);
+      });
+      const walkinCompressImageToDataUrl = (f, maxBytes) => new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(f);
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+          let width = img.naturalWidth || img.width;
+          let height = img.naturalHeight || img.height;
+          const canvas = document.createElement("canvas");
+          const ctx = canvas.getContext("2d");
+
+          const renderAt = (w, h, quality) => {
+            canvas.width = w;
+            canvas.height = h;
+            ctx.clearRect(0, 0, w, h);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, w, h);
+            ctx.drawImage(img, 0, 0, w, h);
+            return canvas.toDataURL("image/jpeg", quality);
+          };
+
+          let quality = 0.92;
+          let dataUrl = renderAt(width, height, quality);
+
+          while (dataUrl.length * 0.75 > maxBytes && quality > 0.4) {
+            quality -= 0.1;
+            dataUrl = renderAt(width, height, quality);
+          }
+
+          let guard = 0;
+          while (dataUrl.length * 0.75 > maxBytes && guard < 12) {
+            width = Math.round(width * 0.85);
+            height = Math.round(height * 0.85);
+            quality = Math.max(quality, 0.6);
+            dataUrl = renderAt(width, height, quality);
+            guard++;
+          }
+
+          if (dataUrl.length * 0.75 > maxBytes) {
+            reject(new Error("Could not compress this image small enough. Try a simpler image."));
+            return;
+          }
+          resolve(dataUrl);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error("Could not read that image file."));
+        };
+        img.src = objectUrl;
+      });
+
+      walkinForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        
+        const firstName = document.getElementById("walk-in-first-name")?.value.trim();
+        const lastName = document.getElementById("walk-in-last-name")?.value.trim();
+        const email = document.getElementById("walk-in-email")?.value.trim();
+        const phone = document.getElementById("walk-in-phone")?.value.trim() || "";
+        const enrollmentCourse = document.getElementById("walk-in-course")?.value || "";
+        const notes = document.getElementById("walk-in-notes")?.value.trim() || "";
+        const sendEmail = document.getElementById("walk-in-send-email")?.checked ?? true;
+        const certFile = document.getElementById("walk-in-certificate-file")?.files?.[0] || null;
+
+        if (!firstName || !lastName || !email) {
+          alert("Please fill in first name, last name, and email.");
+          return;
+        }
+
+        let certificateFile = null;
+        if (certFile) {
+          const isImageFile = certFile.type.startsWith("image/") || /\.(png|jpe?g|webp)$/i.test(certFile.name);
+          if (!isImageFile && certFile.size > WALKIN_MAX_FILE_BYTES) {
+            window.showToast?.(`Certificate file is too large (${Math.round(certFile.size / 1024)}KB). Please upload a PDF under 700KB.`, "error");
+            return;
+          }
+          try {
+            const dataUrl = (isImageFile && certFile.size > WALKIN_MAX_FILE_BYTES)
+              ? await walkinCompressImageToDataUrl(certFile, WALKIN_MAX_FILE_BYTES)
+              : await walkinReadFileAsDataUrl(certFile);
+            certificateFile = { dataUrl, fileName: certFile.name };
+          } catch (fileError) {
+            console.error("Failed to process walk-in certificate file", fileError);
+            window.showToast?.(fileError.message || "Could not process the certificate file.", "error");
+            return;
+          }
+        }
+
+        walkinForm.style.display = "none";
+        walkinLoading.classList.add("is-active");
+
+        try {
+          const result = await window.createWalkinStudent({
+            firstName,
+            lastName,
+            email,
+            phone,
+            enrollmentCourse,
+            notes,
+            sendEmail,
+            certificateFile
+          });
+
+          walkinLoading.classList.remove("is-active");
+          walkinSuccess.style.display = "block";
+          
+          const successMsg = `
+            <strong>✓ ${result.fullName}</strong> registered successfully!<br/>
+            Email: ${result.email}<br/>
+            Certificate ID: ${result.certificateCode}<br/>
+            ${result.enrollmentCourse ? `Course: ${result.enrollmentCourse}<br/>` : ""}
+            ${result.hasCertificateFile ? "Certificate: uploaded ✅" : "Certificate: pending upload (add it later from the Certificates page)"}
+          `;
+          document.getElementById("walk-in-success-message").innerHTML = successMsg;
+
+          // Log temporary password to console for admin to see
+          console.log("Walk-in Student Account Created:", result);
+          window.showToast?.(`Walk-in student ${result.fullName} registered successfully!`, "success");
+        } catch (error) {
+          console.error("Walk-in registration failed:", error);
+          walkinLoading.classList.remove("is-active");
+          walkinError.style.display = "block";
+          document.getElementById("walk-in-error-message").textContent = error.message || "Registration failed. Please try again.";
+          window.showToast?.(error.message || "Registration failed", "error");
+        }
+      });
+
+      /* ---------- Today's date (topbar pill) ---------- */
+      const todayDateEl = document.getElementById("adx-today-date");
+      const todayDayEl = document.getElementById("adx-today-day");
+      if (todayDateEl && todayDayEl) {
+        const today = new Date();
+        todayDateEl.textContent = today.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+        todayDayEl.textContent = today.toLocaleDateString("en-US", { weekday: "long", hour: "2-digit", minute: "2-digit" });
+      }
+
+      /* ---------- Stat cards ----------
+         "Total Users" comes from the "users" collection (every account gets
+         a profile doc there, keyed by email, on login — see syncUserProfile
+         in script.js). Accounts that already had certificates/enrollments
+         before that collection existed won't have a doc yet, so we backfill
+         them here from data we already have, using the email as the doc id
+         (no need to know their Auth uid). This runs once per dashboard load
+         and only writes docs that don't already exist. */
+      const knownUserEmails = new Set(users.map((u) => (u.email || "").toLowerCase()));
+      const backfillCandidates = new Map(); // email -> name
+      [...enrollments, ...certificates].forEach((r) => {
+        const email = (r.email || "").trim().toLowerCase();
+        if (!email || knownUserEmails.has(email)) return;
+        if (!backfillCandidates.has(email) || !backfillCandidates.get(email)) {
+          backfillCandidates.set(email, r.name || "");
+        }
+      });
+      if (backfillCandidates.size) {
+        await Promise.all([...backfillCandidates.entries()].map(([email, name]) =>
+          setDoc(doc(db, "users", email), {
+            uid: null,
+            name: name || "",
+            email,
+            role: "user",
+            createdAt: new Date().toISOString(),
+            lastLoginAt: null,
+            backfilled: true
+          }, { merge: true }).catch((error) => console.error(`Failed to backfill user ${email}`, error))
+        ));
+        // Reflect the backfill immediately without a second round trip.
+        backfillCandidates.forEach((name, email) => users.push({ email, name, role: "user" }));
+      }
+
+      /* ---------- Reconcile roles against the "instructors" collection ----------
+         A "users" doc's role field can drift from reality — e.g. it still
+         says "instructor" after that instructor account was removed, or an
+         instructor hasn't logged in yet so has no "users" doc at all. The
+         "instructors" collection is the source of truth for who actually
+         has instructor access, so: (1) anyone in it gets counted as an
+         instructor even before their first login, and (2) anyone NOT in it
+         is never counted as an instructor, even if a stale role field says
+         so. This keeps Total Users / Total Instructors here identical to
+         what Manage Users shows. */
+      const instructorEmailSet = new Set(
+        instructors.map((i) => (i.email || "").toLowerCase()).filter(Boolean)
+      );
+      users.forEach((u) => {
+        const email = (u.email || "").toLowerCase();
+        if (instructorEmailSet.has(email)) {
+          u.role = "instructor";
+        } else if (u.role === "instructor") {
+          u.role = "user";
+        }
+      });
+      const knownEmailsForInstructors = new Set(users.map((u) => (u.email || "").toLowerCase()));
+      instructors.forEach((i) => {
+        const email = (i.email || "").toLowerCase();
+        if (!email || knownEmailsForInstructors.has(email)) return;
+        users.push({ email, name: i.name || "", role: "instructor", createdAt: i.createdAt || null, uid: i.uid || null });
+        knownEmailsForInstructors.add(email);
+      });
+
+      const totalUsers = users.length;
+      document.getElementById("adx-stat-users").textContent = totalUsers;
+
+      /* ---------- Total Instructors ----------
+         Counts only the "instructors" collection — the same source
+         Instructor Management reads from — so this stat always matches
+         the actual, active instructor accounts shown there. A user's
+         "role" field can say "instructor" on its own (e.g. left over
+         from a profile that was never fully set up, or an instructor
+         account that was later removed) without a real instructor
+         doc/account behind it, so that field alone isn't a reliable
+         count and is intentionally not added in here. */
+      document.getElementById("adx-stat-instructors").textContent = instructors.length;
+
+      /* ---------- Total Courses ----------
+         The "courses" Firestore collection only holds courses an admin
+         or instructor has saved through the course builder. Most of the
+         catalog actually shown to learners across the site (Browse
+         Courses, program pages, etc.) comes from the static BHF_COURSES
+         list baked into script.js, merged with any saved Firestore
+         courses. Counting only the raw Firestore collection made this
+         stat show close to 0 even with a full catalog live on the site.
+         This used to lean on script.js's own getCourseCatalog(), but that
+         requires its internal course cache to have finished loading
+         (dataReadyPromise) — waiting on it gated this entire dashboard
+         behind an extra, redundant Firestore round trip for data (the
+         "courses" collection) this page had already fetched itself above.
+         Merging locally, the same way script.js's mergeCoursesWithSaved()
+         does, gives the identical count without that wait. */
+      const normalizeCourseTitleForStat = (t) => (t || "").trim().toLowerCase();
+      const baseCatalog = Array.isArray(window.BHF_COURSES) ? window.BHF_COURSES : [];
+      const savedCoursesByTitle = courses.reduce((map, c) => {
+        map[normalizeCourseTitleForStat(c.title)] = c;
+        return map;
+      }, {});
+      const mergedBaseCourses = baseCatalog.map(
+        (c) => savedCoursesByTitle[normalizeCourseTitleForStat(c.title)] || c
+      );
+      const extraSavedCourses = courses.filter(
+        (c) => !mergedBaseCourses.some((m) => normalizeCourseTitleForStat(m.title) === normalizeCourseTitleForStat(c.title))
+      );
+      const fullCourseCatalog = [...mergedBaseCourses, ...extraSavedCourses].filter((c) => c.active !== false);
+      document.getElementById("adx-stat-courses").textContent = fullCourseCatalog.length;
+
+      document.getElementById("adx-stat-certificates").textContent = certificates.length;
+
+      /* ---------- Active Enrollments ----------
+         This card is labeled "Active" but was just showing
+         enrollments.length — every enrollment ever made, including
+         ones that already finished and got a certificate. Reports &
+         Analytics defines "active" as enrollments that haven't been
+         completed yet, so this now subtracts completed enrollments
+         (matched to a certificate for the same learner + course) to
+         match that definition instead of showing the raw total. */
+      const certifiedKey = (email, course) => `${(email || "").trim().toLowerCase()}::${course}`;
+      const certifiedMap = new Map(
+        certificates.map((c) => [certifiedKey(c.email, c.course), c])
+      );
+      const completedCount = enrollments.filter((e) => certifiedMap.has(certifiedKey(e.email, e.course))).length;
+      const activeEnrollmentCount = Math.max(enrollments.length - completedCount, 0);
+      document.getElementById("adx-stat-enrollments").textContent = activeEnrollmentCount;
+
+      const totalQuizQuestions = courses.reduce((sum, c) => {
+        const modules = Array.isArray(c.modules) ? c.modules : [];
+        const moduleQuizCount = modules.reduce((s, m) => s + (Array.isArray(m.quiz) ? m.quiz.length : 0), 0);
+        // Most authored courses store their quiz/exam questions on
+        // course.questions (the exam question bank built in the course
+        // builder), not inside individual modules, so both need counting.
+        const examQuestionCount = Array.isArray(c.questions) ? c.questions.length : 0;
+        return sum + moduleQuizCount + examQuestionCount;
+      }, 0);
+      document.getElementById("adx-stat-quizzes").textContent = totalQuizQuestions;
+
+      /* ---------- Stat card trends (this month vs. last month) ----------
+         Generic helper: counts records whose `dateField` falls in the
+         current vs. previous calendar month and expresses the change as
+         a percentage. Falls back to "—" when there isn't enough date
+         data to compare (e.g. records with no timestamp at all). */
+      const monthTrend = (records, dateField) => {
+        const now = new Date();
+        const inMonth = (d, offset) => {
+          const target = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+          return d.getFullYear() === target.getFullYear() && d.getMonth() === target.getMonth();
+        };
+        const dated = records
+          .map((r) => new Date(r[dateField] || NaN))
+          .filter((d) => !Number.isNaN(d.getTime()));
+        if (!dated.length) return null;
+        const thisMonth = dated.filter((d) => inMonth(d, 0)).length;
+        const lastMonth = dated.filter((d) => inMonth(d, 1)).length;
+        if (lastMonth > 0) return ((thisMonth - lastMonth) / lastMonth) * 100;
+        if (thisMonth > 0) return null; // "new" — nothing to compare against yet
+        return 0;
+      };
+
+      const renderTrend = (elId, records, dateField) => {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        const pct = monthTrend(records, dateField);
+        if (pct === null) {
+          el.textContent = "New";
+          el.className = "adx-stat-trend is-up";
+        } else {
+          const rounded = Math.abs(pct) < 0.1 ? 0 : pct;
+          el.textContent = `${rounded >= 0 ? "↑" : "↓"} ${Math.abs(rounded).toFixed(1)}% from last month`;
+          el.className = `adx-stat-trend ${rounded > 0 ? "is-up" : rounded < 0 ? "is-down" : "is-flat"}`;
+        }
+      };
+
+      renderTrend("adx-trend-users", users, "createdAt");
+      renderTrend("adx-trend-instructors", instructors, "createdAt");
+      renderTrend("adx-trend-courses", courses, "createdAt");
+      renderTrend("adx-trend-certificates", certificates, "issuedAt");
+      renderTrend("adx-trend-enrollments", enrollments, "enrolledAt");
+      document.getElementById("adx-trend-quizzes").textContent = `${totalQuizQuestions} in question bank`;
+
+      /* ---------- Enrollment Chart (last 6 months) ---------- */
+      const monthKeys = [];
+      const monthLabels = [];
+      const now = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        monthKeys.push(`${d.getFullYear()}-${d.getMonth()}`);
+        monthLabels.push(d.toLocaleDateString("en-US", { month: "short" }));
+      }
+      const monthCounts = monthKeys.map((key) => {
+        const [year, month] = key.split("-").map(Number);
+        return enrollments.filter((e) => {
+          const d = new Date(e.enrolledAt || 0);
+          return d.getFullYear() === year && d.getMonth() === month;
+        }).length;
+      });
+
+      /* ---------- Completion stats ----------
+         Computed unconditionally (not just when window.Chart is available)
+         so the donut center label and the completions table below always
+         populate, even if the Chart.js CDN script is blocked or slow to
+         load — only the chart itself needs Chart.js.
+         (certifiedKey/certifiedMap/completedCount are computed earlier,
+         above the Active Enrollments stat, and reused here.) */
+      const notStartedCount = enrollments.filter((e) => (e.status || "").toLowerCase() === "not-started").length;
+      const inProgressCount = Math.max(enrollments.length - completedCount - notStartedCount, 0);
+
+      const completionPct = enrollments.length
+        ? Math.round((completedCount / enrollments.length) * 100)
+        : 0;
+      const donutPctEl = document.getElementById("adx-donut-pct");
+      if (donutPctEl) donutPctEl.textContent = `${completionPct}%`;
+
+      const pctOf = (n) => (enrollments.length ? Math.round((n / enrollments.length) * 100) : 0);
+      const donutLegendEl = document.getElementById("adx-donut-legend");
+      if (donutLegendEl) {
+        donutLegendEl.innerHTML = `
+          <div class="adx-donut-legend-row">
+            <span class="adx-donut-dot" style="background:#2BA84A;"></span>
+            <strong>Completed</strong><span>${pctOf(completedCount)}% (${completedCount})</span>
+          </div>
+          <div class="adx-donut-legend-row">
+            <span class="adx-donut-dot" style="background:#2B6CB0;"></span>
+            <strong>In Progress</strong><span>${pctOf(inProgressCount)}% (${inProgressCount})</span>
+          </div>
+          <div class="adx-donut-legend-row">
+            <span class="adx-donut-dot" style="background:#FFD500;"></span>
+            <strong>Not Started</strong><span>${pctOf(notStartedCount)}% (${notStartedCount})</span>
+          </div>
+        `;
+      }
+
+      if (window.Chart) {
+        new Chart(document.getElementById("adx-enrollment-chart"), {
+          type: "line",
+          data: {
+            labels: monthLabels,
+            datasets: [{
+              label: "Enrollments",
+              data: monthCounts,
+              borderColor: "#2B6CB0",
+              backgroundColor: "rgba(43, 108, 176, 0.12)",
+              fill: true,
+              tension: 0.35,
+              pointBackgroundColor: "#2B6CB0",
+              pointRadius: 4
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+          }
+        });
+
+        new Chart(document.getElementById("adx-completion-chart"), {
+          type: "doughnut",
+          data: {
+            labels: ["Completed", "In Progress", "Not Started"],
+            datasets: [{
+              data: [completedCount, inProgressCount, notStartedCount],
+              backgroundColor: ["#2BA84A", "#2B6CB0", "#FFD500"],
+              borderWidth: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "72%",
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+
+      /* ---------- All Course Completions (every user, not just recent) ---------- */
+      const completionsWrap = document.getElementById("adx-all-completions");
+      if (completionsWrap) {
+        const completionRows = [...enrollments]
+          .sort((a, b) => new Date(b.enrolledAt || 0) - new Date(a.enrolledAt || 0))
+          .map((e) => {
+            const cert = certifiedMap.get(certifiedKey(e.email, e.course));
+            const status = cert
+              ? "Completed"
+              : (e.status || "").toLowerCase() === "not-started"
+                ? "Not Started"
+                : "In Progress";
+            return { ...e, status, certDate: cert?.date || cert?.issuedAt || "" };
+        });
+
+        completionsWrap.innerHTML = completionRows.length
+          ? `
+            <table class="adx-table">
+              <thead><tr><th>Learner</th><th>Course</th><th>Status</th><th>Enrolled</th><th>Completed</th></tr></thead>
+              <tbody>
+                ${completionRows.map((r) => `
+                  <tr>
+                    <td>${escapeHtml(r.name || r.email || "—")}</td>
+                    <td>${escapeHtml(r.course || "—")}</td>
+                    <td><span class="adx-status-pill ${r.status === "Completed" ? "is-ok" : r.status === "Not Started" ? "is-muted" : "is-progress"}">${escapeHtml(r.status)}</span></td>
+                    <td>${escapeHtml(r.enrolledAt ? new Date(r.enrolledAt).toLocaleDateString("en-US") : "—")}</td>
+                    <td>${escapeHtml(r.status === "Completed" && r.certDate ? new Date(r.certDate).toLocaleDateString("en-US") : "—")}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          `
+          : `<p class="adx-empty">No enrollments yet.</p>`;
+      }
+
+      /* ---------- Recent Activities ---------- */
+      const sortedNotifications = [...notifications].sort(
+        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      );
+
+      /* ---------- Notifications (interactive) ---------- */
+      const notifList = document.getElementById("adx-notifications-list");
+      const notifBadge = document.getElementById("adx-notif-badge");
+      const bellCount = document.getElementById("adx-bell-count");
+      const notifMarkAll = document.getElementById("adx-notif-mark-all");
+      let notifCache = sortedNotifications;
+
+      const renderNotifications = () => {
+        const unreadCount = notifCache.filter((n) => !n.read).length;
+        notifBadge.textContent = `${unreadCount} Unread`;
+        bellCount.textContent = unreadCount;
+        const shown = notifCache.slice(0, 8);
+        notifList.innerHTML = shown.length
+          ? shown.map((n) => `
+              <div class="adx-list-item ${n.read ? "" : "is-unread"}">
+                <div>
+                  <p class="adx-list-item-title">${notificationIcon(n.type)} ${escapeHtml(n.message)}</p>
+                  <p class="adx-list-item-meta">${timeAgo(n.createdAt)}</p>
+                </div>
+                ${n.read ? "" : `<button class="adx-mark-read-btn" data-id="${n.id}" type="button">Mark read</button>`}
+              </div>
+            `).join("")
+          : `<p class="adx-empty">You're all caught up.</p>`;
+
+        notifList.querySelectorAll(".adx-mark-read-btn").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-id");
+            try {
+              await updateDoc(doc(db, "notifications", id), { read: true });
+              const target = notifCache.find((n) => n.id === id);
+              if (target) target.read = true;
+              renderNotifications();
+            } catch (error) {
+              console.error("Failed to mark notification read", error);
+            }
+          });
+        });
+      };
+      renderNotifications();
+
+      notifMarkAll.addEventListener("click", async () => {
+        const unread = notifCache.filter((n) => !n.read);
+        try {
+          await Promise.all(unread.map((n) => updateDoc(doc(db, "notifications", n.id), { read: true })));
+          unread.forEach((n) => { n.read = true; });
+          renderNotifications();
+        } catch (error) {
+          console.error("Failed to mark all notifications read", error);
+        }
+      });
+
+      /* ---------- Top Courses (by enrollment count) ---------- */
+      const enrollmentCountByCourse = enrollments.reduce((map, e) => {
+        const key = e.course || "Untitled course";
+        map[key] = (map[key] || 0) + 1;
+        return map;
+      }, {});
+      const topCourses = courses
+        .map((c) => ({
+          title: c.title || "Untitled course",
+          students: enrollmentCountByCourse[c.title] || 0
+        }))
+        .sort((a, b) => b.students - a.students)
+        .slice(0, 5);
+      const maxCourseStudents = Math.max(1, ...topCourses.map((c) => c.students));
+
+      document.getElementById("adx-top-courses").innerHTML = topCourses.length
+        ? topCourses.map((c) => `
+            <div class="adx-course-row">
+              <div class="adx-course-row-head">
+                <span>${escapeHtml(c.title)}</span>
+                <span>${c.students} student${c.students === 1 ? "" : "s"}</span>
+              </div>
+              <div class="adx-progress-track">
+                <div class="adx-progress-fill" style="width:${(c.students / maxCourseStudents) * 100}%;"></div>
+              </div>
+            </div>
+          `).join("")
+        : `<p class="adx-empty">No courses yet.</p>`;
+
+      /* ---------- Top Instructors (by courses taught + students reached) ---------- */
+      const topInstructors = instructors
+        .map((i) => {
+          const theirCourses = courses.filter((c) => c.instructorId === i.id);
+          const theirTitles = new Set(theirCourses.map((c) => c.title));
+          const students = enrollments.filter((e) => theirTitles.has(e.course)).length;
+          return { name: i.name || i.email || "Instructor", courseCount: theirCourses.length, students };
+        })
+        .sort((a, b) => b.students - a.students || b.courseCount - a.courseCount)
+        .slice(0, 5);
+
+      document.getElementById("adx-top-instructors").innerHTML = topInstructors.length
+        ? topInstructors.map((i) => `
+            <div class="adx-instructor-item">
+              <div class="adx-instructor-avatar">${initials(i.name)}</div>
+              <div>
+                <p class="adx-instructor-name">${escapeHtml(i.name)}</p>
+                <p class="adx-instructor-meta">${i.courseCount} course${i.courseCount === 1 ? "" : "s"}</p>
+              </div>
+              <div class="adx-instructor-stat">${i.students} student${i.students === 1 ? "" : "s"}</div>
+            </div>
+          `).join("")
+        : `<p class="adx-empty">No instructors yet.</p>`;
+
+      /* ---------- Recent Enrollments ---------- */
+      const recentEnrollments = [...enrollments]
+        .sort((a, b) => new Date(b.enrolledAt || 0) - new Date(a.enrolledAt || 0))
+        .slice(0, 8);
+
+      const enrollmentsWrap = document.getElementById("adx-recent-enrollments");
+      enrollmentsWrap.innerHTML = recentEnrollments.length
+        ? `
+          <table class="adx-table">
+            <thead><tr><th>Learner</th><th>Course</th><th>Status</th><th>Enrolled</th></tr></thead>
+            <tbody>
+              ${recentEnrollments.map((e) => `
+                <tr>
+                  <td>${escapeHtml(e.name || e.email || "Learner")}</td>
+                  <td>${escapeHtml(e.course || "—")}</td>
+                  <td><span class="adx-status-pill">${escapeHtml(e.status || "in-progress")}</span></td>
+                  <td>${e.enrolledAt ? new Date(e.enrolledAt).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—"}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `
+        : `<p class="adx-empty">No enrollments yet.</p>`;
+
+      /* ---------- Recent Certificates ---------- */
+      const recentCertificates = [...certificates]
+        .sort((a, b) => new Date(b.issuedAt || 0) - new Date(a.issuedAt || 0))
+        .slice(0, 8);
+
+      const certificatesWrap = document.getElementById("adx-recent-certificates");
+      certificatesWrap.innerHTML = recentCertificates.length
+        ? `
+          <table class="adx-table">
+            <thead><tr><th>Recipient</th><th>Course</th><th>Code</th><th>Issued</th></tr></thead>
+            <tbody>
+              ${recentCertificates.map((c) => `
+                <tr>
+                  <td>${escapeHtml(c.name || c.email || "—")}</td>
+                  <td>${escapeHtml(c.course || "—")}</td>
+                  <td>${escapeHtml(c.code || "—")}</td>
+                  <td>${escapeHtml(c.date || "—")}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        `
+        : `<p class="adx-empty">No certificates issued yet.</p>`;
+
+      /* ---------- System status ---------- */
+      const totalRecords = courses.length + enrollments.length + certificates.length +
+        examSchedule.length + notifications.length + instructors.length + users.length;
+      document.getElementById("adx-status-records").textContent = totalRecords;
+      document.getElementById("adx-status-synced").textContent = new Date().toLocaleTimeString("en-US");
+
+      const tickClock = () => {
+        document.getElementById("adx-status-time").textContent = new Date().toLocaleString("en-US", {
+          hour: "2-digit", minute: "2-digit", month: "short", day: "numeric"
+        });
+      };
+      tickClock();
+      setInterval(tickClock, 30000);
+    </script>
+  </body>
+</html>

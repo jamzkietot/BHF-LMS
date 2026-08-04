@@ -1,0 +1,2232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management | BHF Certification Academy</title>
+    <meta name="description" content="Manage and monitor all user accounts on the BHF Certification Academy platform." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+    <style>
+      /* =========================================================
+         Admin Dashboard v2 — sidebar layout (shared with admin.html)
+         Scoped with the "adx-" prefix so nothing here collides with
+         the shared design system in style.css. Colors reuse the
+         existing CSS variables (--accent-dark, --accent, --cert-accent, etc).
+      ========================================================= */
+      * { box-sizing: border-box; }
+      body { background: var(--bg); font-family: 'Inter', sans-serif; }
+
+      .adx-shell { display: flex; min-height: 100vh; }
+
+      /* ---------- Sidebar ---------- */
+      .adx-sidebar {
+        width: 264px;
+        flex-shrink: 0;
+        background: var(--accent-dark);
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 40;
+        transition: transform 0.25s ease;
+      }
+      .adx-sidebar.is-superadmin { background: linear-gradient(180deg, #0f1b2e 0%, #13233a 100%); }
+      .adx-sidebar.is-superadmin .adx-nav a.is-active { background: rgba(255,255,255,0.25); color: #fff; }
+      .adx-sidebar.is-superadmin .adx-nav a:hover { background: rgba(255,255,255,0.12); color: #fff; }
+      .adx-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 1.4rem 1.3rem;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+      .adx-brand img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; }
+      .adx-brand-text strong { display: block; font-size: 0.95rem; line-height: 1.2; }
+      .adx-brand-text span { font-size: 0.68rem; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; }
+      .adx-nav { flex: 1; overflow-y: auto; padding: 0.85rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+      .adx-nav a {
+        display: flex; align-items: center; gap: 0.75rem;
+        padding: 0.65rem 0.85rem; border-radius: 12px;
+        color: rgba(255,255,255,0.78); text-decoration: none;
+        font-size: 0.88rem; font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .adx-nav a .adx-nav-icon { font-size: 1.05rem; width: 22px; text-align: center; }
+      .adx-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+      .adx-nav a.is-active { background: var(--accent); color: var(--accent-dark); }
+      .adx-nav-sub { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.2rem 0 0.35rem 1.1rem; }
+      .adx-nav-sub a { padding: 0.5rem 0.75rem; font-size: 0.78rem; color: rgba(255,255,255,0.72); }
+      .adx-sidebar-footer { padding: 0.85rem 1.3rem 1.3rem; border-top: 1px solid rgba(255,255,255,0.08); }
+      .adx-sidebar-footer a {
+        display: flex; align-items: center; gap: 0.6rem;
+        color: rgba(255,255,255,0.75); text-decoration: none;
+        font-weight: 600; font-size: 0.88rem; padding: 0.5rem 0;
+      }
+      .adx-sidebar-footer a:hover { color: #fff; }
+
+      /* ---------- Main column ---------- */
+      .adx-main { margin-left: 264px; flex: 1; min-width: 0; }
+      .adx-topbar {
+        position: sticky; top: 0; z-index: 30;
+        background: #fff; border-bottom: 1px solid rgba(15,34,72,0.08);
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 1rem 1.75rem;
+      }
+      .adx-topbar-left { display: flex; align-items: center; gap: 0.85rem; }
+      .adx-hamburger { display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--accent-dark); }
+      .adx-topbar h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--accent-dark); margin: 0; }
+      .adx-topbar-right { display: flex; align-items: center; gap: 1.1rem; }
+      .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(15,34,72,0.12);
+        background: var(--surface-3);
+        color: var(--accent-dark);
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+      .adx-topbar-right .theme-toggle:hover {
+        background: var(--surface-2);
+        border-color: rgba(15,34,72,0.2);
+      }
+      .adx-bell {
+        position: relative; width: 40px; height: 40px; border-radius: 12px;
+        background: var(--surface-3); border: 1px solid rgba(15,34,72,0.08);
+        display: grid; place-items: center; font-size: 1.1rem; cursor: pointer;
+        text-decoration: none; color: var(--accent-dark);
+      }
+      .adx-bell-count {
+        position: absolute; top: -4px; right: -4px; background: #E4483F; color: #fff;
+        font-size: 0.62rem; font-weight: 700; min-width: 17px; height: 17px;
+        border-radius: 999px; display: grid; place-items: center; padding: 0 3px;
+      }
+      .adx-profile { display: flex; align-items: center; gap: 0.65rem; }
+      .adx-profile-avatar {
+        width: 38px; height: 38px; border-radius: 50%; background: var(--accent-dark);
+        color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem;
+      }
+      .adx-profile-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.1; }
+      .adx-profile-role { font-size: 0.72rem; color: var(--muted); }
+
+      .adx-content { padding: 1.5rem 1.75rem 4rem; max-width: 1500px; }
+
+      .adx-breadcrumb { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.6rem; font-weight: 600; }
+      .adx-breadcrumb a { color: var(--cert-accent-dark); text-decoration: none; }
+      .adx-breadcrumb a:hover { text-decoration: underline; }
+
+      .adx-page-head {
+        display: flex; align-items: flex-start; justify-content: space-between;
+        gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem;
+      }
+      .adx-page-head h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.3rem; font-size: 1.7rem; }
+      .adx-page-head p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+      /* ---------- Stat cards ---------- */
+      .adx-stats-grid {
+        display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem;
+      }
+      @media (max-width: 1250px) { .adx-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+      @media (max-width: 700px) { .adx-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      @media (max-width: 460px) { .adx-stats-grid { grid-template-columns: 1fr; } }
+      .adx-stat-card {
+        background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07);
+        box-shadow: 0 10px 26px rgba(15,34,72,0.06); padding: 1.15rem 1.2rem;
+        display: flex; flex-direction: column; gap: 0.45rem;
+      }
+      .adx-stat-top { display: flex; align-items: center; justify-content: space-between; }
+      .adx-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 1.1rem; }
+      .adx-stat-value { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--accent-dark); line-height: 1; }
+      .adx-stat-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+
+      /* ---------- Generic cards / grids ---------- */
+      .adx-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+      @media (max-width: 960px) { .adx-grid-2 { grid-template-columns: 1fr; } }
+      .adx-grid-3 { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+      @media (max-width: 1100px) { .adx-grid-3 { grid-template-columns: 1fr; } }
+      .adx-card {
+        background: #fff; border-radius: 22px; border: 1px solid rgba(15,34,72,0.07);
+        box-shadow: 0 10px 26px rgba(15,34,72,0.05); padding: 1.4rem 1.4rem 1.5rem;
+      }
+      .adx-card h3 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.2rem; font-size: 1.1rem; }
+      .adx-card-sub { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem; }
+      .adx-card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+      .adx-card-head a { font-size: 0.8rem; font-weight: 700; color: var(--cert-accent-dark); text-decoration: none; }
+      .adx-card-head a:hover { text-decoration: underline; }
+      .adx-chart-wrap { position: relative; height: 210px; }
+      .adx-empty { color: var(--muted); font-size: 0.88rem; padding: 0.6rem 0; }
+
+      .adx-list { display: flex; flex-direction: column; gap: 0.55rem; }
+      .adx-list-item {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem;
+        padding: 0.7rem 0.85rem; border-radius: 14px; background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.05);
+      }
+      .adx-list-item-title { font-weight: 700; color: var(--text); margin: 0 0 0.1rem; font-size: 0.86rem; }
+      .adx-list-item-meta { font-size: 0.75rem; color: var(--muted); margin: 0; }
+
+      /* ---------- Role distribution legend ---------- */
+      .um-legend { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.9rem; }
+      .um-legend-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+      .um-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+      .um-legend-label { flex: 1; color: var(--text); font-weight: 600; }
+      .um-legend-value { color: var(--muted); font-weight: 700; }
+
+      /* ---------- System status ---------- */
+      .adx-status-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0.75rem 0; border-bottom: 1px solid rgba(15,34,72,0.06); font-size: 0.85rem;
+      }
+      .adx-status-row:last-child { border-bottom: none; }
+      .adx-status-row span:first-child { color: var(--muted); font-weight: 600; }
+      .adx-status-ok { color: #2BA84A; font-weight: 700; display: flex; align-items: center; gap: 0.4rem; }
+      .adx-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #2BA84A; display: inline-block; }
+      .adx-status-dot.is-bad { background: #E4483F; }
+      .adx-status-ok.is-bad { color: #E4483F; }
+
+      /* ---------- Tables ---------- */
+      .adx-table-wrap { overflow-x: auto; }
+      .adx-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      .adx-table th {
+        text-align: left; color: var(--muted); font-weight: 700; font-size: 0.7rem;
+        text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.6rem;
+        border-bottom: 2px solid rgba(15,34,72,0.08); white-space: nowrap;
+      }
+      .adx-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid rgba(15,34,72,0.06); color: var(--text); vertical-align: middle; }
+      .adx-table tr:last-child td { border-bottom: none; }
+      .adx-status-pill {
+        display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px;
+        background: rgba(43,108,176,0.1); color: var(--cert-accent-dark);
+        font-size: 0.72rem; font-weight: 700; text-transform: capitalize;
+      }
+      .adx-status-pill.is-ok { background: rgba(43,168,74,0.14); color: #2BA84A; }
+      .adx-status-pill.is-bad { background: rgba(228,72,63,0.12); color: #b33a3a; }
+      .adx-status-pill.is-muted { background: rgba(15,34,72,0.08); color: var(--muted); }
+      .adx-status-pill.is-purple { background: rgba(124,77,255,0.14); color: #7C4DFF; }
+
+      /* ---------- Mobile sidebar toggle ---------- */
+      .adx-backdrop { display: none; position: fixed; inset: 0; background: rgba(6,14,32,0.45); z-index: 35; }
+      @media (max-width: 900px) {
+        .adx-hamburger { display: inline-flex; }
+        .adx-sidebar { transform: translateX(-100%); }
+        .adx-main { margin-left: 0; }
+        .adx-shell.adx-sidebar-open .adx-sidebar { transform: translateX(0); }
+        .adx-shell.adx-sidebar-open .adx-backdrop { display: block; }
+      }
+
+      /* =========================================================
+         User Management — page-specific ("um-" prefix)
+      ========================================================= */
+      .um-toolbar-card { padding: 1.1rem 1.2rem; margin-bottom: 1.1rem; }
+      .um-toolbar-grid {
+        display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr auto auto;
+        gap: 0.7rem; align-items: end;
+      }
+      @media (max-width: 1100px) { .um-toolbar-grid { grid-template-columns: 1fr 1fr; } }
+      @media (max-width: 560px) { .um-toolbar-grid { grid-template-columns: 1fr; } }
+      .um-field label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em; }
+      .um-field input[type="text"], .um-field select {
+        width: 100%; padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 10px;
+        background: var(--surface-3); color: var(--text); font: inherit; font-size: 0.86rem;
+      }
+      .um-field input[type="text"]:focus, .um-field select:focus {
+        outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,213,0,0.15);
+      }
+      .um-search-wrap { position: relative; }
+      .um-search-wrap span { position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+      .um-toolbar-btns { display: flex; gap: 0.5rem; }
+      .um-btn-sm { padding: 0.62rem 1.1rem; font-size: 0.82rem; border-radius: 10px; box-shadow: none; white-space: nowrap; }
+
+      .um-bulk-bar {
+        display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
+        padding: 0.85rem 1.2rem; margin-bottom: 0.9rem; background: #fff; border-radius: 16px;
+        border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 6px 16px rgba(15,34,72,0.04);
+      }
+      .um-bulk-label { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+      .um-bulk-left, .um-bulk-right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+      .um-chip {
+        display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 0.9rem;
+        border-radius: 999px; font-size: 0.78rem; font-weight: 700; cursor: pointer;
+        border: 1px solid rgba(15,34,72,0.1); background: var(--surface-3); color: var(--text);
+        transition: opacity 0.15s ease, transform 0.1s ease;
+      }
+      .um-chip:hover { transform: translateY(-1px); }
+      .um-chip:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+      .um-chip.is-activate { color: #2BA84A; border-color: rgba(43,168,74,0.3); }
+      .um-chip.is-deactivate { color: #b3860a; border-color: rgba(179,134,10,0.3); }
+      .um-chip.is-delete { color: #b33a3a; border-color: rgba(179,58,58,0.3); }
+      .um-chip.is-export { color: var(--cert-accent-dark); border-color: rgba(43,108,176,0.25); }
+
+      .um-table-card { padding: 1.2rem 1.2rem 0.6rem; }
+      .um-user-cell { display: flex; align-items: center; gap: 0.6rem; }
+      .um-avatar {
+        width: 34px; height: 34px; border-radius: 50%; background: rgba(43,108,176,0.14);
+        color: var(--cert-accent-dark); display: grid; place-items: center; font-weight: 700;
+        font-size: 0.78rem; flex-shrink: 0;
+      }
+      .um-user-name { font-weight: 700; color: var(--text); font-size: 0.86rem; }
+      .um-progress-track { width: 76px; height: 7px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+      .um-progress-fill { height: 100%; background: var(--cert-accent); border-radius: 999px; }
+      .um-progress-label { font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; }
+      .um-actions-cell { display: flex; align-items: center; gap: 0.35rem; }
+      .um-icon-btn {
+        width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(15,34,72,0.08);
+        background: var(--surface-3); display: grid; place-items: center; cursor: pointer;
+        font-size: 0.85rem; color: var(--text); transition: background 0.15s ease;
+      }
+      .um-icon-btn:hover { background: var(--surface-2); }
+      .um-icon-btn.is-danger { color: #b33a3a; }
+      .um-icon-btn.is-danger:hover { background: rgba(228,72,63,0.12); }
+      .um-checkbox { width: 16px; height: 16px; cursor: pointer; }
+
+      .um-pagination {
+        display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+        padding: 1rem 0.2rem 1.2rem; font-size: 0.82rem; color: var(--muted);
+      }
+      .um-page-btns { display: flex; align-items: center; gap: 0.3rem; }
+      .um-page-btn {
+        min-width: 32px; height: 32px; padding: 0 0.4rem; border-radius: 8px; border: 1px solid rgba(15,34,72,0.1);
+        background: #fff; color: var(--text); font-weight: 600; font-size: 0.82rem; cursor: pointer;
+      }
+      .um-page-btn:hover:not(:disabled) { background: var(--surface-3); }
+      .um-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      .um-page-btn.is-active { background: var(--accent-dark); color: #fff; border-color: var(--accent-dark); }
+      .um-rows-per-page { display: flex; align-items: center; gap: 0.5rem; }
+      .um-rows-per-page select {
+        padding: 0.4rem 0.6rem; border-radius: 8px; border: 1px solid rgba(15,34,72,0.1); background: #fff; font: inherit; font-size: 0.82rem;
+      }
+
+      .um-modal-form .form-group { margin-bottom: 1rem; }
+      .um-modal-form input, .um-modal-form select {
+        width: 100%; padding: 0.85rem 1rem; border: 1.5px solid var(--border); border-radius: 12px;
+        background: var(--surface-3); color: var(--text); font: inherit;
+      }
+      .um-modal-form input:focus, .um-modal-form select:focus {
+        outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,213,0,0.15);
+      }
+      .um-modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; }
+      .um-form-hint { font-size: 0.78rem; color: var(--muted); margin: -0.5rem 0 1rem; }
+      .um-view-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.65rem 0; border-bottom: 1px solid rgba(15,34,72,0.08); font-size: 0.88rem; }
+      .um-view-row:last-child { border-bottom: none; }
+      .um-view-row span:first-child { color: var(--muted); font-weight: 600; }
+      .um-view-row span:last-child { font-weight: 600; color: var(--text); text-align: right; }
+
+      /* ---------- Dark Mode ---------- */
+      body[data-theme="dark"] {
+        --adx-surface: #0f1b2e;
+        --adx-surface-2: #16253d;
+        --adx-surface-3: #101c2a;
+        --adx-text: #f3f7ff;
+        --adx-muted: #9fb0c8;
+        --adx-border: rgba(255,255,255,0.12);
+        --adx-shadow: 0 18px 40px rgba(0,0,0,0.4);
+      }
+
+      body[data-theme="dark"] .adx-topbar {
+        background: var(--adx-surface);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-topbar h1 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(22,37,61,0.8);
+        color: #f3f7ff;
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle:hover {
+        background: rgba(30,45,70,0.95);
+      }
+
+      body[data-theme="dark"] .adx-bell {
+        background: rgba(16,28,42,0.8);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-name {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-role {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-stat-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-stat-value {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-stat-label,
+      body[data-theme="dark"] .adx-card-sub {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-card h3 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-empty {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-list-item {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-title {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-meta {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .um-legend-label {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .um-legend-value {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-table-wrap {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-table th {
+        color: var(--adx-muted);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-table td {
+        color: var(--adx-text);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .um-toolbar-card {
+        background: var(--adx-surface);
+        border: 1px solid var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .um-field input[type="text"],
+      body[data-theme="dark"] .um-field select {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .um-bulk-bar {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .um-bulk-label {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .um-chip {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .um-table-card {
+        background: var(--adx-surface);
+        border: 1px solid var(--adx-border);
+      }
+
+      body[data-theme="dark"] .um-user-name {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .um-progress-track {
+        background: var(--adx-surface-2);
+      }
+
+      body[data-theme="dark"] .um-progress-label {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .um-icon-btn {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .um-icon-btn:hover {
+        background: var(--adx-surface-2);
+      }
+
+      body[data-theme="dark"] .um-page-btn {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .um-page-btn:hover:not(:disabled) {
+        background: var(--adx-surface-2);
+      }
+
+      body[data-theme="dark"] .um-pagination {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .um-modal-form input,
+      body[data-theme="dark"] .um-modal-form select {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .um-form-hint {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .um-view-row {
+        border-bottom-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .um-view-row span:first-child {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .um-view-row span:last-child {
+        color: var(--adx-text);
+      }
+
+      /* ---------- Print (Export PDF) ---------- */
+      @media print {
+        .adx-sidebar, .adx-topbar, .adx-breadcrumb, .adx-page-head, .adx-stats-grid,
+        .um-toolbar-card, .um-bulk-bar, .um-pagination, .adx-grid-3, .um-actions-cell,
+        .um-table-card th:last-child, .um-table-card td:last-child,
+        .um-table-card th:first-child, .um-table-card td:first-child { display: none !important; }
+        .adx-main { margin-left: 0 !important; }
+        body { background: #fff !important; }
+        .um-table-card { box-shadow: none !important; border: none !important; }
+      }
+          /* ---------- Walk-in Registration Modal ---------- */
+      .walk-in-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .walk-in-modal.is-open {
+        display: flex;
+      }
+      .walk-in-modal-content {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 2rem;
+      }
+      body[data-theme="dark"] .walk-in-modal-content {
+        background: var(--adx-surface);
+        color: var(--adx-text);
+      }
+      .walk-in-modal h2 {
+        font-family: 'Playfair Display', serif;
+        color: var(--accent-dark);
+        margin: 0 0 1rem;
+        font-size: 1.4rem;
+      }
+      body[data-theme="dark"] .walk-in-modal h2 {
+        color: #f3f7ff;
+      }
+      .walk-in-form-group {
+        margin-bottom: 1rem;
+      }
+      .walk-in-form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      body[data-theme="dark"] .walk-in-form-group label {
+        color: var(--adx-text);
+      }
+      .walk-in-form-group input,
+      .walk-in-form-group select,
+      .walk-in-form-group textarea {
+        width: 100%;
+        padding: 0.7rem;
+        border: 1px solid rgba(15,34,72,0.15);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      body[data-theme="dark"] .walk-in-form-group input,
+      body[data-theme="dark"] .walk-in-form-group select,
+      body[data-theme="dark"] .walk-in-form-group textarea {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.12);
+        color: var(--adx-text);
+      }
+      .walk-in-form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .walk-in-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 600px) {
+        .walk-in-form-row { grid-template-columns: 1fr; }
+      }
+      .walk-in-modal-buttons {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1.5rem;
+      }
+      .walk-in-modal-buttons button {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+      .walk-in-modal-buttons .btn-primary {
+        background: var(--accent-dark);
+        color: #fff;
+      }
+      .walk-in-modal-buttons .btn-primary:hover {
+        filter: brightness(1.1);
+      }
+      .walk-in-modal-buttons .btn-secondary {
+        background: rgba(15,34,72,0.08);
+        color: var(--accent-dark);
+      }
+      .walk-in-modal-buttons .btn-secondary:hover {
+        background: rgba(15,34,72,0.12);
+      }
+      body[data-theme="dark"] .walk-in-modal-buttons .btn-secondary {
+        background: rgba(255,255,255,0.1);
+        color: #f3f7ff;
+      }
+      .walk-in-note {
+        background: rgba(43,108,176,0.08);
+        border-left: 4px solid var(--cert-accent-dark);
+        padding: 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+      }
+      body[data-theme="dark"] .walk-in-note {
+        background: rgba(43,108,176,0.15);
+        color: var(--adx-text);
+      }
+      .walk-in-loading {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+      }
+      .walk-in-loading.is-active {
+        display: block;
+      }
+      .walk-in-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(15,34,72,0.2);
+        border-top-color: var(--accent-dark);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      body[data-theme="dark"] .walk-in-spinner {
+        border-color: rgba(255,255,255,0.2);
+        border-top-color: #f3f7ff;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+</style>
+  </head>
+  <body data-page="manage-users">
+    <div class="adx-shell" id="adx-shell">
+      <div class="adx-backdrop" id="adx-backdrop"></div>
+
+      <!-- ============ Sidebar ============ -->
+      <aside class="adx-sidebar">
+        <a class="adx-brand" href="index.html" style="text-decoration:none;color:#fff;">
+          <img src="bhflogo.jpg" alt="BHF logo" />
+          <span class="adx-brand-text">
+            <strong>BHF</strong>
+            <span id="adx-brand-sub">TRAINING &amp; CERTIFICATE</span>
+          </span>
+        </a>
+        <nav class="adx-nav" aria-label="Admin sections">
+          <a href="admin.html" id="um-nav-dashboard"><span class="adx-nav-icon">📊</span> Dashboard</a>
+          <a href="manage-users.html" class="is-active"><span class="adx-nav-icon">👥</span> User Management</a>
+          <a href="manage-instructors.html"><span class="adx-nav-icon">👩‍🏫</span> Instructor Management</a>
+          <a href="manage-courses.html"><span class="adx-nav-icon">📘</span> Course Management</a>
+          <a href="quiz-management.html"><span class="adx-nav-icon">📝</span> Quiz Management</a>
+          <a href="certificates.html"><span class="adx-nav-icon">🏆</span> Certificates</a>
+          <a href="reports-analytics.html"><span class="adx-nav-icon">📈</span> Reports &amp; Analytics</a>
+          <a href="calendar.html"><span class="adx-nav-icon">📅</span> Calendar</a>
+          <a href="index.html"><span class="adx-nav-icon">🏠</span> Browse Home</a>
+          <div class="adx-nav-sub">
+            <a href="login.html?from=admin"><span class="adx-nav-icon">🔐</span> Login Page</a>
+            <a href="signup.html?from=admin"><span class="adx-nav-icon">📝</span> Create Account</a>
+            <a href="#" id="open-walkin-modal"><span class="adx-nav-icon">🧑‍🎓</span> Walk-in Registration</a>
+          </div>
+        </nav>
+        <div class="adx-sidebar-footer">
+          <a href="login.html" id="nav-auth-link" class="login-link" style="display:none;"><span class="adx-nav-icon">🔑</span> Login</a>
+          <a href="login.html" id="logout-button"><span class="adx-nav-icon">🚪</span> Logout</a>
+        </div>
+      </aside>
+
+      <!-- ============ Main column ============ -->
+      <div class="adx-main">
+        <header class="adx-topbar">
+          <div class="adx-topbar-left">
+            <button class="adx-hamburger" id="adx-hamburger" type="button" aria-label="Toggle menu">☰</button>
+            <h1>User Management</h1>
+          </div>
+          <div class="adx-topbar-right">
+            <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙 Dark mode</button>
+            <a href="admin.html#adx-notifications" class="adx-bell" aria-label="Notifications" id="um-bell-link">
+              🔔
+              <span class="adx-bell-count" id="adx-bell-count">0</span>
+            </a>
+            <div class="adx-profile">
+              <div class="adx-profile-avatar" id="um-profile-avatar">A</div>
+              <div>
+                <p class="adx-profile-name" id="um-profile-name">Admin</p>
+                <p class="adx-profile-role" id="um-profile-role">Administrator</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="adx-content">
+          <p class="adx-breadcrumb"><a href="admin.html" id="um-breadcrumb-dashboard">Dashboard</a> &nbsp;›&nbsp; User Management</p>
+
+          <div class="adx-page-head">
+            <div>
+              <h2>User Management</h2>
+              <p>Manage and monitor all user accounts in the system.</p>
+            </div>
+            <button class="btn btn-primary" id="um-add-btn" type="button">+ Add New User</button>
+          </div>
+
+          <!-- ============ Stat cards ============ -->
+          <div class="adx-stats-grid">
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">👥</div>
+              </div>
+              <div class="adx-stat-value" id="um-stat-total">0</div>
+              <div class="adx-stat-label">Total Users</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,168,74,0.14); color:#2BA84A;">✅</div>
+              </div>
+              <div class="adx-stat-value" id="um-stat-active">0</div>
+              <div class="adx-stat-label">Active Users</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(228,72,63,0.12); color:#E4483F;">🚫</div>
+              </div>
+              <div class="adx-stat-value" id="um-stat-inactive">0</div>
+              <div class="adx-stat-label">Inactive Users</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(124,77,255,0.14); color:#7C4DFF;">➕</div>
+              </div>
+              <div class="adx-stat-value" id="um-stat-new">0</div>
+              <div class="adx-stat-label">New This Month</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">🏆</div>
+              </div>
+              <div class="adx-stat-value" id="um-stat-certs">0</div>
+              <div class="adx-stat-label">Certificates Earned</div>
+            </div>
+          </div>
+
+          <!-- ============ Filter toolbar ============ -->
+          <div class="adx-card um-toolbar-card">
+            <div class="um-toolbar-grid">
+              <div class="um-field um-search-wrap">
+                <label for="um-search">Search</label>
+                <input id="um-search" type="text" placeholder="Search users by name, email or ID…" />
+                <span>🔍</span>
+              </div>
+              <div class="um-field">
+                <label for="um-filter-role">Filter by Role</label>
+                <select id="um-filter-role">
+                  <option value="all">All Roles</option>
+                  <option value="user">Student</option>
+                  <option value="instructor">Instructor</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+              <div class="um-field">
+                <label for="um-filter-status">Filter by Status</label>
+                <select id="um-filter-status">
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+              <div class="um-field">
+                <label for="um-filter-course">Filter by Course</label>
+                <select id="um-filter-course">
+                  <option value="all">All Courses</option>
+                </select>
+              </div>
+              <div class="um-toolbar-btns">
+                <button class="btn btn-secondary um-btn-sm" id="um-reset-btn" type="button">Reset</button>
+              </div>
+              <div class="um-toolbar-btns">
+                <button class="btn btn-primary um-btn-sm" id="um-search-btn" type="button">🔍 Search</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ Bulk actions ============ -->
+          <div class="um-bulk-bar">
+            <div class="um-bulk-left">
+              <span class="um-bulk-label">Bulk Actions:</span>
+              <button class="um-chip is-activate" id="um-bulk-activate" type="button" disabled>✅ Activate</button>
+              <button class="um-chip is-deactivate" id="um-bulk-deactivate" type="button" disabled>⛔ Deactivate</button>
+              <button class="um-chip is-delete" id="um-bulk-delete" type="button" disabled>🗑️ Delete</button>
+            </div>
+            <div class="um-bulk-right">
+              <button class="um-chip is-export" id="um-export-csv" type="button">⬇️ Export CSV</button>
+              <button class="um-chip is-export" id="um-export-pdf" type="button">📄 Export PDF</button>
+            </div>
+          </div>
+
+          <!-- ============ Users table ============ -->
+          <div class="adx-card um-table-card">
+            <div class="adx-table-wrap">
+              <table class="adx-table" id="um-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" class="um-checkbox" id="um-select-all" /></th>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Course</th>
+                    <th>Progress</th>
+                    <th>Certificates</th>
+                    <th>Status</th>
+                    <th>Registered</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="um-table-body">
+                  <tr><td colspan="12"><p class="adx-empty">Loading users…</p></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="um-pagination">
+              <span id="um-pagination-summary">Showing 0 of 0 users</span>
+              <div class="um-page-btns" id="um-page-btns"></div>
+              <div class="um-rows-per-page">
+                <span>Rows per page</span>
+                <select id="um-rows-per-page">
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ Activities / Role Distribution / System Status ============ -->
+          <div class="adx-grid-3" style="margin-top: 1.4rem;">
+            <div class="adx-card">
+              <div class="adx-card-head">
+                <h3>Recent User Activities</h3>
+                <a href="admin.html#adx-notifications">View All</a>
+              </div>
+              <p class="adx-card-sub">Latest actions across all accounts</p>
+              <div id="um-activities-list" class="adx-list">
+                <p class="adx-empty">Loading recent activities…</p>
+              </div>
+            </div>
+            <div class="adx-card">
+              <h3>User Role Distribution</h3>
+              <p class="adx-card-sub">Breakdown of all accounts by role</p>
+              <div class="adx-chart-wrap" style="height:170px;"><canvas id="um-role-chart"></canvas></div>
+              <div class="um-legend" id="um-role-legend"></div>
+            </div>
+            <div class="adx-card">
+              <h3>System Status</h3>
+              <p class="adx-card-sub">Live connection &amp; data health</p>
+              <div class="adx-status-row">
+                <span>Total Users Synced</span>
+                <span id="um-status-records">0</span>
+              </div>
+              <div class="adx-status-row">
+                <span>Database Health</span>
+                <span class="adx-status-ok" id="um-status-health"><span class="adx-status-dot"></span> Healthy</span>
+              </div>
+              <div class="adx-status-row">
+                <span>Firebase Connection</span>
+                <span class="adx-status-ok" id="um-status-firebase"><span class="adx-status-dot"></span> Connected</span>
+              </div>
+              <div class="adx-status-row">
+                <span>Last Synced</span>
+                <span id="um-status-synced">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Add New User modal ============ -->
+    <div id="um-add-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="um-add-modal-title">
+      <div class="dashboard-modal-card">
+        <button class="dashboard-modal-close" type="button" data-um-close aria-label="Close dialog">×</button>
+        <h3 id="um-add-modal-title">Add New User</h3>
+        <form id="um-add-form" class="um-modal-form">
+          <div class="form-group">
+            <label for="um-add-name">Full Name</label>
+            <input id="um-add-name" type="text" placeholder="e.g. Juan Dela Cruz" required />
+          </div>
+          <div class="form-group">
+            <label for="um-add-email">Email</label>
+            <input id="um-add-email" type="email" placeholder="name@email.com" required />
+          </div>
+          <div class="form-group">
+            <label for="um-add-role">Role</label>
+            <select id="um-add-role">
+              <option value="user">Student</option>
+              <option value="instructor">Instructor (profile only)</option>
+            </select>
+          </div>
+          <p class="um-form-hint" id="um-add-hint">
+            This creates a profile record only. The person still needs to sign up at
+            the login page with this exact email to activate real portal access.
+            For instructors who need to log in immediately, use Instructor Management instead.
+          </p>
+          <p id="um-add-form-note" class="form-note"></p>
+          <div class="um-modal-actions">
+            <button type="button" class="btn btn-secondary" data-um-close>Cancel</button>
+            <button id="um-add-submit" type="submit" class="btn btn-primary">Save User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============ View User modal ============ -->
+    <div id="um-view-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="um-view-modal-title">
+      <div class="dashboard-modal-card">
+        <button class="dashboard-modal-close" type="button" data-um-close aria-label="Close dialog">×</button>
+        <h3 id="um-view-modal-title">User Details</h3>
+        <div id="um-view-content"></div>
+      </div>
+    </div>
+
+    <!-- ============ Edit User modal ============ -->
+    <div id="um-edit-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="um-edit-modal-title">
+      <div class="dashboard-modal-card">
+        <button class="dashboard-modal-close" type="button" data-um-close aria-label="Close dialog">×</button>
+        <h3 id="um-edit-modal-title">Edit User</h3>
+        <form id="um-edit-form" class="um-modal-form">
+          <input type="hidden" id="um-edit-id" />
+          <div class="form-group">
+            <label for="um-edit-name">Full Name</label>
+            <input id="um-edit-name" type="text" required />
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input id="um-edit-email" type="email" disabled />
+          </div>
+          <div class="form-group">
+            <label for="um-edit-status">Status</label>
+            <select id="um-edit-status">
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+          <p class="um-form-hint">Role changes aren't made here — instructor access is managed from Instructor Management, and admin access is fixed to the admin login email.</p>
+          <p id="um-edit-form-note" class="form-note"></p>
+          <div class="um-modal-actions">
+            <button type="button" class="btn btn-secondary" data-um-close>Cancel</button>
+            <button id="um-edit-submit" type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+        <!-- ============ Walk-in Registration Modal ============ -->
+    <div id="walk-in-modal" class="walk-in-modal">
+      <div class="walk-in-modal-content">
+        <h2>📝 Walk-in Student Registration</h2>
+        
+        <div class="walk-in-note">
+          <strong>Note:</strong> A temporary password will be generated and sent to the student's email along with login credentials and certificate information.
+        </div>
+
+        <form id="walk-in-form" style="display: none;">
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-first-name">First Name *</label>
+              <input type="text" id="walk-in-first-name" placeholder="e.g., John" required />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-last-name">Last Name *</label>
+              <input type="text" id="walk-in-last-name" placeholder="e.g., Doe" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-email">Email Address *</label>
+            <input type="email" id="walk-in-email" placeholder="student@example.com" required />
+          </div>
+
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-phone">Phone Number</label>
+              <input type="tel" id="walk-in-phone" placeholder="+1 (555) 000-0000" />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-date">Registration Date *</label>
+              <input type="date" id="walk-in-date" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-course">Enroll in Course</label>
+            <select id="walk-in-course">
+              <option value="">-- Select a course (optional) --</option>
+            </select>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-notes">Additional Notes</label>
+            <textarea id="walk-in-notes" placeholder="Any additional information about the student..."></textarea>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label>
+              <input type="checkbox" id="walk-in-send-email" checked />
+              Send login credentials email to student
+            </label>
+          </div>
+
+          <div class="walk-in-modal-buttons">
+            <button type="button" class="btn-secondary" id="close-walkin-modal">Cancel</button>
+            <button type="submit" class="btn-primary">Create Account</button>
+          </div>
+        </form>
+
+        <div id="walk-in-loading" class="walk-in-loading">
+          <div class="walk-in-spinner"></div>
+          <p style="margin-top: 0.8rem; color: var(--muted);">Creating student account...</p>
+        </div>
+
+        <div id="walk-in-success" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+            <h3 style="margin: 0 0 0.5rem; color: #2BA84A;">Student Account Created!</h3>
+            <p id="walk-in-success-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="close-walkin-success" class="btn-primary" style="width: 100%; padding: 0.7rem;">Close</button>
+          </div>
+        </div>
+
+        <div id="walk-in-error" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: #E4483F;">❌</div>
+            <h3 style="margin: 0 0 0.5rem; color: #E4483F;">Registration Failed</h3>
+            <p id="walk-in-error-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="retry-walkin" class="btn-primary" style="width: 100%; padding: 0.7rem;">Try Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+      <!-- Activate Course (manual walk-in payment) modal -->
+      <div id="um-activate-course-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="um-activate-course-title">
+        <div class="dashboard-modal-card">
+          <button class="dashboard-modal-close" type="button" data-um-close aria-label="Close dialog">×</button>
+          <h3 id="um-activate-course-title">Activate Course for Student (Manual Payment)</h3>
+          <form id="um-activate-course-form" class="um-modal-form">
+            <input type="hidden" id="um-activate-email" />
+            <div class="form-group">
+              <label for="um-activate-course-select">Select Course</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <select id="um-activate-course-select" style="flex:1;">
+                  <option value="">-- Select a course --</option>
+                </select>
+                <label style="white-space:nowrap;font-size:0.9rem;display:flex;align-items:center;gap:6px;margin:0 0 0 8px;">
+                  <input id="um-activate-show-all" type="checkbox" checked /> Show all
+                </label>
+              </div>
+              <pre id="um-activate-debug" style="display:none;margin-top:8px;padding:8px;border-radius:6px;background:#f7fafc;color:#1a202c;max-height:160px;overflow:auto;font-size:0.85rem;">Debug output</pre>
+            </div>
+            <div class="form-group">
+              <label for="um-activate-notes">Notes (optional)</label>
+              <input id="um-activate-notes" type="text" placeholder="Payment reference, cashier name, etc." />
+            </div>
+            <div class="um-modal-actions">
+              <button type="button" class="btn btn-secondary" data-um-close>Cancel</button>
+              <button id="um-activate-submit" type="submit" class="btn btn-primary">Activate Course</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- script.js manages auth/session (login pill, logout button) -->
+      <script type="module" src="script.js"></script>
+    <script>
+      if (typeof updateHeaderAuthLink === 'function') {
+        updateHeaderAuthLink();
+      }
+      // Mobile sidebar toggle
+      const adxShell = document.getElementById('adx-shell');
+      const adxHamburger = document.getElementById('adx-hamburger');
+      const adxBackdrop = document.getElementById('adx-backdrop');
+      adxHamburger?.addEventListener('click', () => adxShell.classList.toggle('adx-sidebar-open'));
+      adxBackdrop?.addEventListener('click', () => adxShell.classList.remove('adx-sidebar-open'));
+    </script>
+
+    <!-- This page's own module: guards the route, pulls live Firestore data,
+         and renders the stats, filters, table, chart, and modals. -->
+    <script type="module">
+      import { db, auth } from "./firebase-init.js";
+      import {
+        collection, getDocs, doc, setDoc, updateDoc, deleteDoc
+      } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+      import {
+        sendPasswordResetEmail
+      } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+      /* ---------- Role-aware "back to dashboard" links ----------
+         This page is shared between admin.html and superadmin.html (both
+         link here as "User Management"). The sidebar/breadcrumb/bell
+         "Dashboard" links and the profile block used to be hardcoded to
+         admin.html/"Admin", which meant a super admin clicking their way
+         back out of this page landed on the regular Admin Dashboard
+         instead of staying in the Super Admin area. Point those links at
+         the right portal based on the signed-in user's actual role.
+
+         Applied in two passes:
+         1) Synchronously, right away, if the link we arrived on already
+            says ?from=superadmin — this is the normal case (clicked from
+            the Super Admin sidebar) and needs no waiting, so there's no
+            flash of the default Admin look before this runs.
+         2) After auth is ready, as a fallback for direct loads/refreshes
+            that don't carry the query param, based on the real role. */
+      const applySuperAdminBranding = () => {
+        const dashboardHref = "superadmin.html";
+        document.querySelector(".adx-sidebar")?.classList.add("is-superadmin");
+        const brandSub = document.getElementById("adx-brand-sub");
+        if (brandSub) brandSub.textContent = "SUPER ADMIN";
+        const navDash = document.getElementById("um-nav-dashboard");
+        const breadcrumbDash = document.getElementById("um-breadcrumb-dashboard");
+        const bellLink = document.getElementById("um-bell-link");
+        const profileAvatar = document.getElementById("um-profile-avatar");
+        const profileName = document.getElementById("um-profile-name");
+        const profileRole = document.getElementById("um-profile-role");
+        if (navDash) {
+          navDash.href = dashboardHref;
+          navDash.innerHTML = '<span class="adx-nav-icon">👑</span> Dashboard';
+        }
+        if (breadcrumbDash) breadcrumbDash.href = dashboardHref;
+        if (bellLink) bellLink.href = `${dashboardHref}#adx-notifications`;
+        if (profileAvatar) profileAvatar.textContent = "S";
+        if (profileName) profileName.textContent = "Super Admin";
+        if (profileRole) profileRole.textContent = "Master Administrator";
+      };
+
+      const cameFromSuperAdmin = new URLSearchParams(window.location.search).get("from") === "superadmin";
+      if (cameFromSuperAdmin) applySuperAdminBranding();
+
+      /* ---------- Route guard: admins only ---------- */
+      const isLocalPreview =
+        location.protocol === "file:" ||
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1";
+
+      const currentAuthForBranding = (window.getAuth && window.getAuth()) || null;
+      if (!cameFromSuperAdmin && currentAuthForBranding?.role === "superadmin") {
+        applySuperAdminBranding();
+      }
+
+      if (window.authReadyPromise) await window.authReadyPromise;
+
+      if (!isLocalPreview) {
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+          window.location.href = "login.html";
+        } else if (!window.isAdmin || !window.isAdmin()) {
+          window.location.href = "dashboard.html";
+        }
+      }
+
+      if (!cameFromSuperAdmin) {
+        const currentAuthForBrandingAfter = (window.getAuth && window.getAuth()) || null;
+        if (currentAuthForBrandingAfter?.role === "superadmin") applySuperAdminBranding();
+      }
+
+      /* ---------- Helpers ---------- */
+      const escapeHtml = (str) =>
+        String(str ?? "").replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        }[c]));
+
+      const fetchCollection = async (name) => {
+        try {
+          const snapshot = await getDocs(collection(db, name));
+          return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        } catch (error) {
+          console.error(`Failed to load "${name}" from Firestore`, error);
+          const fb = document.getElementById("um-status-firebase");
+          if (fb) { fb.innerHTML = '<span class="adx-status-dot is-bad"></span> Error'; fb.classList.add("is-bad"); }
+          const hp = document.getElementById("um-status-health");
+          if (hp) { hp.innerHTML = '<span class="adx-status-dot is-bad"></span> Degraded'; hp.classList.add("is-bad"); }
+          return [];
+        }
+      };
+
+      const initials = (name) => {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return "?";
+        return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+      };
+
+      const timeAgo = (isoString) => {
+        if (!isoString) return "";
+        const then = new Date(isoString).getTime();
+        if (Number.isNaN(then)) return "";
+        const diffMs = Date.now() - then;
+        const minutes = Math.floor(diffMs / 60000);
+        if (minutes < 1) return "just now";
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days}d ago`;
+        return new Date(isoString).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      };
+
+      const notificationIcon = (type) => ({
+        enrollment: "📝", certificate: "🏆", exam: "📅"
+      }[type] || "🔔");
+
+      const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }) : "—";
+      const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+
+      const roleMeta = {
+        admin:      { label: "Admin",      pill: "is-purple" },
+        instructor: { label: "Instructor", pill: "" },
+        user:       { label: "Student",    pill: "is-ok" }
+      };
+
+      /* ---------- Load all data in parallel ---------- */
+      const [usersRaw, enrollments, certificates, courses, notifications, instructors] = await Promise.all([
+        fetchCollection("users"),
+        fetchCollection("enrollments"),
+        fetchCollection("certificates"),
+        fetchCollection("courses"),
+        fetchCollection("notifications"),
+        fetchCollection("instructors")
+      ]);
+
+      /* ---------- Backfill users with no Firestore profile yet ----------
+         Mirrors the same backfill admin.html performs, so counts stay
+         consistent between the two admin pages. */
+      const knownEmails = new Set(usersRaw.map((u) => (u.email || "").toLowerCase()));
+      const backfillMap = new Map();
+      [...enrollments, ...certificates].forEach((r) => {
+        const email = (r.email || "").trim().toLowerCase();
+        if (!email || knownEmails.has(email)) return;
+        if (!backfillMap.has(email) || !backfillMap.get(email)) backfillMap.set(email, r.name || "");
+      });
+      if (backfillMap.size) {
+        await Promise.all([...backfillMap.entries()].map(([email, name]) =>
+          setDoc(doc(db, "users", email), {
+            uid: null, name: name || "", email, role: "user",
+            createdAt: new Date().toISOString(), lastLoginAt: null, backfilled: true
+          }, { merge: true }).catch((err) => console.error(`Failed to backfill user ${email}`, err))
+        ));
+        backfillMap.forEach((name, email) => usersRaw.push({ id: email, email, name, role: "user" }));
+      }
+
+      /* ---------- Reconcile roles against the "instructors" collection ----------
+         Same reconciliation admin.html does: the "instructors" collection is
+         the source of truth for who actually has instructor access, so a
+         stale "instructor" role left on a "users" doc with no matching
+         instructor account gets corrected back to "user", and any real
+         instructor who hasn't logged in yet (so has no "users" doc) gets
+         included here too. This is what keeps Total Users / Total
+         Instructors identical between this page and the Dashboard. */
+      const instructorEmailSet = new Set(
+        instructors.map((i) => (i.email || "").toLowerCase()).filter(Boolean)
+      );
+      usersRaw.forEach((u) => {
+        const email = (u.email || "").toLowerCase();
+        if (instructorEmailSet.has(email)) {
+          u.role = "instructor";
+        } else if (u.role === "instructor") {
+          u.role = "user";
+        }
+      });
+      const knownEmailsForInstructors = new Set(usersRaw.map((u) => (u.email || "").toLowerCase()));
+      instructors.forEach((i) => {
+        const email = (i.email || "").toLowerCase();
+        if (!email || knownEmailsForInstructors.has(email)) return;
+        usersRaw.push({ id: email, email, name: i.name || "", role: "instructor", createdAt: i.createdAt || null, uid: i.uid || null });
+        knownEmailsForInstructors.add(email);
+      });
+
+      /* ---------- Build lookup maps ---------- */
+      const emailKey = (e) => (e || "").trim().toLowerCase();
+      const enrollmentsByEmail = new Map();
+      enrollments.forEach((e) => {
+        const k = emailKey(e.email);
+        if (!k) return;
+        if (!enrollmentsByEmail.has(k)) enrollmentsByEmail.set(k, []);
+        enrollmentsByEmail.get(k).push(e);
+      });
+      enrollmentsByEmail.forEach((list) => list.sort((a, b) => new Date(b.enrolledAt || 0) - new Date(a.enrolledAt || 0)));
+
+      const certificatesByEmail = new Map();
+      certificates.forEach((c) => {
+        const k = emailKey(c.email);
+        if (!k) return;
+        if (!certificatesByEmail.has(k)) certificatesByEmail.set(k, []);
+        certificatesByEmail.get(k).push(c);
+      });
+
+      /* ---------- Normalize each user row ----------
+         Every account that has a doc in the "users" collection — student,
+         instructor, or admin — belongs on this page. This used to filter
+         down to role === "user" only, which silently hid every instructor
+         and admin account from Manage Users even though the role filter
+         dropdown, ID prefixes (ADM/INS/STU), and role pill styling were
+         all already built to handle every role. */
+      const usersRawOnly = usersRaw.filter((u) => (u.email || "").trim());
+      const roleSort = { admin: 0, instructor: 1, user: 2 };
+      const sortedForIds = [...usersRawOnly].sort((a, b) => {
+        const roleDiff = (roleSort[a.role] ?? 3) - (roleSort[b.role] ?? 3);
+        if (roleDiff !== 0) return roleDiff;
+        return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+      });
+      const idCounters = { admin: 0, instructor: 0, user: 0 };
+      const idPrefix = { admin: "ADM", instructor: "INS", user: "STU" };
+      const idByEmail = new Map();
+      sortedForIds.forEach((u) => {
+        const role = roleSort[u.role] !== undefined ? u.role : "user";
+        idCounters[role] += 1;
+        idByEmail.set(emailKey(u.email), `${idPrefix[role]}-${String(idCounters[role]).padStart(4, "0")}`);
+      });
+
+      const users = usersRawOnly.map((u) => {
+        const k = emailKey(u.email);
+        const role = roleMeta[u.role] ? u.role : "user";
+        const myEnrollments = enrollmentsByEmail.get(k) || [];
+        const myCertificates = certificatesByEmail.get(k) || [];
+        const primaryCourse = myEnrollments[0]?.course || null;
+        const matchedCompletions = myEnrollments.filter((e) =>
+          myCertificates.some((c) => c.course === e.course)
+        ).length;
+        const progressPct = myEnrollments.length
+          ? Math.round((matchedCompletions / myEnrollments.length) * 100)
+          : null;
+        return {
+          docId: u.id,
+          uid: u.uid || null,
+          email: u.email || "",
+          name: u.name || (u.email ? u.email.split("@")[0] : "Unknown"),
+          role,
+          status: u.status === "inactive" ? "inactive" : "active",
+          createdAt: u.createdAt || null,
+          lastLoginAt: u.lastLoginAt || null,
+          idLabel: idByEmail.get(k) || "—",
+          course: primaryCourse,
+          courseCount: myEnrollments.length,
+          certCount: myCertificates.length,
+          progressPct
+        };
+      });
+
+      /* ---------- Stat cards ---------- */
+      const now = new Date();
+      const totalUsers = users.length;
+      const activeUsers = users.filter((u) => u.status === "active").length;
+      const inactiveUsers = users.filter((u) => u.status === "inactive").length;
+      const newThisMonth = users.filter((u) => {
+        if (!u.createdAt) return false;
+        const d = new Date(u.createdAt);
+        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      }).length;
+
+      document.getElementById("um-stat-total").textContent = totalUsers.toLocaleString("en-US");
+      document.getElementById("um-stat-active").textContent = activeUsers.toLocaleString("en-US");
+      document.getElementById("um-stat-inactive").textContent = inactiveUsers.toLocaleString("en-US");
+      document.getElementById("um-stat-new").textContent = newThisMonth.toLocaleString("en-US");
+      document.getElementById("um-stat-certs").textContent = certificates.length.toLocaleString("en-US");
+
+      /* ---------- Course filter options ---------- */
+      const courseFilterSelect = document.getElementById("um-filter-course");
+      const courseTitles = [...new Set(courses.map((c) => c.title).filter(Boolean))].sort();
+      courseTitles.forEach((title) => {
+        const opt = document.createElement("option");
+        opt.value = title;
+        opt.textContent = title;
+        courseFilterSelect.appendChild(opt);
+      });
+
+      /* ---------- Role distribution chart ---------- */
+      const roleCounts = { user: users.length };
+      const roleColors = { user: "#2B6CB0" };
+      const roleLabelText = { user: "Students" };
+
+      if (window.Chart) {
+        new Chart(document.getElementById("um-role-chart"), {
+          type: "doughnut",
+          data: {
+            labels: ["Students"],
+            datasets: [{
+              data: [roleCounts.user],
+              backgroundColor: [roleColors.user],
+              borderWidth: 0
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+      }
+
+      const roleLegend = document.getElementById("um-role-legend");
+      roleLegend.innerHTML = ["user"].map((r) => {
+        const pct = totalUsers ? Math.round((roleCounts[r] / totalUsers) * 100) : 0;
+        return `
+          <div class="um-legend-row">
+            <span class="um-legend-dot" style="background:${roleColors[r]};"></span>
+            <span class="um-legend-label">${roleLabelText[r]}</span>
+            <span class="um-legend-value">${roleCounts[r]} (${pct}%)</span>
+          </div>
+        `;
+      }).join("");
+
+      /* ---------- Recent User Activities ---------- */
+      const sortedNotifications = [...notifications].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      const bellCount = document.getElementById("adx-bell-count");
+      const unreadCount = sortedNotifications.filter((n) => !n.read).length;
+      if (bellCount) bellCount.textContent = unreadCount;
+
+      const activitiesList = document.getElementById("um-activities-list");
+      const recentActivities = sortedNotifications.slice(0, 6);
+      activitiesList.innerHTML = recentActivities.length
+        ? recentActivities.map((n) => `
+            <div class="adx-list-item">
+              <div>
+                <p class="adx-list-item-title">${notificationIcon(n.type)} ${escapeHtml(n.message)}</p>
+                <p class="adx-list-item-meta">${timeAgo(n.createdAt)}</p>
+              </div>
+            </div>
+          `).join("")
+        : `<p class="adx-empty">No recent activity yet.</p>`;
+
+      /* ---------- System status ---------- */
+      document.getElementById("um-status-records").textContent = totalUsers.toLocaleString("en-US");
+      document.getElementById("um-status-synced").textContent = new Date().toLocaleTimeString("en-US");
+
+      /* =========================================================
+         Table: filtering, sorting, pagination, selection
+      ========================================================= */
+      const tableBody = document.getElementById("um-table-body");
+      const paginationSummary = document.getElementById("um-pagination-summary");
+      const pageBtnsWrap = document.getElementById("um-page-btns");
+      const rowsPerPageSelect = document.getElementById("um-rows-per-page");
+      const selectAllCheckbox = document.getElementById("um-select-all");
+
+      const searchInput = document.getElementById("um-search");
+      const roleFilter = document.getElementById("um-filter-role");
+      const statusFilter = document.getElementById("um-filter-status");
+      const courseFilter = document.getElementById("um-filter-course");
+
+      let currentPage = 1;
+      let rowsPerPage = Number(rowsPerPageSelect.value) || 10;
+      let selectedEmails = new Set();
+      let filteredUsers = [...users];
+
+      const applyFilters = () => {
+        const q = searchInput.value.trim().toLowerCase();
+        const role = roleFilter.value;
+        const status = statusFilter.value;
+        const course = courseFilter.value;
+
+        filteredUsers = users.filter((u) => {
+          if (role !== "all" && u.role !== role) return false;
+          if (status !== "all" && u.status !== status) return false;
+          if (course !== "all" && u.course !== course) return false;
+          if (q) {
+            const haystack = `${u.name} ${u.email} ${u.idLabel}`.toLowerCase();
+            if (!haystack.includes(q)) return false;
+          }
+          // Also ensure local catalog defaults (BHF_COURSES / getCourseCatalog) are included
+          try {
+            const localCatalog = (typeof window.getCourseCatalog === 'function') ? window.getCourseCatalog() : (window.BHF_COURSES || []);
+            (localCatalog || []).forEach((c) => {
+              const title = (c && (c.title || c.course || c.name)) ? String(c.title || c.course || c.name).trim() : null;
+              if (!title || seen.has(title)) return;
+              const requiresPayment = hasGlobalChecker ? window.courseRequiresPayment(c) : localCourseRequiresPayment(c);
+              if (!requiresPayment && !showAll) return;
+              const opt = document.createElement('option');
+              opt.value = title;
+              opt.textContent = title;
+              activateSelect.appendChild(opt);
+              seen.add(title);
+            });
+          } catch (e) {
+            console.debug('manage-users: failed to include local catalog', e);
+          }
+          return true;
+        });
+        currentPage = 1;
+        renderTable();
+      };
+
+      const progressBarHtml = (pct) => {
+        if (pct === null) return `<span class="adx-empty" style="padding:0;">—</span>`;
+        return `
+          <div>
+            <div class="um-progress-track"><div class="um-progress-fill" style="width:${pct}%;"></div></div>
+            <div class="um-progress-label">${pct}%</div>
+          </div>
+        `;
+      };
+
+      const rowHtml = (u) => {
+        const rm = roleMeta[u.role];
+        const statusPillClass = u.status === "active" ? "is-ok" : "is-bad";
+        return `
+          <tr data-email="${escapeHtml(u.email)}">
+            <td><input type="checkbox" class="um-checkbox um-row-check" data-email="${escapeHtml(u.email)}" ${selectedEmails.has(u.email) ? "checked" : ""} /></td>
+            <td>${escapeHtml(u.idLabel)}</td>
+            <td>
+              <div class="um-user-cell">
+                <div class="um-avatar">${initials(u.name)}</div>
+                <span class="um-user-name">${escapeHtml(u.name)}</span>
+              </div>
+            </td>
+            <td>${escapeHtml(u.email)}</td>
+            <td><span class="adx-status-pill ${rm.pill}">${rm.label}</span></td>
+            <td>${escapeHtml(u.course || "—")}</td>
+            <td>${progressBarHtml(u.progressPct)}</td>
+            <td>${u.certCount}</td>
+            <td><span class="adx-status-pill ${statusPillClass}">${u.status === "active" ? "Active" : "Inactive"}</span></td>
+            <td>${fmtDate(u.createdAt)}</td>
+            <td>${fmtDateTime(u.lastLoginAt)}</td>
+            <td>
+              <div class="um-actions-cell">
+                  <button class="um-icon-btn um-view-btn" data-email="${escapeHtml(u.email)}" type="button" title="View">👁️</button>
+                <button class="um-icon-btn um-edit-btn" data-email="${escapeHtml(u.email)}" type="button" title="Edit">✏️</button>
+                <button class="um-icon-btn um-reset-btn" data-email="${escapeHtml(u.email)}" type="button" title="Send password reset email">🔑</button>
+                <button class="um-icon-btn is-danger um-delete-btn" data-email="${escapeHtml(u.email)}" type="button" title="Delete">🗑️</button>
+                  <button class="um-icon-btn um-activate-course-btn" data-email="${escapeHtml(u.email)}" type="button" title="Activate course (FTF)">💰</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      };
+
+      const updateBulkBar = () => {
+        const anySelected = selectedEmails.size > 0;
+        document.getElementById("um-bulk-activate").disabled = !anySelected;
+        document.getElementById("um-bulk-deactivate").disabled = !anySelected;
+        document.getElementById("um-bulk-delete").disabled = !anySelected;
+      };
+
+      const renderPagination = () => {
+        const totalRows = filteredUsers.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = totalRows === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+        const end = Math.min(currentPage * rowsPerPage, totalRows);
+        paginationSummary.textContent = `Showing ${start} to ${end} of ${totalRows} user${totalRows === 1 ? "" : "s"}`;
+
+        let btns = "";
+        btns += `<button class="um-page-btn" data-page="prev" ${currentPage === 1 ? "disabled" : ""}>‹</button>`;
+        const windowSize = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(windowSize / 2));
+        let endPage = Math.min(totalPages, startPage + windowSize - 1);
+        startPage = Math.max(1, endPage - windowSize + 1);
+        if (startPage > 1) btns += `<button class="um-page-btn" data-page="1">1</button>${startPage > 2 ? `<span>…</span>` : ""}`;
+        for (let p = startPage; p <= endPage; p++) {
+          btns += `<button class="um-page-btn ${p === currentPage ? "is-active" : ""}" data-page="${p}">${p}</button>`;
+        }
+        if (endPage < totalPages) btns += `${endPage < totalPages - 1 ? `<span>…</span>` : ""}<button class="um-page-btn" data-page="${totalPages}">${totalPages}</button>`;
+        btns += `<button class="um-page-btn" data-page="next" ${currentPage === totalPages ? "disabled" : ""}>›</button>`;
+        pageBtnsWrap.innerHTML = btns;
+
+        pageBtnsWrap.querySelectorAll("[data-page]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const val = btn.getAttribute("data-page");
+            if (val === "prev") currentPage = Math.max(1, currentPage - 1);
+            else if (val === "next") currentPage = Math.min(totalPages, currentPage + 1);
+            else currentPage = Number(val);
+            renderTable();
+          });
+        });
+      };
+
+      const renderTable = () => {
+        const totalRows = filteredUsers.length;
+        const totalPages = Math.max(1, Math.ceil(totalRows / rowsPerPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+        const startIdx = (currentPage - 1) * rowsPerPage;
+        const pageRows = filteredUsers.slice(startIdx, startIdx + rowsPerPage);
+
+        tableBody.innerHTML = pageRows.length
+          ? pageRows.map(rowHtml).join("")
+          : `<tr><td colspan="12"><p class="adx-empty">No users match your filters.</p></td></tr>`;
+
+        const pageEmails = pageRows.map((u) => u.email);
+        selectAllCheckbox.checked = pageEmails.length > 0 && pageEmails.every((e) => selectedEmails.has(e));
+
+        tableBody.querySelectorAll(".um-row-check").forEach((cb) => {
+          cb.addEventListener("change", () => {
+            const email = cb.getAttribute("data-email");
+            if (cb.checked) selectedEmails.add(email); else selectedEmails.delete(email);
+            selectAllCheckbox.checked = pageEmails.every((e) => selectedEmails.has(e));
+            updateBulkBar();
+          });
+        });
+
+        tableBody.querySelectorAll(".um-view-btn").forEach((btn) => btn.addEventListener("click", () => openViewModal(btn.getAttribute("data-email"))));
+        tableBody.querySelectorAll(".um-edit-btn").forEach((btn) => btn.addEventListener("click", () => openEditModal(btn.getAttribute("data-email"))));
+        tableBody.querySelectorAll(".um-reset-btn").forEach((btn) => btn.addEventListener("click", () => resetUserPassword(btn.getAttribute("data-email"))));
+        tableBody.querySelectorAll(".um-activate-course-btn").forEach((btn) => btn.addEventListener("click", () => openActivateCourseModal(btn.getAttribute("data-email"))));
+        tableBody.querySelectorAll(".um-delete-btn").forEach((btn) => btn.addEventListener("click", () => deleteUsers([btn.getAttribute("data-email")] )));
+
+        renderPagination();
+        updateBulkBar();
+      };
+
+      selectAllCheckbox.addEventListener("change", () => {
+        const startIdx = (currentPage - 1) * rowsPerPage;
+        const pageEmails = filteredUsers.slice(startIdx, startIdx + rowsPerPage).map((u) => u.email);
+        if (selectAllCheckbox.checked) pageEmails.forEach((e) => selectedEmails.add(e));
+        else pageEmails.forEach((e) => selectedEmails.delete(e));
+        renderTable();
+      });
+
+      rowsPerPageSelect.addEventListener("change", () => {
+        rowsPerPage = Number(rowsPerPageSelect.value) || 10;
+        currentPage = 1;
+        renderTable();
+      });
+
+      searchInput.addEventListener("input", () => applyFilters());
+      roleFilter.addEventListener("change", () => applyFilters());
+      statusFilter.addEventListener("change", () => applyFilters());
+      courseFilter.addEventListener("change", () => applyFilters());
+      document.getElementById("um-search-btn").addEventListener("click", () => applyFilters());
+      document.getElementById("um-reset-btn").addEventListener("click", () => {
+        searchInput.value = "";
+        roleFilter.value = "all";
+        statusFilter.value = "all";
+        courseFilter.value = "all";
+        applyFilters();
+      });
+
+      /* =========================================================
+         Row-level user find/update helpers
+      ========================================================= */
+      const findUser = (email) => users.find((u) => u.email === email);
+
+      // Sends Firebase's standard "reset your password" email — the same
+      // flow forgot-password.html uses for the "email me a reset link"
+      // option. This does NOT set or reveal a password itself; the user
+      // still has to open the email and follow the link, so this can't be
+      // used to expose or change someone's password directly.
+      const resetUserPassword = async (email) => {
+        const u = findUser(email);
+        if (!u || !u.email) { alert("This user has no email on file."); return; }
+        const confirmed = window.confirm(`Send a password reset email to ${u.name || "this user"} (${u.email})?`);
+        if (!confirmed) return;
+        try {
+          await sendPasswordResetEmail(auth, u.email);
+          if (typeof window.showToast === "function") {
+            window.showToast(`Password reset email sent to ${u.email}.`, "success");
+          } else {
+            alert(`Password reset email sent to ${u.email}.`);
+          }
+        } catch (error) {
+          console.error("Failed to send password reset email", error);
+          alert("Could not send the password reset email: " + error.message);
+        }
+      };
+
+      const setUserStatus = async (email, status) => {
+        const u = findUser(email);
+        if (!u) return;
+        try {
+          await setDoc(doc(db, "users", email.toLowerCase()), { status }, { merge: true });
+          u.status = status;
+        } catch (error) {
+          console.error("Failed to update user status", error);
+          alert("Couldn't update this user's status. Please try again.");
+        }
+      };
+
+      const deleteUsers = async (emails) => {
+        const targets = emails.map(findUser).filter(Boolean);
+        if (!targets.length) return;
+        const label = targets.length === 1 ? targets[0].name : `${targets.length} users`;
+        const confirmed = window.confirm(
+          `Permanently delete ${label}? This removes their profile, enrollments, and ` +
+          `certificates from the database. This cannot be undone. Note: their sign-in ` +
+          `account itself isn't removed (that requires a separate admin console action), ` +
+          `so they could still log in and a fresh profile would be created for them.`
+        );
+        if (!confirmed) return;
+
+        for (const u of targets) {
+          try {
+            const k = emailKey(u.email);
+
+            // Deleting only the "users" doc used to leave the account
+            // reappearing after a refresh: the backfill step above (which
+            // rebuilds missing user profiles from any enrollments/
+            // certificates that still reference the email) would simply
+            // recreate it. Deleting those related records too is what
+            // makes the removal actually stick.
+            const relatedEnrollments = enrollmentsByEmail.get(k) || [];
+            const relatedCertificates = certificatesByEmail.get(k) || [];
+
+            await Promise.all([
+              deleteDoc(doc(db, "users", u.email.toLowerCase())),
+              ...relatedEnrollments.map((e) => deleteDoc(doc(db, "enrollments", e.id)).catch(() => {})),
+              ...relatedCertificates.map((c) => deleteDoc(doc(db, "certificates", c.id)).catch(() => {}))
+            ]);
+            if (u.role === "instructor" && u.uid) {
+              await deleteDoc(doc(db, "instructors", u.uid)).catch(() => {});
+            }
+
+            // Keep in-memory state consistent with what was just deleted,
+            // so counts/columns don't reference stale enrollment/certificate
+            // data for the rest of this session.
+            relatedEnrollments.forEach((e) => {
+              const i = enrollments.findIndex((x) => x.id === e.id);
+              if (i !== -1) enrollments.splice(i, 1);
+            });
+            relatedCertificates.forEach((c) => {
+              const i = certificates.findIndex((x) => x.id === c.id);
+              if (i !== -1) certificates.splice(i, 1);
+            });
+            enrollmentsByEmail.delete(k);
+            certificatesByEmail.delete(k);
+
+            const idx = users.findIndex((x) => x.email === u.email);
+            if (idx !== -1) users.splice(idx, 1);
+            selectedEmails.delete(u.email);
+          } catch (error) {
+            console.error(`Failed to delete user ${u.email}`, error);
+            alert(`Couldn't delete ${u.name}. Please try again.`);
+          }
+        }
+        document.getElementById("um-stat-total").textContent = users.length.toLocaleString("en-US");
+        applyFilters();
+      };
+
+      /* ---------- Bulk actions ---------- */
+      document.getElementById("um-bulk-activate").addEventListener("click", async () => {
+        await Promise.all([...selectedEmails].map((email) => setUserStatus(email, "active")));
+        renderTable();
+      });
+      document.getElementById("um-bulk-deactivate").addEventListener("click", async () => {
+        await Promise.all([...selectedEmails].map((email) => setUserStatus(email, "inactive")));
+        renderTable();
+      });
+      document.getElementById("um-bulk-delete").addEventListener("click", () => deleteUsers([...selectedEmails]));
+
+      /* ---------- Export CSV ---------- */
+      document.getElementById("um-export-csv").addEventListener("click", () => {
+        const headers = ["ID", "Name", "Email", "Role", "Course", "Progress", "Certificates", "Status", "Registered", "Last Login"];
+        const csvRows = [headers.join(",")];
+        filteredUsers.forEach((u) => {
+          const row = [
+            u.idLabel, u.name, u.email, roleMeta[u.role].label, u.course || "—",
+            u.progressPct === null ? "—" : `${u.progressPct}%`, u.certCount,
+            u.status === "active" ? "Active" : "Inactive", fmtDate(u.createdAt), fmtDateTime(u.lastLoginAt)
+          ].map((val) => `"${String(val).replace(/"/g, '""')}"`);
+          csvRows.push(row.join(","));
+        });
+        const blob = new Blob([csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `bhf-users-${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      /* ---------- Export PDF (browser print → Save as PDF) ---------- */
+      document.getElementById("um-export-pdf").addEventListener("click", () => window.print());
+
+      /* =========================================================
+         Modals
+      ========================================================= */
+      const addModal = document.getElementById("um-add-modal");
+      const viewModal = document.getElementById("um-view-modal");
+      const editModal = document.getElementById("um-edit-modal");
+      const activateModal = document.getElementById("um-activate-course-modal");
+
+      const openModal = (modal) => modal.classList.remove("hidden");
+      const closeModal = (modal) => modal.classList.add("hidden");
+
+      document.querySelectorAll("[data-um-close]").forEach((btn) => {
+        btn.addEventListener("click", () => { closeModal(addModal); closeModal(viewModal); closeModal(editModal); closeModal(activateModal); });
+      });
+      [addModal, viewModal, editModal, activateModal].forEach((modal) => {
+        if (!modal) return;
+        modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(modal); });
+      });
+
+      /* ---------- Add New User ---------- */
+      document.getElementById("um-add-btn").addEventListener("click", () => {
+        document.getElementById("um-add-form").reset();
+        document.getElementById("um-add-form-note").textContent = "";
+        openModal(addModal);
+      });
+
+      document.getElementById("um-add-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const note = document.getElementById("um-add-form-note");
+        const name = document.getElementById("um-add-name").value.trim();
+        const email = document.getElementById("um-add-email").value.trim().toLowerCase();
+        const role = document.getElementById("um-add-role").value;
+        if (!name || !email) { note.textContent = "Name and email are required."; return; }
+        if (users.some((u) => u.email.toLowerCase() === email)) {
+          note.textContent = "A user with this email already exists.";
+          return;
+        }
+        const submitBtn = document.getElementById("um-add-submit");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Saving…";
+        try {
+          await setDoc(doc(db, "users", email), {
+            uid: null, name, email, role, status: "active",
+            createdAt: new Date().toISOString(), lastLoginAt: null
+          }, { merge: true });
+          users.push({
+            docId: email, uid: null, email, name, role,
+            status: "active", createdAt: new Date().toISOString(), lastLoginAt: null,
+            idLabel: `${idPrefix[roleMeta[role] ? role : "user"]}-NEW`,
+            course: null, courseCount: 0, certCount: 0, progressPct: null
+          });
+          document.getElementById("um-stat-total").textContent = users.length.toLocaleString("en-US");
+          document.getElementById("um-stat-active").textContent = users.filter((u) => u.status === "active").length.toLocaleString("en-US");
+          closeModal(addModal);
+          applyFilters();
+        } catch (error) {
+          console.error("Failed to add user", error);
+          note.textContent = "Something went wrong saving this user. Please try again.";
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Save User";
+        }
+      });
+
+      /* ---------- View User ---------- */
+      const openViewModal = (email) => {
+        const u = findUser(email);
+        if (!u) return;
+        const rm = roleMeta[u.role];
+        const myCertificates = certificatesByEmail.get(emailKey(u.email)) || [];
+        document.getElementById("um-view-content").innerHTML = `
+          <div class="um-view-row"><span>ID</span><span>${escapeHtml(u.idLabel)}</span></div>
+          <div class="um-view-row"><span>Name</span><span>${escapeHtml(u.name)}</span></div>
+          <div class="um-view-row"><span>Email</span><span>${escapeHtml(u.email)}</span></div>
+          <div class="um-view-row"><span>Role</span><span>${rm.label}</span></div>
+          <div class="um-view-row"><span>Status</span><span>${u.status === "active" ? "Active" : "Inactive"}</span></div>
+          <div class="um-view-row"><span>Registered</span><span>${fmtDate(u.createdAt)}</span></div>
+          <div class="um-view-row"><span>Last Login</span><span>${fmtDateTime(u.lastLoginAt)}</span></div>
+          <div class="um-view-row"><span>Certificates</span><span>${myCertificates.length ? myCertificates.map((c) => escapeHtml(c.course)).join(", ") : "—"}</span></div>
+        `;
+        openModal(viewModal);
+      };
+
+      /* ---------- Edit User ---------- */
+      const openEditModal = (email) => {
+        const u = findUser(email);
+        if (!u) return;
+        document.getElementById("um-edit-id").value = u.email;
+        document.getElementById("um-edit-name").value = u.name;
+        document.getElementById("um-edit-email").value = u.email;
+        document.getElementById("um-edit-status").value = u.status;
+        document.getElementById("um-edit-form-note").textContent = "";
+        openModal(editModal);
+      };
+
+      document.getElementById("um-edit-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const note = document.getElementById("um-edit-form-note");
+        const email = document.getElementById("um-edit-id").value;
+        const name = document.getElementById("um-edit-name").value.trim();
+        const status = document.getElementById("um-edit-status").value;
+        if (!name) { note.textContent = "Name is required."; return; }
+        const submitBtn = document.getElementById("um-edit-submit");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Saving…";
+        try {
+          await setDoc(doc(db, "users", email.toLowerCase()), { name, status }, { merge: true });
+          const u = findUser(email);
+          if (u) { u.name = name; u.status = status; }
+          document.getElementById("um-stat-active").textContent = users.filter((x) => x.status === "active").length.toLocaleString("en-US");
+          document.getElementById("um-stat-inactive").textContent = users.filter((x) => x.status === "inactive").length.toLocaleString("en-US");
+          closeModal(editModal);
+          renderTable();
+        } catch (error) {
+          console.error("Failed to save user changes", error);
+          note.textContent = "Something went wrong saving your changes. Please try again.";
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Save Changes";
+        }
+      });
+
+      /* ---------- Initial render ---------- */
+      renderTable();
+          /* ---------- Walk-in Registration Modal ---------- */
+      const walkinModal = document.getElementById("walk-in-modal");
+      const openWalkinBtn = document.getElementById("open-walkin-modal");
+      const closeWalkinBtn = document.getElementById("close-walkin-modal");
+      const walkinForm = document.getElementById("walk-in-form");
+      const walkinLoading = document.getElementById("walk-in-loading");
+      const walkinSuccess = document.getElementById("walk-in-success");
+      const walkinError = document.getElementById("walk-in-error");
+
+      const walkinDateInput = document.getElementById("walk-in-date");
+      if (walkinDateInput) {
+        walkinDateInput.valueAsDate = new Date();
+      }
+
+      // Populate course dropdown (fetched independently so this modal
+      // works the same on every admin page, not just the dashboard)
+      const walkinCourseSelect = document.getElementById("walk-in-course");
+      if (walkinCourseSelect) {
+        getDocs(collection(db, "courses"))
+          .then((snapshot) => {
+            snapshot.docs.forEach((docSnap) => {
+              const c = docSnap.data();
+              const option = document.createElement("option");
+              option.value = c.title || "Untitled course";
+              option.textContent = c.title || "Untitled course";
+              walkinCourseSelect.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Failed to load courses for walk-in form", error);
+          });
+      }
+
+      const openWalkinModal = () => {
+        walkinModal.classList.add("is-open");
+        walkinForm.style.display = "block";
+        walkinLoading.classList.remove("is-active");
+        walkinSuccess.style.display = "none";
+        walkinError.style.display = "none";
+        walkinForm.reset();
+        if (walkinDateInput) walkinDateInput.valueAsDate = new Date();
+      };
+
+      const closeWalkinModal = () => {
+        walkinModal.classList.remove("is-open");
+      };
+
+      openWalkinBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openWalkinModal();
+      });
+      closeWalkinBtn?.addEventListener("click", closeWalkinModal);
+      document.getElementById("close-walkin-success")?.addEventListener("click", closeWalkinModal);
+      document.getElementById("retry-walkin")?.addEventListener("click", () => {
+        walkinForm.style.display = "block";
+        walkinError.style.display = "none";
+        walkinLoading.classList.remove("is-active");
+      });
+
+      walkinModal?.addEventListener("click", (e) => {
+        if (e.target === walkinModal) closeWalkinModal();
+      });
+
+      walkinForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const firstName = document.getElementById("walk-in-first-name")?.value.trim();
+        const lastName = document.getElementById("walk-in-last-name")?.value.trim();
+        const email = document.getElementById("walk-in-email")?.value.trim();
+        const phone = document.getElementById("walk-in-phone")?.value.trim() || "";
+        const enrollmentCourse = document.getElementById("walk-in-course")?.value || "";
+        const notes = document.getElementById("walk-in-notes")?.value.trim() || "";
+        const sendEmail = document.getElementById("walk-in-send-email")?.checked ?? true;
+
+        if (!firstName || !lastName || !email) {
+          alert("Please fill in first name, last name, and email.");
+          return;
+        }
+
+        walkinForm.style.display = "none";
+        walkinLoading.classList.add("is-active");
+
+        try {
+          const result = await window.createWalkinStudent({
+            firstName,
+            lastName,
+            email,
+            phone,
+            enrollmentCourse,
+            notes,
+            sendEmail
+          });
+
+          walkinLoading.classList.remove("is-active");
+          walkinSuccess.style.display = "block";
+
+          const successMsg = `
+            <strong>✓ ${result.fullName}</strong> registered successfully!<br/>
+            Email: ${result.email}<br/>
+            Certificate ID: ${result.certificateCode}<br/>
+            ${result.enrollmentCourse ? `Course: ${result.enrollmentCourse}` : ""}
+          `;
+          document.getElementById("walk-in-success-message").innerHTML = successMsg;
+
+          console.log("Walk-in Student Account Created:", result);
+          window.showToast?.(`Walk-in student ${result.fullName} registered successfully!`, "success");
+        } catch (error) {
+          console.error("Walk-in registration failed:", error);
+          walkinLoading.classList.remove("is-active");
+          walkinError.style.display = "block";
+          document.getElementById("walk-in-error-message").textContent = error.message || "Registration failed. Please try again.";
+          window.showToast?.(error.message || "Registration failed", "error");
+        }
+      });
+
+      /* ---------- Manual course activation (FTF / cash) ---------- */
+      const activateForm = document.getElementById("um-activate-course-form");
+      const activateSelect = document.getElementById("um-activate-course-select");
+      const activateEmailInput = document.getElementById("um-activate-email");
+      const activateNotesInput = document.getElementById("um-activate-notes");
+
+      const openActivateCourseModal = async (email) => {
+        const u = findUser(email);
+        if (!u) { alert("User not found"); return; }
+        activateEmailInput.value = u.email;
+        // populate courses fresh from Firestore to include all categories
+        activateSelect.innerHTML = '<option value="">-- Select a course --</option>';
+        try {
+          const snap = await getDocs(collection(db, "courses"));
+          const seen = new Set();
+          // Prefer the site-wide helper if available; otherwise fall back to heuristics
+          const hasGlobalChecker = typeof window.courseRequiresPayment === 'function';
+          const localCourseRequiresPayment = (c) => {
+            if (!c) return false;
+            // Check numeric-looking price fields
+            const priceFields = [c.price, c.fee, c.cost, c.paymentAmount, c.amount];
+            for (const p of priceFields) {
+              if (p === undefined || p === null) continue;
+              const num = Number(String(p).replace(/[^0-9.\-]/g, ''));
+              if (!Number.isNaN(num) && num > 0) return true;
+            }
+            // Explicit flags
+            if (c.requiresPayment === true || c.requires_payment === true) return true;
+            if (c.paid === true || c.isPaid === true || c.is_paid === true) return true;
+            if (typeof c.free === 'boolean' && c.free === false) return true;
+            // Titles mentioning 'free' likely don't require payment
+            if ((c.title || '').toLowerCase().includes('free')) return false;
+            return false;
+          };
+
+          console.debug('manage-users: course docs fetched:', snap.size);
+          const showAllCheckbox = document.getElementById('um-activate-show-all');
+          const showAll = showAllCheckbox?.checked === true;
+          snap.docs.forEach((docSnap) => {
+            const c = docSnap.data();
+            const rawTitle = c?.title || c?.course || c?.name || c?.courseTitle || docSnap.id;
+            const title = rawTitle ? String(rawTitle).trim() : null;
+            if (!title || seen.has(title)) {
+              return;
+            }
+            const requiresPayment = hasGlobalChecker ? window.courseRequiresPayment(c) : localCourseRequiresPayment(c);
+            if (!requiresPayment && !showAll) return; // skip free/non-paid courses unless user asked to show all
+            seen.add(title);
+            const option = document.createElement('option');
+            option.value = title;
+            option.textContent = title;
+            activateSelect.appendChild(option);
+          });
+          // fallback: if nothing (other than placeholder) was added and there are cached titles, try cached
+          if (activateSelect.options.length <= 1 && Array.isArray(courseTitles) && courseTitles.length) {
+            (courseTitles || []).forEach((title) => {
+              const saved = (typeof window.findSavedCourse === 'function') ? window.findSavedCourse(title) : null;
+              const maybePaid = saved ? (
+                (typeof window.courseRequiresPayment === 'function')
+                  ? window.courseRequiresPayment(saved)
+                  : (
+                    (saved.price && Number(String(saved.price).replace(/[^0-9.\-]/g, '')) > 0) ||
+                    saved.requiresPayment || saved.requires_payment || saved.isPaid
+                  )
+              ) : false;
+              if (!saved && !maybePaid && !showAll) return;
+              if (saved && saved.title && (saved.title || '').toLowerCase().includes('free') && !showAll) return;
+              const opt = document.createElement('option');
+              opt.value = title;
+              opt.textContent = title;
+              activateSelect.appendChild(opt);
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load courses for activation modal', err);
+          // fallback to previously fetched list if available (filter for paid-like titles)
+          (courseTitles || []).forEach((title) => {
+            // try to find the saved course and apply the same heuristics
+            const saved = (typeof window.findSavedCourse === 'function') ? window.findSavedCourse(title) : null;
+            const maybePaid = saved ? (
+              (typeof window.courseRequiresPayment === 'function')
+                ? window.courseRequiresPayment(saved)
+                : (
+                  (saved.price && Number(String(saved.price).replace(/[^0-9.\-]/g, '')) > 0) ||
+                  saved.requiresPayment || saved.requires_payment || saved.isPaid
+                )
+            ) : false;
+            if (!saved && !maybePaid) return;
+            if (saved && saved.title && (saved.title || '').toLowerCase().includes('free')) return;
+            const opt = document.createElement('option');
+            opt.value = title;
+            opt.textContent = title;
+            activateSelect.appendChild(opt);
+          });
+        }
+        activateNotesInput.value = "";
+        openModal(activateModal);
+      };
+
+      activateForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = (activateEmailInput.value || "").trim();
+        const course = (activateSelect.value || "").trim();
+        const notes = (activateNotesInput.value || "").trim();
+        if (!email) { alert("Missing user email."); return; }
+        if (!course) { alert("Please select a course to activate."); return; }
+        const u = findUser(email);
+        if (!u) { alert("User not found."); return; }
+        if (!window.confirm(`Activate course "${course}" for ${u.name} (${u.email})?`)) return;
+        const submitBtn = document.getElementById("um-activate-submit");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Activating…";
+        try {
+          const enrollmentId = `${encodeURIComponent(email)}-${Date.now()}`;
+          const entry = {
+            email,
+            name: u.name || "",
+            course,
+            enrolledAt: new Date().toISOString(),
+            method: 'cash',
+            activatedBy: auth?.currentUser?.email || null,
+            notes
+          };
+          await setDoc(doc(db, "enrollments", enrollmentId), entry);
+          enrollments.push(entry);
+          const k = emailKey(email);
+          if (!enrollmentsByEmail.has(k)) enrollmentsByEmail.set(k, []);
+          enrollmentsByEmail.get(k).unshift(entry);
+          const userObj = findUser(email);
+          if (userObj) {
+            userObj.course = course;
+            userObj.courseCount = (userObj.courseCount || 0) + 1;
+            userObj.progressPct = userObj.progressPct ?? null;
+          }
+          window.showToast?.(`Activated ${course} for ${u.name}`, "success");
+          closeModal(activateModal);
+          applyFilters();
+        } catch (err) {
+          console.error("Failed to create enrollment", err);
+          alert("Could not activate course: " + (err?.message || String(err)));
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Activate Course";
+        }
+      });
+
+      // Global error handlers to surface failures during page init
+      window.addEventListener('error', (ev) => {
+        console.error('Unhandled error on User Management page', ev.error || ev.message || ev);
+        const tb = document.getElementById('um-table-body');
+        if (tb) tb.innerHTML = `<tr><td colspan="12"><p class="adx-empty">Error loading User Management: ${ev.error?.message || ev.message || 'See console'}</p></td></tr>`;
+      });
+      window.addEventListener('unhandledrejection', (ev) => {
+        console.error('Unhandled promise rejection on User Management page', ev.reason || ev);
+        const tb = document.getElementById('um-table-body');
+        if (tb) tb.innerHTML = `<tr><td colspan="12"><p class="adx-empty">Error loading User Management: ${ev.reason?.message || String(ev.reason) || 'See console'}</p></td></tr>`;
+      });
+
+</script>
+  </body>
+</html>

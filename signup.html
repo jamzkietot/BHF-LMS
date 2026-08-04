@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Account | BHF Certification Academy</title>
+    <meta name="description" content="Register for a new BHF Certification Academy account.">
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="signup">
+    <div class="auth-shell">
+      <div class="auth-card">
+        <!-- Signup Form Side -->
+        <div class="auth-panel">
+          <a class="brand" href="index.html">
+            <img class="brand-logo" src="bhflogo.jpg" alt="BHF logo" />
+            <span>BHF Certification Academy</span>
+          </a>
+
+          <div>
+            <span class="page-title-eyebrow">✨ Join for free</span>
+            <h2>Create your account and start earning certificates.</h2>
+            <p>Join BHF to access courses, track progress, and earn official certifications.</p>
+
+            <form id="signup-form" class="auth-form">
+              <div class="form-group">
+                <label for="fullname">Full Name</label>
+                <input
+                  id="fullname"
+                  type="text"
+                  placeholder="Your full name"
+                  required
+                  autocomplete="name"
+                />
+              </div>
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  required
+                  autocomplete="email"
+                />
+              </div>
+              <div class="form-group">
+                <label for="password">Password</label>
+                <input
+                  id="password"
+                  type="password"
+                  placeholder="Create password (min 6 characters)"
+                  required
+                  minlength="6"
+                  autocomplete="new-password"
+                />
+              </div>
+              <div class="form-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  placeholder="••••••••"
+                  required
+                  autocomplete="new-password"
+                />
+              </div>
+              <button class="btn btn-primary" type="submit">Create Account</button>
+            </form>
+
+            <div id="signup-banner" class="auth-alert" aria-live="polite"></div>
+            <p id="signup-note" class="form-note" aria-live="polite"></p>
+            <p class="form-note"><a href="forgot-password.html">Forgot Password?</a></p>
+
+            <div class="auth-divider">
+              <span>Already have an account?</span>
+            </div>
+
+            <div class="auth-actions">
+              <a class="btn btn-secondary" href="login.html">Sign In Instead</a>
+            </div>
+
+            <div class="auth-links">
+              <a href="index.html">← Back to Home</a>
+              <a href="programs.html">Browse Programs</a>
+            </div>
+          </div>
+
+          <p class="form-note small">By creating an account, you agree to our terms of service and privacy policy.</p>
+        </div>
+
+        <!-- Hero / Info Side -->
+        <div class="auth-panel hero-panel">
+          <div>
+            <p class="eyebrow">🚀 Start Learning Today</p>
+            <h2>Build skills that <span class="headline-gradient">advance your career.</span></h2>
+            <p class="hero-subtitle">Get instant access to every training program, track your progress in real time, and earn recognized certificates as you complete each course.</p>
+
+            <div class="hero-features">
+              <div class="feature-item">
+                <span class="feature-icon">🎓</span>
+                <div>
+                  <h4>20+ Certifications</h4>
+                  <p>Hospitality, IT, accounting, business & more</p>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">⚡</span>
+                <div>
+                  <h4>Self-Paced Learning</h4>
+                  <p>Start, pause, and resume anytime — no fixed class times</p>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">📈</span>
+                <div>
+                  <h4>Track Your Progress</h4>
+                  <p>Real-time dashboards keep every module and exam in view</p>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">✅</span>
+                <div>
+                  <h4>Verified Credentials</h4>
+                  <p>Shareable certificates employers can verify online</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-footer">
+            <p>Trusted by professionals worldwide</p>
+            <div class="trust-stats">
+              <div><strong>20+</strong> Programs</div>
+              <div><strong>5</strong> Industries</div>
+              <div><strong>90%</strong> Passing Score</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>

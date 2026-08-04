@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz Management | BHF Certification Academy</title>
+    <meta name="description" content="Create, manage and monitor all quizzes and exams across courses on the BHF Certification Academy platform." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+    <style>
+      /* =========================================================
+         Admin Dashboard v2 — sidebar layout (shared with admin.html,
+         manage-users.html, manage-courses.html, manage-instructors.html).
+         Scoped with the "adx-" prefix; colors reuse the existing
+         CSS variables (--accent-dark, --accent, --cert-accent, etc).
+      ========================================================= */
+      * { box-sizing: border-box; }
+      html, body { max-width: 100%; overflow-x: hidden; }
+      body { background: var(--bg); font-family: 'Inter', sans-serif; }
+
+      .adx-shell { display: flex; min-height: 100vh; }
+
+      /* ---------- Sidebar ---------- */
+      .adx-sidebar {
+        width: 264px; flex-shrink: 0; background: var(--accent-dark); color: #fff;
+        display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
+        z-index: 40; transition: transform 0.25s ease;
+      }
+      .adx-sidebar.is-superadmin { background: linear-gradient(180deg, #0f1b2e 0%, #13233a 100%); }
+      .adx-sidebar.is-superadmin .adx-nav a.is-active { background: rgba(255,255,255,0.25); color: #fff; }
+      .adx-sidebar.is-superadmin .adx-nav a:hover { background: rgba(255,255,255,0.12); color: #fff; }
+      .adx-brand { display: flex; align-items: center; gap: 0.65rem; padding: 1.4rem 1.3rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .adx-brand img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; }
+      .adx-brand-text strong { display: block; font-size: 0.95rem; line-height: 1.2; }
+      .adx-brand-text span { font-size: 0.68rem; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; }
+      .adx-nav { flex: 1; overflow-y: auto; padding: 0.85rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+      .adx-nav a {
+        display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 12px;
+        color: rgba(255,255,255,0.78); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .adx-nav a .adx-nav-icon { font-size: 1.05rem; width: 22px; text-align: center; }
+      .adx-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+      .adx-nav a.is-active { background: var(--accent); color: var(--accent-dark); }
+      .adx-nav-sub { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.2rem 0 0.35rem 1.1rem; }
+      .adx-nav-sub a { padding: 0.5rem 0.75rem; font-size: 0.78rem; color: rgba(255,255,255,0.72); }
+      .adx-sidebar-footer { padding: 0.85rem 1.3rem 1.3rem; border-top: 1px solid rgba(255,255,255,0.08); }
+      .adx-sidebar-footer a { display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.75); text-decoration: none; font-weight: 600; font-size: 0.88rem; padding: 0.5rem 0; }
+      .adx-sidebar-footer a:hover { color: #fff; }
+
+      /* ---------- Main column ---------- */
+      .adx-main { margin-left: 264px; flex: 1; min-width: 0; max-width: 100%; }
+      .adx-topbar {
+        position: sticky; top: 0; z-index: 30; background: #fff; border-bottom: 1px solid rgba(15,34,72,0.08);
+        display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.75rem;
+      }
+      .adx-topbar-left { display: flex; align-items: center; gap: 0.85rem; }
+      .adx-hamburger { display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--accent-dark); }
+      .adx-topbar h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--accent-dark); margin: 0; }
+      .adx-topbar-right { display: flex; align-items: center; gap: 1.1rem; }
+      .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(15,34,72,0.12);
+        background: var(--surface-3);
+        color: var(--accent-dark);
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+      .adx-topbar-right .theme-toggle:hover {
+        background: var(--surface-2);
+        border-color: rgba(15,34,72,0.2);
+      }
+      .adx-bell {
+        position: relative; width: 40px; height: 40px; border-radius: 12px; background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.08); display: grid; place-items: center; font-size: 1.1rem; cursor: pointer;
+        text-decoration: none; color: var(--accent-dark);
+      }
+      .adx-bell-count {
+        position: absolute; top: -4px; right: -4px; background: #E4483F; color: #fff; font-size: 0.62rem; font-weight: 700;
+        min-width: 17px; height: 17px; border-radius: 999px; display: grid; place-items: center; padding: 0 3px;
+      }
+      .adx-profile { display: flex; align-items: center; gap: 0.65rem; }
+      .adx-profile-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--accent-dark); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; }
+      .adx-profile-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.1; }
+      .adx-profile-role { font-size: 0.72rem; color: var(--muted); }
+
+      .adx-content { padding: 1.5rem 1.75rem 4rem; max-width: 1600px; }
+
+      .adx-breadcrumb { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.6rem; font-weight: 600; }
+      .adx-breadcrumb a { color: var(--cert-accent-dark); text-decoration: none; }
+      .adx-breadcrumb a:hover { text-decoration: underline; }
+
+      .adx-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+      .adx-page-head h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.3rem; font-size: 1.7rem; }
+      .adx-page-head p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+      /* ---------- Stat cards ---------- */
+      .adx-stats-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+      @media (max-width: 1300px) { .adx-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+      @media (max-width: 700px) { .adx-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      @media (max-width: 460px) { .adx-stats-grid { grid-template-columns: 1fr; } }
+      .adx-stat-card {
+        background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.06);
+        padding: 1.15rem 1.2rem; display: flex; flex-direction: column; gap: 0.45rem; min-width: 0;
+      }
+      .adx-stat-top { display: flex; align-items: center; justify-content: space-between; }
+      .adx-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 1.1rem; }
+      .adx-stat-value { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--accent-dark); line-height: 1; }
+      .adx-stat-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+
+      /* ---------- Generic cards / grids ---------- */
+      .adx-layout { display: grid; grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+      @media (max-width: 1150px) { .adx-layout { grid-template-columns: minmax(0, 1fr); } }
+      .adx-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+      @media (max-width: 960px) { .adx-grid-2 { grid-template-columns: 1fr; } }
+      .adx-card {
+        background: #fff; border-radius: 22px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.05);
+        padding: 1.4rem 1.4rem 1.5rem; min-width: 0;
+      }
+      .adx-card h3 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.2rem; font-size: 1.1rem; }
+      .adx-card-sub { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem; }
+      .adx-card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+      .adx-card-head a { font-size: 0.8rem; font-weight: 700; color: var(--cert-accent-dark); text-decoration: none; }
+      .adx-card-head a:hover { text-decoration: underline; }
+      .adx-chart-wrap { position: relative; height: 190px; }
+      .adx-empty { color: var(--muted); font-size: 0.88rem; padding: 0.6rem 0; }
+
+      .adx-list { display: flex; flex-direction: column; gap: 0.55rem; }
+      .adx-list-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; padding: 0.7rem 0.85rem; border-radius: 14px; background: var(--surface-3); border: 1px solid rgba(15,34,72,0.05); }
+      .adx-list-item-title { font-weight: 700; color: var(--text); margin: 0 0 0.1rem; font-size: 0.86rem; }
+      .adx-list-item-meta { font-size: 0.75rem; color: var(--muted); margin: 0; }
+
+      /* ---------- Legend ---------- */
+      .qm-legend { display: flex; flex-direction: column; gap: 0.6rem; margin-top: 0.9rem; }
+      .qm-legend-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; }
+      .qm-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+      .qm-legend-label { flex: 1; color: var(--text); font-weight: 600; }
+      .qm-legend-value { color: var(--muted); font-weight: 700; }
+
+      /* ---------- Type breakdown bars ---------- */
+      .qm-type-row { margin-bottom: 0.85rem; }
+      .qm-type-row:last-child { margin-bottom: 0; }
+      .qm-type-top { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.3rem; }
+      .qm-type-top span:first-child { font-weight: 700; color: var(--text); }
+      .qm-type-top span:last-child { color: var(--muted); font-weight: 600; }
+      .qm-type-track { width: 100%; height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+      .qm-type-fill { height: 100%; border-radius: 999px; }
+
+      /* ---------- Tables ---------- */
+      .adx-table-wrap { overflow-x: auto; }
+      .adx-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      .adx-table th { text-align: left; color: var(--muted); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.6rem; border-bottom: 2px solid rgba(15,34,72,0.08); white-space: nowrap; }
+      .adx-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid rgba(15,34,72,0.06); color: var(--text); vertical-align: middle; }
+      .adx-table tr:last-child td { border-bottom: none; }
+      .adx-status-pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(43,108,176,0.1); color: var(--cert-accent-dark); font-size: 0.72rem; font-weight: 700; text-transform: capitalize; }
+      .adx-status-pill.is-ok { background: rgba(43,168,74,0.14); color: #2BA84A; }
+      .adx-status-pill.is-bad { background: rgba(228,72,63,0.12); color: #b33a3a; }
+      .adx-status-pill.is-muted { background: rgba(15,34,72,0.08); color: var(--muted); }
+      .adx-status-pill.is-progress { background: rgba(255,159,10,0.15); color: #b3720a; }
+      .adx-status-pill.is-purple { background: rgba(124,77,255,0.14); color: #7C4DFF; }
+
+      /* ---------- Mobile sidebar toggle ---------- */
+      .adx-backdrop { display: none; position: fixed; inset: 0; background: rgba(6,14,32,0.45); z-index: 35; }
+      @media (max-width: 900px) {
+        .adx-hamburger { display: inline-flex; }
+        .adx-sidebar { transform: translateX(-100%); }
+        .adx-main { margin-left: 0; }
+        .adx-shell.adx-sidebar-open .adx-sidebar { transform: translateX(0); }
+        .adx-shell.adx-sidebar-open .adx-backdrop { display: block; }
+      }
+
+      /* =========================================================
+         Quiz Management — page-specific ("qm-" prefix)
+      ========================================================= */
+      .qm-toolbar-card { padding: 1.1rem 1.2rem; margin-bottom: 1.1rem; }
+      .qm-toolbar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.7rem; align-items: end; }
+      .qm-toolbar-grid .qm-search-wrap { min-width: 200px; }
+      .qm-field label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em; }
+      .qm-field input[type="text"], .qm-field select {
+        width: 100%; padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 10px;
+        background: var(--surface-3); color: var(--text); font: inherit; font-size: 0.86rem;
+      }
+      .qm-field input[type="text"]:focus, .qm-field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,213,0,0.15); }
+      .qm-search-wrap { position: relative; }
+      .qm-search-wrap span { position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+      .qm-table-card { padding: 1.2rem 1.2rem 0.6rem; }
+      .qm-quiz-cell { display: flex; align-items: center; gap: 0.65rem; }
+      .qm-quiz-icon {
+        width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: grid; place-items: center;
+        font-size: 1rem; background: rgba(43,108,176,0.12); color: var(--cert-accent-dark);
+      }
+      .qm-quiz-icon.is-exam { background: rgba(228,72,63,0.12); color: #b33a3a; }
+      .qm-quiz-title { font-weight: 700; color: var(--text); font-size: 0.88rem; margin: 0; }
+      .qm-quiz-sub { font-size: 0.76rem; color: var(--muted); margin: 0.1rem 0 0; }
+      .qm-instructor-cell { display: flex; align-items: center; gap: 0.5rem; }
+      .qm-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(43,108,176,0.14); color: var(--cert-accent-dark); display: grid; place-items: center; font-weight: 700; font-size: 0.7rem; flex-shrink: 0; }
+      .qm-type-chip { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(124,77,255,0.12); color: #6a3fd4; font-size: 0.74rem; font-weight: 700; }
+      .qm-type-chip.is-exam { background: rgba(228,72,63,0.1); color: #b33a3a; }
+      .qm-actions-cell { display: flex; align-items: center; gap: 0.35rem; }
+      .qm-icon-btn {
+        width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(15,34,72,0.08); background: var(--surface-3);
+        display: grid; place-items: center; cursor: pointer; font-size: 0.85rem; color: var(--text); text-decoration: none; transition: background 0.15s ease;
+      }
+      .qm-icon-btn:hover { background: var(--surface-2); }
+      .qm-icon-btn.is-danger { color: #b33a3a; }
+      .qm-icon-btn.is-danger:hover { background: rgba(228,72,63,0.12); }
+      .qm-icon-btn.is-ok { color: #2BA84A; }
+      .qm-icon-btn.is-ok:hover { background: rgba(43,168,74,0.12); }
+      .qm-row-inactive { opacity: 0.55; }
+      .qm-inactive-pill { margin-left: 0.35rem; }
+
+      .qm-pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 0.2rem 1.2rem; font-size: 0.82rem; color: var(--muted); }
+      .qm-page-btns { display: flex; align-items: center; gap: 0.3rem; }
+      .qm-page-btn { min-width: 32px; height: 32px; padding: 0 0.4rem; border-radius: 8px; border: 1px solid rgba(15,34,72,0.1); background: #fff; color: var(--text); font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+      .qm-page-btn:hover:not(:disabled) { background: var(--surface-3); }
+      .qm-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      .qm-page-btn.is-active { background: var(--accent-dark); color: #fff; border-color: var(--accent-dark); }
+      .qm-rows-per-page { display: flex; align-items: center; gap: 0.5rem; }
+      .qm-rows-per-page select { padding: 0.4rem 0.6rem; border-radius: 8px; border: 1px solid rgba(15,34,72,0.1); background: #fff; font: inherit; font-size: 0.82rem; }
+
+      /* ---------- Categories widget ---------- */
+      .qm-cat-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.55rem 0; border-bottom: 1px solid rgba(15,34,72,0.06); font-size: 0.86rem; }
+      .qm-cat-row:last-child { border-bottom: none; }
+      .qm-cat-name { display: flex; align-items: center; gap: 0.55rem; font-weight: 600; color: var(--text); }
+      .qm-cat-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+      .qm-cat-count { color: var(--muted); font-weight: 700; }
+
+      /* ---------- Top quizzes progress ---------- */
+      .qm-rank-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0; }
+      .qm-rank-num { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-3); color: var(--muted); font-weight: 700; font-size: 0.75rem; display: grid; place-items: center; flex-shrink: 0; }
+      .qm-rank-body { flex: 1; min-width: 0; }
+      .qm-rank-title { font-weight: 700; color: var(--text); font-size: 0.84rem; margin: 0 0 0.15rem; }
+      .qm-rank-sub { font-size: 0.74rem; color: var(--muted); margin: 0 0 0.35rem; }
+      .qm-rank-track { width: 100%; height: 7px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+      .qm-rank-fill { height: 100%; background: var(--cert-accent); border-radius: 999px; }
+      .qm-rank-pct { width: 46px; text-align: right; font-weight: 700; color: var(--muted); font-size: 0.78rem; flex-shrink: 0; }
+
+      /* ---------- Quick actions ---------- */
+      .adx-quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+      .adx-quick-action {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4rem;
+        padding: 1rem 0.5rem; border-radius: 14px; background: var(--surface-3); border: 1px solid rgba(15,34,72,0.06);
+        text-decoration: none; color: var(--text); font-weight: 700; font-size: 0.8rem; text-align: center; cursor: pointer;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+      }
+      .adx-quick-action:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(15,34,72,0.08); }
+      .adx-qa-icon { font-size: 1.3rem; }
+      .adx-quick-action.is-danger { color: #b33a3a; }
+      .adx-quick-action.is-ok { color: #1c7a3d; }
+
+      /* ---------- Dark Mode ---------- */
+      body[data-theme="dark"] {
+        --adx-surface: #0f1b2e;
+        --adx-surface-2: #16253d;
+        --adx-surface-3: #101c2a;
+        --adx-text: #f3f7ff;
+        --adx-muted: #9fb0c8;
+        --adx-border: rgba(255,255,255,0.12);
+        --adx-shadow: 0 18px 40px rgba(0,0,0,0.4);
+      }
+
+      body[data-theme="dark"] .adx-topbar {
+        background: var(--adx-surface);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-topbar h1 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(22,37,61,0.8);
+        color: #f3f7ff;
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle:hover {
+        background: rgba(30,45,70,0.95);
+      }
+
+      body[data-theme="dark"] .adx-bell {
+        background: rgba(16,28,42,0.8);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-name {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-role {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-stat-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-stat-value {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-stat-label,
+      body[data-theme="dark"] .adx-card-sub {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-card h3 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-empty {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-list-item {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-title {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-meta {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-table-wrap {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-table th {
+        color: var(--adx-muted);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-table td {
+        color: var(--adx-text);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] button,
+      body[data-theme="dark"] input,
+      body[data-theme="dark"] select,
+      body[data-theme="dark"] textarea {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-breadcrumb {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-page-head h2 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-page-head p {
+        color: var(--adx-muted);
+      }
+
+      /* ---------- Print (Export PDF) ---------- */
+      @media print {
+        .adx-sidebar, .adx-topbar, .adx-breadcrumb, .adx-page-head, .adx-stats-grid,
+        .qm-toolbar-card, .qm-pagination, .qm-actions-cell, .adx-layout > div:last-child,
+        .qm-table-card th:last-child, .qm-table-card td:last-child { display: none !important; }
+        .adx-main { margin-left: 0 !important; }
+        .adx-layout { display: block !important; }
+        body { background: #fff !important; }
+        .qm-table-card { box-shadow: none !important; border: none !important; }
+      }
+          /* ---------- Walk-in Registration Modal ---------- */
+      .walk-in-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .walk-in-modal.is-open {
+        display: flex;
+      }
+      .walk-in-modal-content {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 2rem;
+      }
+      body[data-theme="dark"] .walk-in-modal-content {
+        background: var(--adx-surface);
+        color: var(--adx-text);
+      }
+      .walk-in-modal h2 {
+        font-family: 'Playfair Display', serif;
+        color: var(--accent-dark);
+        margin: 0 0 1rem;
+        font-size: 1.4rem;
+      }
+      body[data-theme="dark"] .walk-in-modal h2 {
+        color: #f3f7ff;
+      }
+      .walk-in-form-group {
+        margin-bottom: 1rem;
+      }
+      .walk-in-form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      body[data-theme="dark"] .walk-in-form-group label {
+        color: var(--adx-text);
+      }
+      .walk-in-form-group input,
+      .walk-in-form-group select,
+      .walk-in-form-group textarea {
+        width: 100%;
+        padding: 0.7rem;
+        border: 1px solid rgba(15,34,72,0.15);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      body[data-theme="dark"] .walk-in-form-group input,
+      body[data-theme="dark"] .walk-in-form-group select,
+      body[data-theme="dark"] .walk-in-form-group textarea {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.12);
+        color: var(--adx-text);
+      }
+      .walk-in-form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .walk-in-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 600px) {
+        .walk-in-form-row { grid-template-columns: 1fr; }
+      }
+      .walk-in-modal-buttons {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1.5rem;
+      }
+      .walk-in-modal-buttons button {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+      .walk-in-modal-buttons .btn-primary {
+        background: var(--accent-dark);
+        color: #fff;
+      }
+      .walk-in-modal-buttons .btn-primary:hover {
+        filter: brightness(1.1);
+      }
+      .walk-in-modal-buttons .btn-secondary {
+        background: rgba(15,34,72,0.08);
+        color: var(--accent-dark);
+      }
+      .walk-in-modal-buttons .btn-secondary:hover {
+        background: rgba(15,34,72,0.12);
+      }
+      body[data-theme="dark"] .walk-in-modal-buttons .btn-secondary {
+        background: rgba(255,255,255,0.1);
+        color: #f3f7ff;
+      }
+      .walk-in-note {
+        background: rgba(43,108,176,0.08);
+        border-left: 4px solid var(--cert-accent-dark);
+        padding: 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+      }
+      body[data-theme="dark"] .walk-in-note {
+        background: rgba(43,108,176,0.15);
+        color: var(--adx-text);
+      }
+      .walk-in-loading {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+      }
+      .walk-in-loading.is-active {
+        display: block;
+      }
+      .walk-in-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(15,34,72,0.2);
+        border-top-color: var(--accent-dark);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      body[data-theme="dark"] .walk-in-spinner {
+        border-color: rgba(255,255,255,0.2);
+        border-top-color: #f3f7ff;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+</style>
+  </head>
+  <body data-page="quiz-management">
+    <div class="adx-shell" id="adx-shell">
+      <div class="adx-backdrop" id="adx-backdrop"></div>
+
+      <!-- ============ Sidebar ============ -->
+      <aside class="adx-sidebar">
+        <a class="adx-brand" href="index.html" style="text-decoration:none;color:#fff;">
+          <img src="bhflogo.jpg" alt="BHF logo" />
+          <span class="adx-brand-text">
+            <strong>BHF</strong>
+            <span id="adx-brand-sub">TRAINING &amp; CERTIFICATE</span>
+          </span>
+        </a>
+        <nav class="adx-nav" aria-label="Admin sections">
+          <a href="admin.html" id="adx-nav-dashboard"><span class="adx-nav-icon">📊</span> Dashboard</a>
+          <a href="manage-users.html"><span class="adx-nav-icon">👥</span> User Management</a>
+          <a href="manage-instructors.html"><span class="adx-nav-icon">👩‍🏫</span> Instructor Management</a>
+          <a href="manage-courses.html"><span class="adx-nav-icon">📘</span> Course Management</a>
+          <a href="quiz-management.html" class="is-active"><span class="adx-nav-icon">📝</span> Quiz Management</a>
+          <a href="certificates.html"><span class="adx-nav-icon">🏆</span> Certificates</a>
+          <a href="reports-analytics.html"><span class="adx-nav-icon">📈</span> Reports &amp; Analytics</a>
+          <a href="calendar.html"><span class="adx-nav-icon">📅</span> Calendar</a>
+          <a href="index.html"><span class="adx-nav-icon">🏠</span> Browse Home</a>
+          <div class="adx-nav-sub">
+            <a href="login.html?from=admin"><span class="adx-nav-icon">🔐</span> Login Page</a>
+            <a href="signup.html?from=admin"><span class="adx-nav-icon">📝</span> Create Account</a>
+            <a href="#" id="open-walkin-modal"><span class="adx-nav-icon">🧑‍🎓</span> Walk-in Registration</a>
+          </div>
+        </nav>
+        <div class="adx-sidebar-footer">
+          <a href="login.html" id="nav-auth-link" class="login-link" style="display:none;"><span class="adx-nav-icon">🔑</span> Login</a>
+          <a href="login.html" id="logout-button"><span class="adx-nav-icon">🚪</span> Logout</a>
+        </div>
+      </aside>
+
+      <!-- ============ Main column ============ -->
+      <div class="adx-main">
+        <header class="adx-topbar">
+          <div class="adx-topbar-left">
+            <button class="adx-hamburger" id="adx-hamburger" type="button" aria-label="Toggle menu">☰</button>
+            <h1>Quiz Management</h1>
+          </div>
+          <div class="adx-topbar-right">
+            <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙 Dark mode</button>
+            <a href="admin.html#adx-notifications" class="adx-bell" aria-label="Notifications" id="adx-bell-link">
+              🔔
+              <span class="adx-bell-count" id="adx-bell-count">0</span>
+            </a>
+            <div class="adx-profile">
+              <div class="adx-profile-avatar" id="adx-profile-avatar">A</div>
+              <div>
+                <p class="adx-profile-name" id="adx-profile-name">Admin</p>
+                <p class="adx-profile-role" id="adx-profile-role">Administrator</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="adx-content">
+          <p class="adx-breadcrumb"><a href="admin.html" id="adx-breadcrumb-dashboard">Dashboard</a> &nbsp;›&nbsp; Quiz Management</p>
+
+          <div class="adx-page-head">
+            <div>
+              <h2>Quiz Management</h2>
+              <p>Create, manage and monitor all quizzes across courses.</p>
+            </div>
+            <a class="btn btn-primary" href="add-course.html#question-builder">+ Create New Quiz</a>
+          </div>
+
+          <!-- ============ Stat cards ============ -->
+          <div class="adx-stats-grid">
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">📝</div></div>
+              <div class="adx-stat-value" id="qm-stat-total">0</div>
+              <div class="adx-stat-label">Total Quizzes</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(43,168,74,0.14); color:#2BA84A;">✅</div></div>
+              <div class="adx-stat-value" id="qm-stat-published">0</div>
+              <div class="adx-stat-label">Published</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(124,77,255,0.14); color:#7C4DFF;">📄</div></div>
+              <div class="adx-stat-value" id="qm-stat-draft">0</div>
+              <div class="adx-stat-label">Draft</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(255,159,10,0.16); color:#b3720a;">⏳</div></div>
+              <div class="adx-stat-value" id="qm-stat-pending">0</div>
+              <div class="adx-stat-label">Needs Review</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">❓</div></div>
+              <div class="adx-stat-value" id="qm-stat-questions">0</div>
+              <div class="adx-stat-label">Total Questions</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">📘</div></div>
+              <div class="adx-stat-value" id="qm-stat-courses">0</div>
+              <div class="adx-stat-label">Courses Covered</div>
+            </div>
+          </div>
+
+          <!-- ============ Filter toolbar ============ -->
+          <div class="adx-card qm-toolbar-card">
+            <div class="qm-toolbar-grid">
+              <div class="qm-field qm-search-wrap">
+                <label for="qm-search">Search</label>
+                <input id="qm-search" type="text" placeholder="Search quizzes by title or keyword…" />
+                <span>🔍</span>
+              </div>
+              <div class="qm-field">
+                <label for="qm-course">Course</label>
+                <select id="qm-course"><option value="">All Courses</option></select>
+              </div>
+              <div class="qm-field">
+                <label for="qm-instructor">Instructor</label>
+                <select id="qm-instructor"><option value="">All Instructors</option></select>
+              </div>
+              <div class="qm-field">
+                <label for="qm-status">Status</label>
+                <select id="qm-status">
+                  <option value="">All Status</option>
+                  <option value="published">Published</option>
+                  <option value="pending">Needs Review</option>
+                  <option value="draft">Draft</option>
+                </select>
+              </div>
+              <div class="qm-field">
+                <label for="qm-type">Type</label>
+                <select id="qm-type">
+                  <option value="">All Types</option>
+                  <option value="Practice Quiz">Practice Quiz</option>
+                  <option value="Final Exam">Final Exam</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ Main layout: table + side widgets ============ -->
+          <div class="adx-layout">
+            <div>
+              <!-- All Quizzes table -->
+              <div class="adx-card qm-table-card" style="margin-bottom:1.25rem;">
+                <div class="adx-card-head">
+                  <div><h3 style="margin-bottom:0;">All Quizzes</h3></div>
+                  <div style="display:flex; gap:0.5rem;">
+                    <button class="btn btn-secondary" id="qm-export-csv" type="button">⬇ Export CSV</button>
+                    <button class="btn btn-secondary" id="qm-export-pdf" type="button">🖨 Export PDF</button>
+                  </div>
+                </div>
+
+                <div class="adx-table-wrap">
+                  <table class="adx-table" id="qm-quiz-table">
+                    <thead>
+                      <tr>
+                        <th>Quiz Title</th>
+                        <th>Course</th>
+                        <th>Instructor</th>
+                        <th>Type</th>
+                        <th>Questions</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="qm-quiz-tbody">
+                      <tr><td colspan="8" class="adx-empty">Loading quizzes…</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="qm-pagination">
+                  <span id="qm-page-summary">Showing 0 of 0 quizzes</span>
+                  <div class="qm-page-btns" id="qm-page-btns"></div>
+                  <div class="qm-rows-per-page">
+                    Rows per page:
+                    <select id="qm-rows-per-page">
+                      <option value="6">6</option>
+                      <option value="10" selected>10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Recent Activities / Top Quizzes -->
+              <div class="adx-grid-2">
+                <div class="adx-card">
+                  <div class="adx-card-head"><h3 style="margin-bottom:0;">Recent Quiz Activities</h3><a href="admin.html#adx-notifications">View All</a></div>
+                  <p class="adx-card-sub">Latest changes across all quizzes</p>
+                  <div id="qm-activities-list" class="adx-list"><p class="adx-empty">Loading recent activities…</p></div>
+                </div>
+                <div class="adx-card">
+                  <div class="adx-card-head"><h3 style="margin-bottom:0;">Top Quizzes by Questions</h3><a href="reports-analytics.html">View Report</a></div>
+                  <p class="adx-card-sub">Ranked by number of questions</p>
+                  <div id="qm-top-quizzes"><p class="adx-empty">Loading top quizzes…</p></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ============ Right column widgets ============ -->
+            <div>
+              <div class="adx-card" style="margin-bottom:1.25rem;">
+                <h3>Quiz Status Distribution</h3>
+                <p class="adx-card-sub">Breakdown of all quizzes by status</p>
+                <div class="adx-chart-wrap"><canvas id="qm-status-chart"></canvas></div>
+                <div class="qm-legend" id="qm-status-legend"></div>
+              </div>
+
+              <div class="adx-card" style="margin-bottom:1.25rem;">
+                <h3>Quiz Types</h3>
+                <p class="adx-card-sub">Practice quizzes vs. final exams</p>
+                <div id="qm-type-breakdown"></div>
+              </div>
+
+              <div class="adx-card" style="margin-bottom:1.25rem;">
+                <div class="adx-card-head"><h3 style="margin-bottom:0;">Quiz Categories</h3><a href="manage-courses.html">Manage Categories</a></div>
+                <div id="qm-categories-list"><p class="adx-empty">Loading categories…</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+        <!-- ============ Walk-in Registration Modal ============ -->
+    <div id="walk-in-modal" class="walk-in-modal">
+      <div class="walk-in-modal-content">
+        <h2>📝 Walk-in Student Registration</h2>
+        
+        <div class="walk-in-note">
+          <strong>Note:</strong> A temporary password will be generated and sent to the student's email along with login credentials and certificate information.
+        </div>
+
+        <form id="walk-in-form" style="display: none;">
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-first-name">First Name *</label>
+              <input type="text" id="walk-in-first-name" placeholder="e.g., John" required />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-last-name">Last Name *</label>
+              <input type="text" id="walk-in-last-name" placeholder="e.g., Doe" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-email">Email Address *</label>
+            <input type="email" id="walk-in-email" placeholder="student@example.com" required />
+          </div>
+
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-phone">Phone Number</label>
+              <input type="tel" id="walk-in-phone" placeholder="+1 (555) 000-0000" />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-date">Registration Date *</label>
+              <input type="date" id="walk-in-date" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-course">Enroll in Course</label>
+            <select id="walk-in-course">
+              <option value="">-- Select a course (optional) --</option>
+            </select>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-notes">Additional Notes</label>
+            <textarea id="walk-in-notes" placeholder="Any additional information about the student..."></textarea>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label>
+              <input type="checkbox" id="walk-in-send-email" checked />
+              Send login credentials email to student
+            </label>
+          </div>
+
+          <div class="walk-in-modal-buttons">
+            <button type="button" class="btn-secondary" id="close-walkin-modal">Cancel</button>
+            <button type="submit" class="btn-primary">Create Account</button>
+          </div>
+        </form>
+
+        <div id="walk-in-loading" class="walk-in-loading">
+          <div class="walk-in-spinner"></div>
+          <p style="margin-top: 0.8rem; color: var(--muted);">Creating student account...</p>
+        </div>
+
+        <div id="walk-in-success" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+            <h3 style="margin: 0 0 0.5rem; color: #2BA84A;">Student Account Created!</h3>
+            <p id="walk-in-success-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="close-walkin-success" class="btn-primary" style="width: 100%; padding: 0.7rem;">Close</button>
+          </div>
+        </div>
+
+        <div id="walk-in-error" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: #E4483F;">❌</div>
+            <h3 style="margin: 0 0 0.5rem; color: #E4483F;">Registration Failed</h3>
+            <p id="walk-in-error-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="retry-walkin" class="btn-primary" style="width: 100%; padding: 0.7rem;">Try Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- script.js manages auth/session (login pill, logout button) -->
+    <script type="module" src="script.js"></script>
+    <script>
+      if (typeof updateHeaderAuthLink === 'function') { updateHeaderAuthLink(); }
+      // Mobile sidebar toggle
+      const adxShell = document.getElementById('adx-shell');
+      const adxHamburger = document.getElementById('adx-hamburger');
+      const adxBackdrop = document.getElementById('adx-backdrop');
+      adxHamburger?.addEventListener('click', () => adxShell.classList.toggle('adx-sidebar-open'));
+      adxBackdrop?.addEventListener('click', () => adxShell.classList.remove('adx-sidebar-open'));
+    </script>
+
+    <!-- This page's own module: guards the route, derives quizzes from live
+         Firestore course data (quizQuestions / examQuestions on each course),
+         and renders the stats, filters, table, chart, and side widgets. -->
+    <script type="module">
+      import { db } from "./firebase-init.js";
+      import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+      /* ---------- Role-aware "Super Admin" branding ----------
+         This page is shared between admin.html and superadmin.html.
+         When it's opened by/for a super admin, swap the sidebar brand
+         label, Dashboard link, notification bell, and profile block
+         over to the Super Admin look instead of the default Admin one,
+         so the top nav reflects who's actually signed in.
+
+         Applied in two passes:
+         1) Synchronously, right away, if the link we arrived on already
+            says ?from=superadmin — this is the normal case (clicked from
+            the Super Admin sidebar) and needs no waiting, so there's no
+            flash of the default Admin look before this runs.
+         2) After auth is ready, as a fallback for direct loads/refreshes
+            that don't carry the query param, based on the real role. */
+      const applySuperAdminBranding = () => {
+        const dashboardHref = "superadmin.html";
+        document.querySelector(".adx-sidebar")?.classList.add("is-superadmin");
+        const brandSub = document.getElementById("adx-brand-sub");
+        if (brandSub) brandSub.textContent = "SUPER ADMIN";
+        const navDash = document.getElementById("adx-nav-dashboard");
+        if (navDash) {
+          navDash.href = dashboardHref;
+          navDash.innerHTML = '<span class="adx-nav-icon">👑</span> Dashboard';
+        }
+        const breadcrumbDash = document.getElementById("adx-breadcrumb-dashboard");
+        if (breadcrumbDash) breadcrumbDash.href = dashboardHref;
+        const bellLink = document.getElementById("adx-bell-link");
+        if (bellLink) bellLink.href = `${dashboardHref}#adx-notifications`;
+        const profileAvatar = document.getElementById("adx-profile-avatar");
+        const profileName = document.getElementById("adx-profile-name");
+        const profileRole = document.getElementById("adx-profile-role");
+        if (profileAvatar) profileAvatar.textContent = "S";
+        if (profileName) profileName.textContent = "Super Admin";
+        if (profileRole) profileRole.textContent = "Master Administrator";
+      };
+
+      const cameFromSuperAdmin = new URLSearchParams(window.location.search).get("from") === "superadmin";
+      if (cameFromSuperAdmin) applySuperAdminBranding();
+
+      /* ---------- Route guard: admins only ---------- */
+      const isLocalPreview =
+        location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+      const currentAuthForBranding = (window.getAuth && window.getAuth()) || null;
+      if (!cameFromSuperAdmin && currentAuthForBranding?.role === "superadmin") {
+        applySuperAdminBranding();
+      }
+
+      if (window.authReadyPromise) await window.authReadyPromise;
+
+      if (!isLocalPreview) {
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+          window.location.href = "login.html";
+        } else if (!window.isAdmin || !window.isAdmin()) {
+          window.location.href = "dashboard.html";
+        }
+      }
+
+      if (!cameFromSuperAdmin) {
+        const currentAuthForBrandingAfter = (window.getAuth && window.getAuth()) || null;
+        if (currentAuthForBrandingAfter?.role === "superadmin") applySuperAdminBranding();
+      }
+
+      /* ---------- Helpers ---------- */
+      const escapeHtml = (str) =>
+        String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+      const fetchCollection = async (name) => {
+        try {
+          const snapshot = await getDocs(collection(db, name));
+          return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        } catch (error) {
+          console.error(`Failed to load "${name}" from Firestore`, error);
+          return [];
+        }
+      };
+
+      const initials = (name) => {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return "?";
+        return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+      };
+
+      const timeAgo = (isoString) => {
+        if (!isoString) return "—";
+        const then = new Date(isoString).getTime();
+        if (Number.isNaN(then)) return "—";
+        const diffMs = Date.now() - then;
+        const minutes = Math.floor(diffMs / 60000);
+        if (minutes < 1) return "just now";
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days}d ago`;
+        return new Date(isoString).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      };
+
+      const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+
+      const catPalette = ["#2B6CB0", "#2BA84A", "#7C4DFF", "#E4483F", "#b3720a", "#0F2248", "#1c9db8", "#c2185b"];
+
+      /* ---------- Load all data in parallel ---------- */
+      const [courses, categoriesRaw] = await Promise.all([
+        fetchCollection("courses"),
+        fetchCollection("categories")
+      ]);
+
+      const statusOf = (course) => (course.status || "draft").toLowerCase();
+
+      /* ---------- Derive one quiz row per course (Practice Quiz)
+           and one exam row per course (Final Exam) from the
+           quizQuestions / examQuestions arrays saved on each course. ---------- */
+      const quizzes = [];
+      courses.forEach((course) => {
+        const title = course.title || "Untitled Course";
+        const instructorName = course.instructorName || course.instructor || "Unassigned";
+        const status = statusOf(course);
+        const quizQs = Array.isArray(course.quizQuestions) ? course.quizQuestions : [];
+        const examQs = Array.isArray(course.examQuestions) ? course.examQuestions : [];
+        const updatedAt = course.updatedAt || course.createdAt || "";
+
+        if (quizQs.length) {
+          quizzes.push({
+            id: `${course.id}-quiz`, courseId: course.id, kind: "Practice Quiz",
+            title: `${title} Quiz`, course: title, category: course.category || "General",
+            instructor: instructorName, status, questionCount: quizQs.length, updatedAt,
+            // A quiz has no document of its own — it's derived from the
+            // quizQuestions/examQuestions arrays on its parent course doc.
+            // active/field/countField say which fields on that course doc
+            // this row's Activate/Deactivate/Delete buttons should touch.
+            active: course.quizActive !== false, activeField: "quizActive", countField: "quizQuestions"
+          });
+        }
+        if (examQs.length) {
+          quizzes.push({
+            id: `${course.id}-exam`, courseId: course.id, kind: "Final Exam",
+            title: `${title} Final Exam`, course: title, category: course.category || "General",
+            instructor: instructorName, status, questionCount: examQs.length, updatedAt,
+            active: course.examActive !== false, activeField: "examActive", countField: "examQuestions"
+          });
+        }
+      });
+
+      /* ---------- Stat cards ---------- */
+      const coursesCovered = new Set(quizzes.map((q) => q.courseId)).size;
+      document.getElementById("qm-stat-total").textContent = quizzes.length;
+      document.getElementById("qm-stat-published").textContent = quizzes.filter((q) => q.status === "published").length;
+      document.getElementById("qm-stat-draft").textContent = quizzes.filter((q) => q.status === "draft").length;
+      document.getElementById("qm-stat-pending").textContent = quizzes.filter((q) => q.status === "pending").length;
+      document.getElementById("qm-stat-questions").textContent = quizzes.reduce((sum, q) => sum + q.questionCount, 0);
+      document.getElementById("qm-stat-courses").textContent = coursesCovered;
+
+      /* ---------- Populate filter dropdowns ---------- */
+      const courseNames = Array.from(new Set(quizzes.map((q) => q.course))).sort();
+      const qmCourse = document.getElementById("qm-course");
+      courseNames.forEach((name) => { const opt = document.createElement("option"); opt.value = name; opt.textContent = name; qmCourse.appendChild(opt); });
+
+      const instructorNames = Array.from(new Set(quizzes.map((q) => q.instructor))).sort();
+      const qmInstructor = document.getElementById("qm-instructor");
+      instructorNames.forEach((name) => { const opt = document.createElement("option"); opt.value = name; opt.textContent = name; qmInstructor.appendChild(opt); });
+
+      /* ---------- Table rendering with pagination ---------- */
+      const tbody = document.getElementById("qm-quiz-tbody");
+      const pageSummary = document.getElementById("qm-page-summary");
+      const pageBtns = document.getElementById("qm-page-btns");
+      const rowsPerPageSelect = document.getElementById("qm-rows-per-page");
+
+      let filteredQuizzes = [...quizzes];
+      let currentPage = 1;
+
+      const statusPillClass = (status) => ({ published: "is-ok", pending: "is-progress", draft: "is-muted", rejected: "is-bad" }[status] || "is-muted");
+      const statusLabel = (status) => ({ published: "Published", pending: "Needs Review", draft: "Draft", rejected: "Rejected" }[status] || "Draft");
+
+      const renderTable = () => {
+        const rowsPerPage = parseInt(rowsPerPageSelect.value, 10) || 10;
+        const totalPages = Math.max(1, Math.ceil(filteredQuizzes.length / rowsPerPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = (currentPage - 1) * rowsPerPage;
+        const pageItems = filteredQuizzes.slice(start, start + rowsPerPage);
+
+        if (!pageItems.length) {
+          tbody.innerHTML = '<tr><td colspan="8" class="adx-empty">No quizzes found.</td></tr>';
+        } else {
+          tbody.innerHTML = pageItems.map((quiz) => {
+            const isExam = quiz.kind === "Final Exam";
+            return `<tr class="${quiz.active ? "" : "qm-row-inactive"}">
+              <td>
+                <div class="qm-quiz-cell">
+                  <div class="qm-quiz-icon ${isExam ? "is-exam" : ""}">${isExam ? "🎓" : "📝"}</div>
+                  <div>
+                    <p class="qm-quiz-title">${escapeHtml(quiz.title)}</p>
+                    <p class="qm-quiz-sub">${escapeHtml(quiz.category)}</p>
+                  </div>
+                </div>
+              </td>
+              <td>${escapeHtml(quiz.course)}</td>
+              <td>
+                <div class="qm-instructor-cell">
+                  <div class="qm-avatar">${initials(quiz.instructor)}</div>
+                  <span>${escapeHtml(quiz.instructor)}</span>
+                </div>
+              </td>
+              <td><span class="qm-type-chip ${isExam ? "is-exam" : ""}">${quiz.kind}</span></td>
+              <td>${quiz.questionCount}</td>
+              <td>
+                <span class="adx-status-pill ${statusPillClass(quiz.status)}">${statusLabel(quiz.status)}</span>
+                ${quiz.active ? "" : '<span class="adx-status-pill is-bad qm-inactive-pill">inactive</span>'}
+              </td>
+              <td>${fmtDateTime(quiz.updatedAt)}</td>
+              <td>
+                <div class="qm-actions-cell">
+                  <a class="qm-icon-btn" title="Preview" href="course-detail.html?course=${encodeURIComponent(quiz.course)}">👁️</a>
+                  <a class="qm-icon-btn" title="Edit" href="add-course.html?edit=${encodeURIComponent(quiz.course)}#${isExam ? "exam-question-builder" : "question-builder"}">✏️</a>
+                  <button class="qm-icon-btn ${quiz.active ? "is-danger" : "is-ok"}" title="${quiz.active ? "Deactivate" : "Activate"}" data-toggle-active="${quiz.id}">${quiz.active ? "⏸️" : "▶️"}</button>
+                  <button class="qm-icon-btn is-danger" title="Delete" data-delete="${quiz.id}">🗑️</button>
+                </div>
+              </td>
+            </tr>`;
+          }).join("");
+        }
+
+        pageSummary.textContent = filteredQuizzes.length
+          ? `Showing ${start + 1} to ${Math.min(start + rowsPerPage, filteredQuizzes.length)} of ${filteredQuizzes.length} quizzes`
+          : "Showing 0 of 0 quizzes";
+
+        tbody.querySelectorAll("[data-toggle-active]").forEach((btn) => {
+          btn.addEventListener("click", () => toggleQuizActive(btn.getAttribute("data-toggle-active")));
+        });
+        tbody.querySelectorAll("[data-delete]").forEach((btn) => {
+          btn.addEventListener("click", () => deleteQuiz(btn.getAttribute("data-delete")));
+        });
+
+        pageBtns.innerHTML = "";
+        const prevBtn = document.createElement("button");
+        prevBtn.className = "qm-page-btn"; prevBtn.textContent = "‹"; prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener("click", () => { currentPage--; renderTable(); });
+        pageBtns.appendChild(prevBtn);
+
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        startPage = Math.max(1, endPage - maxButtons + 1);
+        for (let p = startPage; p <= endPage; p++) {
+          const btn = document.createElement("button");
+          btn.className = "qm-page-btn" + (p === currentPage ? " is-active" : "");
+          btn.textContent = p;
+          btn.addEventListener("click", () => { currentPage = p; renderTable(); });
+          pageBtns.appendChild(btn);
+        }
+
+        const nextBtn = document.createElement("button");
+        nextBtn.className = "qm-page-btn"; nextBtn.textContent = "›"; nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener("click", () => { currentPage++; renderTable(); });
+        pageBtns.appendChild(nextBtn);
+      };
+
+      /* ---------- Filters ---------- */
+      const applyFilters = () => {
+        const term = document.getElementById("qm-search").value.trim().toLowerCase();
+        const course = document.getElementById("qm-course").value;
+        const instructor = document.getElementById("qm-instructor").value;
+        const status = document.getElementById("qm-status").value;
+        const type = document.getElementById("qm-type").value;
+
+        filteredQuizzes = quizzes.filter((q) => {
+          if (term && !q.title.toLowerCase().includes(term) && !q.course.toLowerCase().includes(term)) return false;
+          if (course && q.course !== course) return false;
+          if (instructor && q.instructor !== instructor) return false;
+          if (status && q.status !== status) return false;
+          if (type && q.kind !== type) return false;
+          return true;
+        });
+        currentPage = 1;
+        renderTable();
+      };
+      ["qm-search", "qm-course", "qm-instructor", "qm-status", "qm-type"].forEach((id) => {
+        const el = document.getElementById(id);
+        el.addEventListener(id === "qm-search" ? "input" : "change", applyFilters);
+      });
+      rowsPerPageSelect.addEventListener("change", () => { currentPage = 1; renderTable(); });
+
+      /* ---------- Activate / Deactivate a quiz or exam ----------
+         A quiz/exam has no Firestore document of its own — it's derived
+         from the quizQuestions/examQuestions array on its parent course.
+         So "deactivating" it sets a flag (quizActive/examActive, default
+         true when unset) on that course document instead. This only
+         affects what's shown here in Quiz Management; it does not hide
+         the quiz/exam from learners on course-detail.html. */
+      async function toggleQuizActive(quizId) {
+        const quiz = quizzes.find((q) => q.id === quizId);
+        if (!quiz) return;
+        const nowActive = !quiz.active;
+        try {
+          await updateDoc(doc(db, "courses", quiz.courseId), { [quiz.activeField]: nowActive, updatedAt: new Date().toISOString() });
+          quiz.active = nowActive;
+          quiz.updatedAt = new Date().toISOString();
+          renderTable();
+          if (typeof window.showToast === "function") {
+            window.showToast(`${quiz.title} is now ${nowActive ? "active" : "deactivated"}.`, nowActive ? "success" : "info");
+          }
+        } catch (error) {
+          console.error("Failed to toggle quiz active state", error);
+          alert("Could not update this quiz. Please try again.");
+        }
+      }
+
+      /* ---------- Delete a quiz or exam permanently ----------
+         Deletes the underlying question array on the parent course doc
+         (quizQuestions for a Practice Quiz, examQuestions for a Final
+         Exam). Since a row only exists here because that array is
+         non-empty, clearing it also removes the row itself — the course
+         and its other quiz/exam (if any) are left untouched. */
+      async function deleteQuiz(quizId) {
+        const quiz = quizzes.find((q) => q.id === quizId);
+        if (!quiz) return;
+        const confirmed = window.confirm(`Delete "${quiz.title}"? This permanently removes all ${quiz.questionCount} question${quiz.questionCount === 1 ? "" : "s"}. This cannot be undone.`);
+        if (!confirmed) return;
+        try {
+          await updateDoc(doc(db, "courses", quiz.courseId), { [quiz.countField]: [], updatedAt: new Date().toISOString() });
+          const idx = quizzes.findIndex((q) => q.id === quizId);
+          if (idx !== -1) quizzes.splice(idx, 1);
+          filteredQuizzes = filteredQuizzes.filter((q) => q.id !== quizId);
+
+          document.getElementById("qm-stat-total").textContent = quizzes.length;
+          document.getElementById("qm-stat-published").textContent = quizzes.filter((q) => q.status === "published").length;
+          document.getElementById("qm-stat-draft").textContent = quizzes.filter((q) => q.status === "draft").length;
+          document.getElementById("qm-stat-pending").textContent = quizzes.filter((q) => q.status === "pending").length;
+          document.getElementById("qm-stat-questions").textContent = quizzes.reduce((sum, q) => sum + q.questionCount, 0);
+          document.getElementById("qm-stat-courses").textContent = new Set(quizzes.map((q) => q.courseId)).size;
+
+          renderTable();
+          if (typeof window.showToast === "function") window.showToast(`Deleted: ${quiz.title}`, "success");
+        } catch (error) {
+          console.error("Failed to delete quiz", error);
+          alert("Could not delete this quiz. Please try again.");
+        }
+      }
+
+      /* ---------- Quiz Status Distribution donut ---------- */
+      const statusCounts = {
+        published: quizzes.filter((q) => q.status === "published").length,
+        draft: quizzes.filter((q) => q.status === "draft").length,
+        pending: quizzes.filter((q) => q.status === "pending").length,
+        rejected: quizzes.filter((q) => q.status === "rejected").length
+      };
+      const statusColors = { published: "#2BA84A", draft: "#7C4DFF", pending: "#b3720a", rejected: "#E4483F" };
+      const statusLabels = { published: "Published", draft: "Draft", pending: "Needs Review", rejected: "Rejected" };
+      const statusKeys = Object.keys(statusCounts).filter((k) => statusCounts[k] > 0);
+
+      if (statusKeys.length) {
+        new Chart(document.getElementById("qm-status-chart"), {
+          type: "doughnut",
+          data: {
+            labels: statusKeys.map((k) => statusLabels[k]),
+            datasets: [{ data: statusKeys.map((k) => statusCounts[k]), backgroundColor: statusKeys.map((k) => statusColors[k]), borderWidth: 0 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, cutout: "68%", plugins: { legend: { display: false } } }
+        });
+      } else {
+        document.getElementById("qm-status-chart").replaceWith(Object.assign(document.createElement("p"), { className: "adx-empty", textContent: "No quizzes yet." }));
+      }
+
+      const totalForLegend = quizzes.length || 1;
+      document.getElementById("qm-status-legend").innerHTML = statusKeys.length ? statusKeys.map((k) => `
+        <div class="qm-legend-row">
+          <span class="qm-legend-dot" style="background:${statusColors[k]};"></span>
+          <span class="qm-legend-label">${statusLabels[k]}</span>
+          <span class="qm-legend-value">${statusCounts[k]} (${Math.round((statusCounts[k] / totalForLegend) * 100)}%)</span>
+        </div>
+      `).join("") : "";
+
+      /* ---------- Quiz Types breakdown ---------- */
+      const typeBreakdownEl = document.getElementById("qm-type-breakdown");
+      const practiceCount = quizzes.filter((q) => q.kind === "Practice Quiz").length;
+      const examCount = quizzes.filter((q) => q.kind === "Final Exam").length;
+      const typeTotal = practiceCount + examCount || 1;
+      typeBreakdownEl.innerHTML = `
+        <div class="qm-type-row">
+          <div class="qm-type-top"><span>📝 Practice Quiz</span><span>${practiceCount} (${Math.round((practiceCount / typeTotal) * 100)}%)</span></div>
+          <div class="qm-type-track"><div class="qm-type-fill" style="width:${Math.round((practiceCount / typeTotal) * 100)}%; background:#2B6CB0;"></div></div>
+        </div>
+        <div class="qm-type-row">
+          <div class="qm-type-top"><span>🎓 Final Exam</span><span>${examCount} (${Math.round((examCount / typeTotal) * 100)}%)</span></div>
+          <div class="qm-type-track"><div class="qm-type-fill" style="width:${Math.round((examCount / typeTotal) * 100)}%; background:#E4483F;"></div></div>
+        </div>
+      `;
+
+      /* ---------- Quiz Categories widget ---------- */
+      const categoriesListEl = document.getElementById("qm-categories-list");
+      const categoryNames = Array.from(new Set(quizzes.map((q) => q.category).filter(Boolean)));
+      const renderCategories = () => {
+        if (!categoryNames.length) {
+          categoriesListEl.innerHTML = '<p class="adx-empty">No quiz categories yet.</p>';
+          return;
+        }
+        const counts = categoryNames.map((name) => ({ name, count: quizzes.filter((q) => q.category === name).length })).sort((a, b) => b.count - a.count);
+        categoriesListEl.innerHTML = counts.map((c, i) => `
+          <div class="qm-cat-row">
+            <span class="qm-cat-name"><span class="qm-cat-dot" style="background:${catPalette[i % catPalette.length]};"></span>${escapeHtml(c.name)}</span>
+            <span class="qm-cat-count">${c.count}</span>
+          </div>
+        `).join("");
+      };
+
+      /* ---------- Recent Quiz Activities widget ---------- */
+      const activitiesListEl = document.getElementById("qm-activities-list");
+      const renderActivities = () => {
+        const events = quizzes
+          .filter((q) => q.updatedAt)
+          .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+          .slice(0, 6);
+        if (!events.length) {
+          activitiesListEl.innerHTML = '<p class="adx-empty">No recent quiz activity yet.</p>';
+          return;
+        }
+        activitiesListEl.innerHTML = events.map((e) => `
+          <div class="adx-list-item">
+            <div>
+              <p class="adx-list-item-title">${e.kind === "Final Exam" ? "🎓" : "📝"} ${escapeHtml(e.instructor)} updated "${escapeHtml(e.title)}"</p>
+              <p class="adx-list-item-meta">${timeAgo(e.updatedAt)}</p>
+            </div>
+          </div>
+        `).join("");
+      };
+
+      /* ---------- Top Quizzes by Questions widget ---------- */
+      const topQuizzesEl = document.getElementById("qm-top-quizzes");
+      const renderTopQuizzes = () => {
+        const ranked = [...quizzes].sort((a, b) => b.questionCount - a.questionCount).slice(0, 5);
+        const maxCount = ranked.length ? ranked[0].questionCount : 1;
+        if (!ranked.length) {
+          topQuizzesEl.innerHTML = '<p class="adx-empty">No quizzes yet.</p>';
+          return;
+        }
+        topQuizzesEl.innerHTML = ranked.map((q, i) => {
+          const pct = Math.round((q.questionCount / (maxCount || 1)) * 100);
+          return `
+            <div class="qm-rank-row">
+              <div class="qm-rank-num">${i + 1}</div>
+              <div class="qm-rank-body">
+                <p class="qm-rank-title">${escapeHtml(q.title)}</p>
+                <p class="qm-rank-sub">${q.questionCount} question${q.questionCount === 1 ? "" : "s"}</p>
+                <div class="qm-rank-track"><div class="qm-rank-fill" style="width:${pct}%;"></div></div>
+              </div>
+              <div class="qm-rank-pct">${q.questionCount}</div>
+            </div>
+          `;
+        }).join("");
+      };
+
+      /* ---------- Notification bell (reuses course/enrollment notifications) ---------- */
+      const notifications = await fetchCollection("notifications");
+      const bellCountEl = document.getElementById("adx-bell-count");
+      if (bellCountEl) bellCountEl.textContent = notifications.filter((n) => !n.read).length;
+
+      /* ---------- Export CSV / PDF ---------- */
+      const toCsvValue = (val) => `"${String(val ?? "").replace(/"/g, '""')}"`;
+      const buildCsv = (list) => {
+        const header = ["Quiz Title", "Course", "Instructor", "Type", "Questions", "Status", "Last Updated"];
+        const rows = list.map((q) => [q.title, q.course, q.instructor, q.kind, q.questionCount, statusLabel(q.status), q.updatedAt || ""]);
+        return [header, ...rows].map((r) => r.map(toCsvValue).join(",")).join("\n");
+      };
+      const downloadCsv = (list, filename) => {
+        const blob = new Blob([buildCsv(list)], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      };
+      document.getElementById("qm-export-csv").addEventListener("click", () => downloadCsv(filteredQuizzes, "quizzes-export.csv"));
+      document.getElementById("qm-export-pdf").addEventListener("click", () => window.print());
+      // Guarded with optional chaining: this button doesn't exist in the
+      // current markup. Calling .addEventListener directly on the
+      // getElementById result threw an uncaught TypeError when the element
+      // was missing, which silently aborted the rest of this script —
+      // including the renderTable() call just below — so the quiz table
+      // never got its first render (it stayed on "Loading quizzes…" until
+      // a filter change manually triggered a re-render), same as the
+      // matching bug that was on Program & Course Management.
+      document.getElementById("qm-export-quizzes-btn")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        downloadCsv(quizzes, "all-quizzes-export.csv");
+      });
+
+      /* ---------- Initial render ---------- */
+      renderTable();
+      renderCategories();
+      renderActivities();
+      renderTopQuizzes();
+          /* ---------- Walk-in Registration Modal ---------- */
+      const walkinModal = document.getElementById("walk-in-modal");
+      const openWalkinBtn = document.getElementById("open-walkin-modal");
+      const closeWalkinBtn = document.getElementById("close-walkin-modal");
+      const walkinForm = document.getElementById("walk-in-form");
+      const walkinLoading = document.getElementById("walk-in-loading");
+      const walkinSuccess = document.getElementById("walk-in-success");
+      const walkinError = document.getElementById("walk-in-error");
+
+      const walkinDateInput = document.getElementById("walk-in-date");
+      if (walkinDateInput) {
+        walkinDateInput.valueAsDate = new Date();
+      }
+
+      // Populate course dropdown (fetched independently so this modal
+      // works the same on every admin page, not just the dashboard)
+      const walkinCourseSelect = document.getElementById("walk-in-course");
+      if (walkinCourseSelect) {
+        getDocs(collection(db, "courses"))
+          .then((snapshot) => {
+            snapshot.docs.forEach((docSnap) => {
+              const c = docSnap.data();
+              const option = document.createElement("option");
+              option.value = c.title || "Untitled course";
+              option.textContent = c.title || "Untitled course";
+              walkinCourseSelect.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Failed to load courses for walk-in form", error);
+          });
+      }
+
+      const openWalkinModal = () => {
+        walkinModal.classList.add("is-open");
+        walkinForm.style.display = "block";
+        walkinLoading.classList.remove("is-active");
+        walkinSuccess.style.display = "none";
+        walkinError.style.display = "none";
+        walkinForm.reset();
+        if (walkinDateInput) walkinDateInput.valueAsDate = new Date();
+      };
+
+      const closeWalkinModal = () => {
+        walkinModal.classList.remove("is-open");
+      };
+
+      openWalkinBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openWalkinModal();
+      });
+      closeWalkinBtn?.addEventListener("click", closeWalkinModal);
+      document.getElementById("close-walkin-success")?.addEventListener("click", closeWalkinModal);
+      document.getElementById("retry-walkin")?.addEventListener("click", () => {
+        walkinForm.style.display = "block";
+        walkinError.style.display = "none";
+        walkinLoading.classList.remove("is-active");
+      });
+
+      walkinModal?.addEventListener("click", (e) => {
+        if (e.target === walkinModal) closeWalkinModal();
+      });
+
+      walkinForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const firstName = document.getElementById("walk-in-first-name")?.value.trim();
+        const lastName = document.getElementById("walk-in-last-name")?.value.trim();
+        const email = document.getElementById("walk-in-email")?.value.trim();
+        const phone = document.getElementById("walk-in-phone")?.value.trim() || "";
+        const enrollmentCourse = document.getElementById("walk-in-course")?.value || "";
+        const notes = document.getElementById("walk-in-notes")?.value.trim() || "";
+        const sendEmail = document.getElementById("walk-in-send-email")?.checked ?? true;
+
+        if (!firstName || !lastName || !email) {
+          alert("Please fill in first name, last name, and email.");
+          return;
+        }
+
+        walkinForm.style.display = "none";
+        walkinLoading.classList.add("is-active");
+
+        try {
+          const result = await window.createWalkinStudent({
+            firstName,
+            lastName,
+            email,
+            phone,
+            enrollmentCourse,
+            notes,
+            sendEmail
+          });
+
+          walkinLoading.classList.remove("is-active");
+          walkinSuccess.style.display = "block";
+
+          const successMsg = `
+            <strong>✓ ${result.fullName}</strong> registered successfully!<br/>
+            Email: ${result.email}<br/>
+            Certificate ID: ${result.certificateCode}<br/>
+            ${result.enrollmentCourse ? `Course: ${result.enrollmentCourse}` : ""}
+          `;
+          document.getElementById("walk-in-success-message").innerHTML = successMsg;
+
+          console.log("Walk-in Student Account Created:", result);
+          window.showToast?.(`Walk-in student ${result.fullName} registered successfully!`, "success");
+        } catch (error) {
+          console.error("Walk-in registration failed:", error);
+          walkinLoading.classList.remove("is-active");
+          walkinError.style.display = "block";
+          document.getElementById("walk-in-error-message").textContent = error.message || "Registration failed. Please try again.";
+          window.showToast?.(error.message || "Registration failed", "error");
+        }
+      });
+
+</script>
+  </body>
+</html>

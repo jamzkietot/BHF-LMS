@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | BHF Certification Academy</title>
+    <meta name="description" content="Access your enrolled courses, track progress, and view upcoming milestones.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="dashboard">
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <!-- Consistent BHF circle logo -->
+        <img class="brand-logo" src="bhflogo.jpg" alt="BHF logo" />
+        <span class="brand-text-full">BHF Certification Academy</span>
+        <span class="brand-text-short">BHF</span>
+      </a>
+      <button id="nav-hamburger" class="nav-hamburger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-main-links">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav-links">
+        <div class="nav-main-links" id="nav-main-links">
+          <a href="index.html">Home</a>
+          <a href="programs.html">Programs</a>
+          <a href="index.html#verify">Verify</a>
+        </div>
+        <div class="nav-account-links">
+          <button id="user-notifications-button" class="btn btn-secondary btn-notification" type="button" aria-label="Notifications">🔔</button>
+          <a href="login.html" id="nav-auth-link" class="login-link">Login</a>
+          <a href="login.html" id="logout-button" class="btn btn-secondary" style="display:none;">Logout</a>
+          <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="dashboard-shell">
+      <div class="dashboard-hero">
+        <div class="dashboard-hero-left">
+          <div class="dashboard-profile-card">
+            <div class="dashboard-profile-avatar" id="dashboard-avatar">J</div>
+            <input id="profile-image-input" type="file" accept="image/*" hidden />
+            <div class="dashboard-profile-copy">
+              <span class="dashboard-profile-welcome">Welcome back,</span>
+              <h1 id="dashboard-welcome">Learner</h1>
+              <p class="dashboard-profile-meta">Learner • Networking Academy</p>
+              <p class="dashboard-profile-contact" id="dashboard-contact-number">Add your contact number</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- hero right metrics removed; moved into Certificate panel -->
+      </div>
+
+      <nav class="dashboard-tabs" aria-label="Dashboard sections">
+        <a class="dashboard-tab is-active" href="#" data-target="#profile-panel">Profile</a>
+        <a class="dashboard-tab" href="#" data-target="#achievements-panel">Certificate</a>
+        <a class="dashboard-tab" href="#" data-target="#learning-history-panel">Learning History</a>
+      </nav>
+
+      <section id="profile-panel" class="dashboard-panel-card basic-info-panel" data-panel="tabbed">
+        <h3>Basic Information</h3>
+        <form id="basic-info-form" class="basic-info-form">
+          <div class="basic-info-grid">
+            <label class="profile-field" for="first-name">
+              <span class="profile-field-label">First Name*</span>
+              <input id="first-name" type="text" autocomplete="given-name" />
+            </label>
+            <label class="profile-field" for="last-name">
+              <span class="profile-field-label">Last Name*</span>
+              <input id="last-name" type="text" autocomplete="family-name" />
+            </label>
+            <label class="profile-field" for="default-language">
+              <span class="profile-field-label">Default Language</span>
+              <select id="default-language">
+                <option>English (English)</option>
+              </select>
+            </label>
+            <label class="profile-field" for="contact-number">
+              <span class="profile-field-label">Contact Number</span>
+              <input id="contact-number" type="tel" placeholder="e.g. +63 912 345 6789" />
+            </label>
+          </div>
+
+          <div class="contact-info-section">
+            <div class="contact-info-heading">
+              <h3>Contact Information</h3>
+              <span class="info-badge" aria-label="Help">?</span>
+            </div>
+            <div class="contact-info-row">
+              <label class="profile-field" for="email-address">
+                <span class="profile-field-label">Email</span>
+                <input id="email-address" type="email" readonly />
+              </label>
+              <a class="contact-change-email" href="#">Change Email</a>
+            </div>
+          </div>
+
+          <div class="basic-info-actions">
+            <button class="btn btn-primary" type="submit">Save changes</button>
+          </div>
+          <p id="basic-info-note" class="form-note"></p>
+        </form>
+
+        <section class="dashboard-panel-card basic-info-panel" style="margin-top:2rem;">
+          <h3>Change Password</h3>
+          <form id="change-password-form" class="basic-info-form">
+            <div class="basic-info-grid">
+              <label class="profile-field" for="current-password">
+                <span class="profile-field-label">Current Password</span>
+                <input id="current-password" type="password" autocomplete="current-password" />
+              </label>
+              <label class="profile-field" for="new-password">
+                <span class="profile-field-label">New Password</span>
+                <input id="new-password" type="password" minlength="6" autocomplete="new-password" />
+              </label>
+              <label class="profile-field" for="confirm-new-password">
+                <span class="profile-field-label">Confirm New Password</span>
+                <input id="confirm-new-password" type="password" minlength="6" autocomplete="new-password" />
+              </label>
+            </div>
+            <div class="basic-info-actions">
+              <button class="btn btn-secondary" type="submit">Save New Password</button>
+            </div>
+            <p id="change-password-note" class="form-note"></p>
+          </form>
+        </section>
+      </section>
+
+      <!-- metric cards moved into Certificate panel -->
+
+      <div id="admin-panel-action" class="admin-cta-card hidden"></div>
+
+      
+
+      <section id="learning-history-panel" class="dashboard-panel-card learning-history-panel" data-panel="tabbed" hidden>
+        <h3>Learning History</h3>
+        <div id="learning-history-list"></div>
+      </section>
+
+      <section id="achievements-panel" class="dashboard-panel-card achievements-panel" data-panel="tabbed" hidden>
+        <h3>🏆 Your Achievements</h3>
+        <div class="achievements-grid" id="achievements-grid">
+          <!-- Achievement cards are injected by script.js -->
+        </div>
+      </section>
+
+      <section class="feature-strip" aria-label="Quick actions">
+        <a class="feature-card" href="programs.html">
+          <div class="feature-icon">🧭</div>
+          <h3>Continue Learning</h3>
+          <p>Jump back into an in-progress course or start a new program from our full catalog.</p>
+        </a>
+        <a class="feature-card" href="index.html#verify">
+          <div class="feature-icon">🔍</div>
+          <h3>Verify a Certificate</h3>
+          <p>Check the authenticity of any BHF certificate using its unique certificate ID.</p>
+        </a>
+        <a class="feature-card" href="https://mail.google.com/mail/?view=cm&fs=1&to=Sijampot19@gmail.com" target="_blank" rel="noopener noreferrer">
+          <div class="feature-icon">💬</div>
+          <h3>Get Support</h3>
+          <p>Questions about a course, exam, or certificate? Our team is one email away.</p>
+        </a>
+      </section>
+
+      <div id="dashboard-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="dashboard-modal-title">
+        <div class="dashboard-modal-card">
+          <button id="dashboard-modal-close" class="dashboard-modal-close" type="button" aria-label="Close dialog">×</button>
+          <h3 id="dashboard-modal-title">Details</h3>
+          <div id="dashboard-modal-content"></div>
+        </div>
+      </div>
+
+      <div id="achievement-detail-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="achievement-detail-title">
+        <div class="dashboard-modal-card achievement-detail-card">
+          <button id="achievement-detail-close" class="dashboard-modal-close" type="button" aria-label="Close dialog">×</button>
+          <h3 id="achievement-detail-title">Achievement</h3>
+          <div id="achievement-detail-content"></div>
+        </div>
+      </div>
+
+      <div id="certificate-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="certificate-modal-title">
+        <div class="dashboard-modal-card certificate-modal-card">
+          <button id="certificate-modal-close" class="dashboard-modal-close" type="button" aria-label="Close dialog">×</button>
+          <div class="certificate-modal-header">
+            <div class="certificate-modal-header-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><circle cx="11" cy="15" r="3"></circle><path d="m14.5 18 1.5 1.5"></path></svg>
+            </div>
+            <div class="certificate-modal-header-text">
+              <h3 id="certificate-modal-title">Certificate</h3>
+              <p class="certificate-modal-subtitle">View and manage your certificate of completion.</p>
+            </div>
+          </div>
+          <div id="certificate-modal-content">
+            <!-- Populated dynamically. The rendered certificate will have id="dashboard-certificate-card" for download/print -->
+          </div>
+        </div>
+      </div>
+    </main>
+
+        <footer class="footer" id="contact">
+          <div class="footer-grid">
+            <div class="footer-col footer-brand">
+              <img class="footer-logo" src="bhflogo.jpg" alt="BHF logo" />
+              <p class="footer-brand-name">BHF</p>
+              <p class="footer-brand-sub">Group of Companies</p>
+              <span class="footer-underline"></span>
+              <p class="footer-desc">Empowering employees through quality training, professional certification, and continuous learning.</p>
+            </div>
+
+            <div class="footer-col">
+              <span class="footer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 10.5V16c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-5.5"/><path d="M21 9v6"/><circle cx="21" cy="16.5" r="1"/></svg>
+              </span>
+              <h3>Our Platform</h3>
+              <span class="footer-underline"></span>
+              <p class="footer-desc">Your all-in-one platform for employee training, certification, and professional growth. Learn anytime, anywhere.</p>
+            </div>
+
+            <div class="footer-col">
+              <span class="footer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="2.5" y="14" width="4" height="6" rx="1.5"/><rect x="17.5" y="14" width="4" height="6" rx="1.5"/><path d="M20 20a4 4 0 0 1-4 3h-2"/></svg>
+              </span>
+              <h3>Contact Us</h3>
+              <span class="footer-underline"></span>
+              <p class="footer-contact">
+                <a href="mailto:hrd.bhfbgo@gmail.com">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></svg>
+                  hrd.bhfbgo@gmail.com
+                </a>
+              </p>
+              <p class="footer-contact">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4l1.5 4.5L7 10.5a12 12 0 0 0 6.5 6.5l1.5-2.5L20 16v4a1 1 0 0 1-1 1c-8.3 0-15-6.7-15-15a1 1 0 0 1 1-1Z"/></svg>
+                <a href="tel:+639177187582">0917 718 7582</a>
+              </p>
+              <p class="footer-contact">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
+                <a href="https://www.google.com/maps/place/217+Bonifacio+Residences/@16.4165544,120.5991646,17z/data=!3m1!4b1!4m6!3m5!1s0x3391a1f06a154c2f:0x6115f00fe12d79be!8m2!3d16.4165544!4d120.5991646!16s%2Fg%2F11rvlzsdjk?entry=ttu&g_ep=EgoyMDI2MDcyMS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer">Barangay, 217 Upper Bonifacio St, Baguio, 2600 Benguet</a>
+              </p>
+            </div>
+
+            <div class="footer-col">
+              <span class="footer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3Z"/></svg>
+              </span>
+              <h3>Follow Us</h3>
+              <span class="footer-underline"></span>
+              <div class="footer-social">
+                <a href="#" target="_blank" rel="noopener" aria-label="Facebook">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.6h2.6l.4-3h-3v-1.9c0-.87.24-1.46 1.5-1.46h1.6V4.35c-.28-.04-1.22-.12-2.32-.12-2.3 0-3.88 1.4-3.88 3.98v2.2H8.9v3h2.5V21h2.1Z"/></svg>
+                </a>
+                <a href="#" target="_blank" rel="noopener" aria-label="LinkedIn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.94 8.5H4.1V20h2.84V8.5ZM5.52 4a1.64 1.64 0 1 0 0 3.28 1.64 1.64 0 0 0 0-3.28ZM20 20h-2.84v-5.9c0-1.4-.5-2.36-1.76-2.36-.96 0-1.53.65-1.78 1.27-.09.22-.11.53-.11.84V20H10.7s.04-9.86 0-10.88h2.83v1.54a2.8 2.8 0 0 1 2.55-1.4c1.86 0 3.26 1.22 3.26 3.83V20Z"/></svg>
+                </a>
+                <a href="#" target="_blank" rel="noopener" aria-label="YouTube">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.6a2.7 2.7 0 0 0-1.9-1.9C18 5.2 12 5.2 12 5.2s-6 0-7.7.5A2.7 2.7 0 0 0 2.4 7.6 28.3 28.3 0 0 0 2 12a28.3 28.3 0 0 0 .4 4.4 2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 0 0 1.9-1.9A28.3 28.3 0 0 0 22 12a28.3 28.3 0 0 0-.4-4.4ZM10 14.9V9.1L15.3 12 10 14.9Z"/></svg>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="footer-bottom">
+            <div class="footer-bottom-content">
+              <p class="footer-copy">© 2026 BHF Group of Companies. All Rights Reserved.</p>
+            </div>
+            <span class="footer-legal-sep footer-bottom-sep">|</span>
+            <div class="footer-bottom-links">
+              <div class="footer-legal">
+                <a href="#">Privacy Policy</a>
+                <span class="footer-legal-sep">|</span>
+                <a href="#">Terms of Service</a>
+              </div>
+            </div>
+          </div>
+        </footer>
+
+    <script type="module" src="script.js"></script>
+    <script>
+      if (typeof updateHeaderAuthLink === 'function') {
+        updateHeaderAuthLink();
+      }
+    </script>
+  </body>
+</html>

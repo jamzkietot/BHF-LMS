@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Add Course | BHF Certification Academy</title>
+    <meta name="description" content="Create a new course and exam setup from the admin portal." />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* Scoped styles for the course/module/exam step headers on this page only */
+      .ac-step-head { display: flex; align-items: center; gap: 0.75rem; margin: 2.25rem 0 1rem; }
+      .ac-step-head:first-of-type { margin-top: 0.5rem; }
+      .ac-step-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+        background: var(--accent); color: var(--accent-dark); font-weight: 800; font-size: 0.95rem;
+      }
+      .ac-step-head div { display: flex; flex-direction: column; }
+      .ac-step-head h2 { margin: 0; font-size: 1.15rem; color: var(--accent-dark); font-weight: 800; }
+      .ac-step-head span { font-size: 0.8rem; color: var(--muted); }
+
+      .ac-access-toggle-row { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+      .ac-access-toggle-btn {
+        flex: 1; min-width: 140px; padding: 0.7rem 1rem; border-radius: 12px;
+        border: 2px solid rgba(15,34,72,0.12); background: #fff; color: var(--text);
+        font-weight: 700; font-size: 0.92rem; cursor: pointer; transition: all 0.15s ease;
+      }
+      .ac-access-toggle-btn:hover { border-color: var(--accent); }
+      .ac-access-toggle-btn.is-active {
+        border-color: var(--accent-dark); background: var(--accent-dark); color: #fff;
+      }
+    </style>
+  </head>
+  <body data-page="add-course">
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="bhflogo.jpg" alt="BHF logo" />
+        <span class="brand-text-full">BHF Certification Academy</span>
+        <span class="brand-text-short">BHF</span>
+      </a>
+      <button id="nav-hamburger" class="nav-hamburger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-main-links">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav-links">
+        <div class="nav-main-links" id="nav-main-links">
+          <a href="index.html">Home</a>
+          <a href="programs.html">Programs</a>
+          <a href="index.html#verify">Verify</a>
+          <a href="admin.html" class="admin-toggle">Admin</a>
+        </div>
+        <div class="nav-account-links">
+          <button id="user-notifications-button" class="btn btn-secondary btn-notification" type="button" aria-label="Notifications">🔔</button>
+          <a href="login.html" id="nav-auth-link" class="login-link">Login</a>
+          <a href="login.html" id="logout-button" class="btn btn-secondary" style="display:none;">Logout</a>
+          <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+        </div>
+      </nav>
+    </header>
+
+    <main class="page-shell admin-shell">
+      <section class="admin-hero">
+        <div class="admin-hero-copy">
+          <p class="eyebrow">INSTRUCTOR COURSE BUILDER</p>
+          <h1>Upload Your Course</h1>
+          <p>Build your certification program in three simple steps — add the course details, create your modules, then set your exam questions. Everything publishes together, instantly.</p>
+        </div>
+        <div class="admin-hero-badge">
+          <span>Course · Module · Exam</span>
+        </div>
+      </section>
+
+      <div class="admin-panel">
+        <form id="course-builder-form">
+          <div class="ac-step-head">
+            <span class="ac-step-num">1</span>
+            <div><h2>Course Details</h2><span>The basics learners will see first</span></div>
+          </div>
+
+          <div class="form-row">
+            <label for="course-title">Course title</label>
+            <input id="course-title" type="text" placeholder="e.g. Hospitality Leadership" required />
+          </div>
+
+          <div class="form-row">
+            <label for="course-category">Category</label>
+            <div class="category-select-row">
+              <select id="course-category">
+                <option>Information Technology</option>
+              </select>
+              <button id="course-add-category-btn" type="button" class="btn btn-secondary">Add Category</button>
+              <button id="course-remove-category-btn" type="button" class="btn btn-secondary">Remove Category</button>
+            </div>
+            <p id="course-category-note" class="form-note"></p>
+            <p class="form-note">To remove a category, select it in the dropdown above, then click "Remove Category". Only admins can remove categories; built-in categories (like Information Technology) can't be removed since they come from the default course catalog.</p>
+          </div>
+
+          <div class="form-row">
+            <label for="course-description">Course description</label>
+            <textarea id="course-description" placeholder="Describe the course in one short paragraph."></textarea>
+          </div>
+
+          <div class="form-row">
+            <label for="course-level">Course level</label>
+            <select id="course-level">
+              <option value="Beginner">Beginner</option>
+              <option value="Intermediate">Intermediate</option>
+              <option value="Advanced">Advanced</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="course-image">Course thumbnail image</label>
+            <input id="course-image-file" type="file" accept="image/*" />
+            <p class="form-note" style="margin:0.35rem 0 0;">Upload an image, or paste a link instead:</p>
+            <input id="course-image" type="url" placeholder="https://example.com/thumbnail.jpg" style="margin-top:0.4rem;" />
+            <img id="course-image-preview" alt="Course thumbnail preview" style="display:none; margin-top:0.6rem; max-width:220px; border-radius:10px;" />
+          </div>
+
+          <div class="form-row">
+            <label>Course access</label>
+            <div class="ac-access-toggle-row">
+              <button type="button" id="course-access-free-btn" class="ac-access-toggle-btn is-active" data-access="free">🆓 Free</button>
+              <button type="button" id="course-access-paid-btn" class="ac-access-toggle-btn" data-access="paid">💳 Paid</button>
+            </div>
+            <input type="hidden" id="course-access-rule" value="free" />
+            <p class="form-note">Choose whether learners can enroll for free, or need to pay before they can access this course. This is shown on the Programs page and the enroll button.</p>
+          </div>
+
+          <div class="ac-step-head">
+            <span class="ac-step-num">2</span>
+            <div><h2>Course Modules</h2><span>Break your content into learning modules</span></div>
+          </div>
+
+          <div class="module-builder-header">
+            <div class="form-row">
+              <label>Add the modules learners will work through</label>
+              <p class="form-note" style="margin:0.25rem 0 0;">Add a <strong>Text Module</strong> to write out module content directly, or a <strong>PDF Module</strong> to upload a PDF that learners will read as-is.</p>
+            </div>
+            <div class="category-select-row" style="gap:0.75rem; flex-wrap:wrap;">
+              <button id="add-module-btn" type="button" class="btn btn-secondary">+ Add Module</button>
+              <button id="add-pdf-module-btn" type="button" class="btn btn-secondary">+ Add PDF Module</button>
+            </div>
+            <div class="category-select-row" style="gap:0.75rem; flex-wrap:wrap; margin-top:0.5rem;">
+              <label for="module-pdf-file" class="form-note" style="margin:0;">Or auto-import modules from a PDF (extracts text into Text Modules)</label>
+              <input id="module-pdf-file" type="file" accept=".pdf,application/pdf" />
+            </div>
+          </div>
+
+          <div id="module-builder" class="module-builder"></div>
+
+          <div class="category-select-row" style="gap:0.75rem; flex-wrap:wrap; margin:1rem 0;">
+            <button id="add-module-bottom-btn" type="button" class="btn btn-secondary">+ Add Module</button>
+            <button id="add-pdf-module-bottom-btn" type="button" class="btn btn-secondary">+ Add PDF Module</button>
+          </div>
+
+          <div class="ac-step-head">
+            <span class="ac-step-num">3</span>
+            <div><h2>Quiz Questions</h2><span>Add quiz questions for practice and assessment</span></div>
+          </div>
+
+          <div class="category-select-row" style="gap:0.75rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+            <label for="quiz-pdf-file" class="form-note" style="margin:0;">Upload quiz file</label>
+            <input id="quiz-pdf-file" type="file" accept=".pdf,application/pdf,.txt,text/plain,.json,application/json" />
+            <button id="add-question-btn" type="button" class="btn btn-secondary">Add Quiz Question</button>
+          </div>
+
+          <div id="question-builder" class="question-builder"></div>
+
+          <div class="ac-step-head">
+            <span class="ac-step-num">4</span>
+            <div><h2>Exam Questions</h2><span>Add final exam questions for certification</span></div>
+          </div>
+
+          <div class="category-select-row" style="gap:0.75rem; flex-wrap:wrap; margin-bottom:0.75rem;">
+            <label for="exam-pdf-file" class="form-note" style="margin:0;">Upload exam file</label>
+            <input id="exam-pdf-file" type="file" accept=".pdf,application/pdf,.txt,text/plain,.json,application/json" />
+            <button id="add-exam-question-btn" type="button" class="btn btn-secondary">Add Exam Question</button>
+          </div>
+
+          <div id="exam-question-builder" class="question-builder"></div>
+
+          <div class="form-actions">
+            <button id="course-save" class="btn btn-primary">Publish Course</button>
+            <button id="course-clear" type="button" class="btn btn-secondary">Reset Form</button>
+          </div>
+
+          <p id="course-builder-note" class="form-note"></p>
+        </form>
+      </div>
+    </main>
+
+        <footer class="footer" id="contact">
+          <div class="footer-grid">
+            <div class="footer-col footer-brand">
+              <img class="footer-logo" src="bhflogo.jpg" alt="BHF logo" />
+              <p class="footer-brand-name">BHF</p>
+              <p class="footer-brand-sub">Group of Companies</p>
+              <span class="footer-underline"></span>
+              <p class="footer-desc">Empowering employees through quality training, professional certification, and continuous learning.</p>
+            </div>
+
+            <div class="footer-col">
+              <span class="footer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 10.5V16c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-5.5"/><path d="M21 9v6"/><circle cx="21" cy="16.5" r="1"/></svg>
+              </span>
+              <h3>Our Platform</h3>
+              <span class="footer-underline"></span>
+              <p class="footer-desc">Your all-in-one platform for employee training, certification, and professional growth. Learn anytime, anywhere.</p>
+            </div>
+
+            <div class="footer-col">
+              <span class="footer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="2.5" y="14" width="4" height="6" rx="1.5"/><rect x="17.5" y="14" width="4" height="6" rx="1.5"/><path d="M20 20a4 4 0 0 1-4 3h-2"/></svg>
+              </span>
+              <h3>Contact Us</h3>
+              <span class="footer-underline"></span>
+              <p class="footer-contact">
+                <a href="mailto:hrd.bhfbgo@gmail.com">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></svg>
+                  hrd.bhfbgo@gmail.com
+                </a>
+              </p>
+              <p class="footer-contact">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4l1.5 4.5L7 10.5a12 12 0 0 0 6.5 6.5l1.5-2.5L20 16v4a1 1 0 0 1-1 1c-8.3 0-15-6.7-15-15a1 1 0 0 1 1-1Z"/></svg>
+                <a href="tel:+639177187582">0917 718 7582</a>
+              </p>
+              <p class="footer-contact">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
+                <a href="https://www.google.com/maps/place/217+Bonifacio+Residences/@16.4165544,120.5991646,17z/data=!3m1!4b1!4m6!3m5!1s0x3391a1f06a154c2f:0x6115f00fe12d79be!8m2!3d16.4165544!4d120.5991646!16s%2Fg%2F11rvlzsdjk?entry=ttu&g_ep=EgoyMDI2MDcyMS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer">Barangay, 217 Upper Bonifacio St, Baguio, 2600 Benguet</a>
+              </p>
+            </div>
+
+            <div class="footer-col">
+              <span class="footer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3Z"/></svg>
+              </span>
+              <h3>Follow Us</h3>
+              <span class="footer-underline"></span>
+              <div class="footer-social">
+                <a href="#" target="_blank" rel="noopener" aria-label="Facebook">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.6h2.6l.4-3h-3v-1.9c0-.87.24-1.46 1.5-1.46h1.6V4.35c-.28-.04-1.22-.12-2.32-.12-2.3 0-3.88 1.4-3.88 3.98v2.2H8.9v3h2.5V21h2.1Z"/></svg>
+                </a>
+                <a href="#" target="_blank" rel="noopener" aria-label="LinkedIn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.94 8.5H4.1V20h2.84V8.5ZM5.52 4a1.64 1.64 0 1 0 0 3.28 1.64 1.64 0 0 0 0-3.28ZM20 20h-2.84v-5.9c0-1.4-.5-2.36-1.76-2.36-.96 0-1.53.65-1.78 1.27-.09.22-.11.53-.11.84V20H10.7s.04-9.86 0-10.88h2.83v1.54a2.8 2.8 0 0 1 2.55-1.4c1.86 0 3.26 1.22 3.26 3.83V20Z"/></svg>
+                </a>
+                <a href="#" target="_blank" rel="noopener" aria-label="YouTube">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.6a2.7 2.7 0 0 0-1.9-1.9C18 5.2 12 5.2 12 5.2s-6 0-7.7.5A2.7 2.7 0 0 0 2.4 7.6 28.3 28.3 0 0 0 2 12a28.3 28.3 0 0 0 .4 4.4 2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 0 0 1.9-1.9A28.3 28.3 0 0 0 22 12a28.3 28.3 0 0 0-.4-4.4ZM10 14.9V9.1L15.3 12 10 14.9Z"/></svg>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="footer-bottom">
+            <div class="footer-bottom-content">
+              <p class="footer-copy">© 2026 BHF Group of Companies. All Rights Reserved.</p>
+            </div>
+            <span class="footer-legal-sep footer-bottom-sep">|</span>
+            <div class="footer-bottom-links">
+              <div class="footer-legal">
+                <a href="#">Privacy Policy</a>
+                <span class="footer-legal-sep">|</span>
+                <a href="#">Terms of Service</a>
+              </div>
+            </div>
+          </div>
+        </footer>
+
+    <script src="vendor/pdfjs/pdf.min.js" defer></script>
+    <script type="module" src="script.js"></script>
+    <script>
+      // If embedded via an iframe with ?embed=1, hide header/footer for a cleaner embedded form view
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('embed') === '1') {
+          document.documentElement.classList.add('embedded-page');
+          const header = document.querySelector('header.topbar');
+          const footer = document.querySelector('footer.footer');
+          if (header) header.style.display = 'none';
+          if (footer) footer.style.display = 'none';
+          const main = document.querySelector('main.page-shell');
+          if (main) main.style.marginTop = '0';
+        }
+      } catch (e) {
+        // ignore
+      }
+    </script>
+  </body>
+</html>

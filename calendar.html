@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calendar | BHF Certification Academy</title>
+    <meta name="description" content="View and manage important events, schedules, deadlines, and exams for BHF Certification Academy." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* =========================================================
+         Admin Dashboard v2 — sidebar layout (shared with admin.html,
+         manage-users.html, manage-instructors.html, manage-courses.html,
+         reports-analytics.html). Scoped with the "adx-" prefix; colors
+         reuse the existing CSS vars.
+      ========================================================= */
+      * { box-sizing: border-box; }
+      html, body { max-width: 100%; overflow-x: hidden; }
+      body { background: var(--bg); font-family: 'Inter', sans-serif; }
+
+      .adx-shell { display: flex; min-height: 100vh; }
+
+      /* ---------- Sidebar ---------- */
+      .adx-sidebar {
+        width: 264px; flex-shrink: 0; background: var(--accent-dark); color: #fff;
+        display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
+        z-index: 40; transition: transform 0.25s ease;
+      }
+      .adx-sidebar.is-superadmin { background: linear-gradient(180deg, #0f1b2e 0%, #13233a 100%); }
+      .adx-sidebar.is-superadmin .adx-nav a.is-active { background: rgba(255,255,255,0.25); color: #fff; }
+      .adx-sidebar.is-superadmin .adx-nav a:hover { background: rgba(255,255,255,0.12); color: #fff; }
+      .adx-brand { display: flex; align-items: center; gap: 0.65rem; padding: 1.4rem 1.3rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .adx-brand img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; }
+      .adx-brand-text strong { display: block; font-size: 0.95rem; line-height: 1.2; }
+      .adx-brand-text span { font-size: 0.68rem; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; }
+      .adx-nav { flex: 1; overflow-y: auto; padding: 0.85rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+      .adx-nav a {
+        display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 12px;
+        color: rgba(255,255,255,0.78); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .adx-nav a .adx-nav-icon { font-size: 1.05rem; width: 22px; text-align: center; }
+      .adx-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+      .adx-nav a.is-active { background: var(--accent); color: var(--accent-dark); }
+      .adx-nav-sub { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.2rem 0 0.35rem 1.1rem; }
+      .adx-nav-sub a { padding: 0.5rem 0.75rem; font-size: 0.78rem; color: rgba(255,255,255,0.72); }
+      .adx-sidebar-footer { padding: 0.85rem 1.3rem 1.3rem; border-top: 1px solid rgba(255,255,255,0.08); }
+      .adx-sidebar-footer a { display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.75); text-decoration: none; font-weight: 600; font-size: 0.88rem; padding: 0.5rem 0; }
+      .adx-sidebar-footer a:hover { color: #fff; }
+
+      /* ---------- Main column ---------- */
+      .adx-main { margin-left: 264px; flex: 1; min-width: 0; max-width: 100%; }
+      .adx-topbar {
+        position: sticky; top: 0; z-index: 30; background: #fff; border-bottom: 1px solid rgba(15,34,72,0.08);
+        display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.75rem;
+      }
+      .adx-topbar-left { display: flex; align-items: center; gap: 0.85rem; }
+      .adx-hamburger { display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--accent-dark); }
+      .adx-topbar h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--accent-dark); margin: 0; }
+      .adx-topbar-right { display: flex; align-items: center; gap: 1.1rem; }
+      .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(15,34,72,0.12);
+        background: var(--surface-3);
+        color: var(--accent-dark);
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+      .adx-topbar-right .theme-toggle:hover {
+        background: var(--surface-2);
+        border-color: rgba(15,34,72,0.2);
+      }
+      .adx-bell {
+        position: relative; width: 40px; height: 40px; border-radius: 12px; background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.08); display: grid; place-items: center; font-size: 1.1rem; cursor: pointer;
+        text-decoration: none; color: var(--accent-dark);
+      }
+      .adx-bell-count {
+        position: absolute; top: -4px; right: -4px; background: #E4483F; color: #fff; font-size: 0.62rem; font-weight: 700;
+        min-width: 17px; height: 17px; border-radius: 999px; display: grid; place-items: center; padding: 0 3px;
+      }
+      .adx-profile { display: flex; align-items: center; gap: 0.65rem; }
+      .adx-profile-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--accent-dark); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; }
+      .adx-profile-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.1; }
+      .adx-profile-role { font-size: 0.72rem; color: var(--muted); }
+
+      .adx-content { padding: 1.5rem 1.75rem 4rem; max-width: 1600px; }
+
+      .adx-breadcrumb { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.6rem; font-weight: 600; }
+      .adx-breadcrumb a { color: var(--cert-accent-dark); text-decoration: none; }
+      .adx-breadcrumb a:hover { text-decoration: underline; }
+
+      .adx-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+      .adx-page-head h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.3rem; font-size: 1.7rem; }
+      .adx-page-head p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+      .adx-page-head-actions { display: flex; gap: 0.65rem; flex-wrap: wrap; }
+      .adx-page-head-actions .btn { padding: 0.7rem 1.25rem; font-size: 0.85rem; }
+
+      /* ---------- Stat cards ---------- */
+      .adx-stats-grid { display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+      @media (max-width: 1300px) { .adx-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+      @media (max-width: 640px) { .adx-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      .adx-stat-card {
+        background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.06);
+        padding: 1.15rem 1.2rem; display: flex; flex-direction: column; gap: 0.45rem; min-width: 0;
+      }
+      .adx-stat-top { display: flex; align-items: center; justify-content: space-between; }
+      .adx-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 1.1rem; flex-shrink: 0; }
+      .adx-stat-value { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--accent-dark); line-height: 1; }
+      .adx-stat-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+      .adx-stat-sub { font-size: 0.72rem; color: var(--muted); }
+
+      /* ---------- Generic cards ---------- */
+      .adx-card {
+        background: #fff; border-radius: 22px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.05);
+        padding: 1.4rem 1.4rem 1.5rem; min-width: 0;
+      }
+      .adx-card h3 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.2rem; font-size: 1.1rem; }
+      .adx-card-sub { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem; }
+      .adx-card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+      .adx-card-head a, .adx-card-head button.adx-link-btn { font-size: 0.8rem; font-weight: 700; color: var(--cert-accent-dark); text-decoration: none; background: none; border: none; cursor: pointer; padding: 0; }
+      .adx-card-head a:hover, .adx-card-head button.adx-link-btn:hover { text-decoration: underline; }
+      .adx-empty { color: var(--muted); font-size: 0.88rem; padding: 0.6rem 0; }
+
+      .adx-select {
+        padding: 0.55rem 0.85rem; border: 1.5px solid var(--border); border-radius: 10px;
+        background: var(--surface-3); color: var(--text); font: inherit; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+        width: 100%;
+      }
+      .adx-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,213,0,0.15); }
+
+      /* ---------- Tables ---------- */
+      .adx-table-wrap { overflow-x: auto; }
+      .adx-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      .adx-table th { text-align: left; color: var(--muted); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.6rem; border-bottom: 2px solid rgba(15,34,72,0.08); white-space: nowrap; }
+      .adx-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid rgba(15,34,72,0.06); color: var(--text); vertical-align: middle; }
+      .adx-table tr:last-child td { border-bottom: none; }
+      .adx-table tr:hover td { background: var(--surface-3); }
+      .adx-icon-btn { background: none; border: none; cursor: pointer; font-size: 0.95rem; padding: 0.3rem 0.4rem; border-radius: 8px; }
+      .adx-icon-btn:hover { background: var(--surface-3); }
+
+      /* ---------- Mobile sidebar toggle ---------- */
+      .adx-backdrop { display: none; position: fixed; inset: 0; background: rgba(6,14,32,0.45); z-index: 35; }
+      @media (max-width: 900px) {
+        .adx-hamburger { display: inline-flex; }
+        .adx-sidebar { transform: translateX(-100%); }
+        .adx-main { margin-left: 0; }
+        .adx-shell.adx-sidebar-open .adx-sidebar { transform: translateX(0); }
+        .adx-shell.adx-sidebar-open .adx-backdrop { display: block; }
+      }
+
+      /* =========================================================
+         Calendar — page-specific ("cal-" prefix)
+      ========================================================= */
+      :root {
+        --cal-event: #2BA84A;
+        --cal-exam: #2B6CB0;
+        --cal-deadline: #C97A00;
+        --cal-deadline-dot: #FF9F0A;
+        --cal-holiday: #E4483F;
+      }
+
+      .cal-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem; margin-bottom: 1.1rem; }
+      .cal-nav-group { display: flex; align-items: center; gap: 0.5rem; }
+      .cal-icon-btn {
+        width: 36px; height: 36px; border-radius: 10px; border: 1.5px solid var(--border); background: #fff;
+        display: grid; place-items: center; cursor: pointer; font-size: 0.9rem; color: var(--accent-dark);
+      }
+      .cal-icon-btn:hover { background: var(--surface-3); }
+      .cal-today-btn {
+        padding: 0.5rem 0.9rem; border-radius: 10px; border: 1.5px solid var(--border); background: #fff;
+        font-weight: 700; font-size: 0.82rem; cursor: pointer; color: var(--accent-dark); font-family: inherit;
+      }
+      .cal-today-btn:hover { background: var(--surface-3); }
+      .cal-month-label { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--accent-dark); min-width: 190px; text-align: center; }
+      .cal-view-switch { display: flex; background: var(--surface-3); border-radius: 10px; padding: 0.25rem; gap: 0.15rem; }
+      .cal-view-btn {
+        padding: 0.45rem 0.95rem; border: none; background: none; border-radius: 8px; font-weight: 700; font-size: 0.8rem;
+        color: var(--muted); cursor: pointer; font-family: inherit;
+      }
+      .cal-view-btn.is-active { background: #fff; color: var(--accent-dark); box-shadow: 0 2px 6px rgba(15,34,72,0.12); }
+
+      .cal-layout { display: grid; grid-template-columns: minmax(0, 2.3fr) minmax(260px, 1fr); gap: 1.25rem; align-items: start; }
+      @media (max-width: 1150px) { .cal-layout { grid-template-columns: 1fr; } }
+
+      .cal-main-card { background: #fff; border-radius: 22px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.05); padding: 1.2rem; min-width: 0; }
+
+      .cal-weekday-row { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 0.4rem; }
+      .cal-weekday-row span { text-align: center; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; padding: 0.3rem 0; }
+
+      .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid rgba(15,34,72,0.08); border-radius: 14px; overflow: hidden; }
+      .cal-day {
+        min-height: 108px; padding: 0.5rem; background: #fff; border-right: 1px solid rgba(15,34,72,0.06); border-bottom: 1px solid rgba(15,34,72,0.06);
+        cursor: pointer; position: relative; display: flex; flex-direction: column; gap: 0.2rem;
+      }
+      .cal-grid .cal-day:nth-child(7n) { border-right: none; }
+      .cal-day:hover { background: var(--surface-3); }
+      .cal-day.is-outside { background: var(--surface-3); }
+      .cal-day.is-outside .cal-day-num { color: #b7c1d1; }
+      .cal-day.is-today { background: rgba(255,213,0,0.10); box-shadow: inset 0 0 0 2px var(--accent); }
+      .cal-day-num { font-weight: 700; font-size: 0.82rem; color: var(--text); }
+      .cal-pill {
+        display: flex; align-items: center; gap: 0.3rem; font-size: 0.66rem; font-weight: 700; padding: 0.14rem 0.35rem;
+        border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+      }
+      .cal-pill .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+      .cal-pill-event { background: rgba(43,168,74,0.12); color: var(--cal-event); }
+      .cal-pill-exam { background: rgba(43,108,176,0.12); color: var(--cal-exam); }
+      .cal-pill-deadline { background: rgba(255,159,10,0.15); color: var(--cal-deadline); }
+      .cal-pill-holiday { background: rgba(228,72,63,0.12); color: var(--cal-holiday); }
+      .cal-pill .dot.cal-dot-event { background: var(--cal-event); }
+      .cal-pill .dot.cal-dot-exam { background: var(--cal-exam); }
+      .cal-pill .dot.cal-dot-deadline { background: var(--cal-deadline-dot); }
+      .cal-pill .dot.cal-dot-holiday { background: var(--cal-holiday); }
+      .cal-more { font-size: 0.64rem; color: var(--cert-accent-dark); font-weight: 700; cursor: pointer; }
+      .cal-more:hover { text-decoration: underline; }
+
+      /* ---------- Agenda (week / day / list views) ---------- */
+      .cal-agenda-group { margin-bottom: 1.1rem; }
+      .cal-agenda-group:last-child { margin-bottom: 0; }
+      .cal-agenda-heading { font-weight: 700; color: var(--accent-dark); font-size: 0.92rem; margin: 0 0 0.55rem; padding-bottom: 0.35rem; border-bottom: 2px solid rgba(15,34,72,0.07); }
+      .cal-agenda-item {
+        display: flex; align-items: center; gap: 0.7rem; padding: 0.65rem 0.8rem; border-radius: 12px;
+        background: var(--surface-3); margin-bottom: 0.5rem; cursor: pointer; border: 1px solid rgba(15,34,72,0.05);
+      }
+      .cal-agenda-item:hover { border-color: rgba(15,34,72,0.15); }
+      .cal-agenda-item:last-child { margin-bottom: 0; }
+      .cal-agenda-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+      .cal-agenda-main { flex: 1; min-width: 0; }
+      .cal-agenda-title { font-weight: 700; font-size: 0.86rem; color: var(--text); margin: 0; }
+      .cal-agenda-meta { font-size: 0.74rem; color: var(--muted); margin: 0.15rem 0 0; }
+      .cal-agenda-badge { font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 999px; text-transform: capitalize; flex-shrink: 0; }
+
+      /* ---------- Upcoming Events sidebar list ---------- */
+      .cal-upcoming-item { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(15,34,72,0.06); cursor: pointer; }
+      .cal-upcoming-item:last-child { border-bottom: none; }
+      .cal-upcoming-item:hover .cal-upcoming-title { text-decoration: underline; }
+      .cal-upcoming-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 0.35rem; flex-shrink: 0; }
+      .cal-upcoming-title { font-weight: 700; font-size: 0.85rem; color: var(--text); margin: 0; }
+      .cal-upcoming-meta { font-size: 0.74rem; color: var(--muted); margin: 0.1rem 0 0; }
+
+      /* ---------- Legend ---------- */
+      .cal-legend-item { display: flex; align-items: flex-start; gap: 0.55rem; margin-bottom: 0.75rem; }
+      .cal-legend-item:last-child { margin-bottom: 0; }
+      .cal-legend-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 0.28rem; flex-shrink: 0; }
+      .cal-legend-title { font-weight: 700; font-size: 0.85rem; color: var(--text); margin: 0; }
+      .cal-legend-sub { font-size: 0.74rem; color: var(--muted); margin: 0.1rem 0 0; }
+
+      /* ---------- Modals (reuse .dashboard-modal base from style.css) ---------- */
+      .cal-modal-card { width: min(520px, 100%); }
+      .cal-modal-card h3 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 1.1rem; }
+      .cal-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; }
+      @media (max-width: 480px) { .cal-form-row { grid-template-columns: 1fr; } }
+      .cal-modal-actions { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-top: 1.3rem; flex-wrap: wrap; }
+      .cal-modal-actions-right { display: flex; gap: 0.6rem; margin-left: auto; }
+
+      @media (max-width: 900px) {
+        .adx-stats-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      }
+
+      /* ---------- Dark Mode ---------- */
+      body[data-theme="dark"] {
+        --adx-surface: #0f1b2e;
+        --adx-surface-2: #16253d;
+        --adx-surface-3: #101c2a;
+        --adx-text: #f3f7ff;
+        --adx-muted: #9fb0c8;
+        --adx-border: rgba(255,255,255,0.12);
+        --adx-shadow: 0 18px 40px rgba(0,0,0,0.4);
+      }
+
+      body[data-theme="dark"] .adx-topbar {
+        background: var(--adx-surface);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-topbar h1 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(22,37,61,0.8);
+        color: #f3f7ff;
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle:hover {
+        background: rgba(30,45,70,0.95);
+      }
+
+      body[data-theme="dark"] .adx-bell {
+        background: rgba(16,28,42,0.8);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-name {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-role {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-stat-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-stat-value {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-stat-label,
+      body[data-theme="dark"] .adx-card-sub {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-card h3 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-empty {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-list-item {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-title {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-meta {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-table-wrap {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-table th {
+        color: var(--adx-muted);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-table td {
+        color: var(--adx-text);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] button,
+      body[data-theme="dark"] input,
+      body[data-theme="dark"] select,
+      body[data-theme="dark"] textarea {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-breadcrumb {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-page-head h2 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-page-head p {
+        color: var(--adx-muted);
+      }
+      
+      /* Page-scoped dark-mode overrides for Calendar to override local white backgrounds */
+      body[data-theme="dark"] .cal-main-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .cal-grid {
+        background: transparent;
+        border-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .cal-day {
+        background: var(--adx-surface-3);
+        border-right: 1px solid var(--adx-border);
+        border-bottom: 1px solid var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .cal-day:hover { background: var(--adx-surface-2); }
+      body[data-theme="dark"] .cal-day.is-outside { background: var(--adx-surface-3); }
+      body[data-theme="dark"] .cal-day.is-today { background: rgba(255,213,0,0.06); box-shadow: inset 0 0 0 2px var(--accent); }
+
+      body[data-theme="dark"] .cal-icon-btn,
+      body[data-theme="dark"] .cal-today-btn {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .cal-view-switch { background: rgba(16,28,42,0.88); border: 1px solid var(--adx-border); }
+      body[data-theme="dark"] .cal-view-btn { color: var(--adx-muted); }
+      body[data-theme="dark"] .cal-view-btn.is-active { background: var(--adx-surface); color: var(--adx-text); box-shadow: none; }
+
+      body[data-theme="dark"] .cal-pill { color: var(--adx-text); }
+      body[data-theme="dark"] .cal-pill-event { background: rgba(43,168,74,0.12); }
+      body[data-theme="dark"] .cal-pill-exam { background: rgba(43,108,176,0.12); }
+      body[data-theme="dark"] .cal-pill-deadline { background: rgba(255,159,10,0.12); }
+      body[data-theme="dark"] .cal-pill-holiday { background: rgba(228,72,63,0.10); }
+
+      body[data-theme="dark"] .cal-agenda-item { background: var(--adx-surface-3); border-color: var(--adx-border); }
+      body[data-theme="dark"] .cal-upcoming-item { border-bottom-color: var(--adx-border); }
+      body[data-theme="dark"] .cal-upcoming-title { color: var(--adx-text); }
+
+          /* ---------- Walk-in Registration Modal ---------- */
+      .walk-in-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .walk-in-modal.is-open {
+        display: flex;
+      }
+      .walk-in-modal-content {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 2rem;
+      }
+      body[data-theme="dark"] .walk-in-modal-content {
+        background: var(--adx-surface);
+        color: var(--adx-text);
+      }
+      .walk-in-modal h2 {
+        font-family: 'Playfair Display', serif;
+        color: var(--accent-dark);
+        margin: 0 0 1rem;
+        font-size: 1.4rem;
+      }
+      body[data-theme="dark"] .walk-in-modal h2 {
+        color: #f3f7ff;
+      }
+      .walk-in-form-group {
+        margin-bottom: 1rem;
+      }
+      .walk-in-form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      body[data-theme="dark"] .walk-in-form-group label {
+        color: var(--adx-text);
+      }
+      .walk-in-form-group input,
+      .walk-in-form-group select,
+      .walk-in-form-group textarea {
+        width: 100%;
+        padding: 0.7rem;
+        border: 1px solid rgba(15,34,72,0.15);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      body[data-theme="dark"] .walk-in-form-group input,
+      body[data-theme="dark"] .walk-in-form-group select,
+      body[data-theme="dark"] .walk-in-form-group textarea {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.12);
+        color: var(--adx-text);
+      }
+      .walk-in-form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .walk-in-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 600px) {
+        .walk-in-form-row { grid-template-columns: 1fr; }
+      }
+      .walk-in-modal-buttons {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1.5rem;
+      }
+      .walk-in-modal-buttons button {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+      .walk-in-modal-buttons .btn-primary {
+        background: var(--accent-dark);
+        color: #fff;
+      }
+      .walk-in-modal-buttons .btn-primary:hover {
+        filter: brightness(1.1);
+      }
+      .walk-in-modal-buttons .btn-secondary {
+        background: rgba(15,34,72,0.08);
+        color: var(--accent-dark);
+      }
+      .walk-in-modal-buttons .btn-secondary:hover {
+        background: rgba(15,34,72,0.12);
+      }
+      body[data-theme="dark"] .walk-in-modal-buttons .btn-secondary {
+        background: rgba(255,255,255,0.1);
+        color: #f3f7ff;
+      }
+      .walk-in-note {
+        background: rgba(43,108,176,0.08);
+        border-left: 4px solid var(--cert-accent-dark);
+        padding: 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+      }
+      body[data-theme="dark"] .walk-in-note {
+        background: rgba(43,108,176,0.15);
+        color: var(--adx-text);
+      }
+      .walk-in-loading {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+      }
+      .walk-in-loading.is-active {
+        display: block;
+      }
+      .walk-in-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(15,34,72,0.2);
+        border-top-color: var(--accent-dark);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      body[data-theme="dark"] .walk-in-spinner {
+        border-color: rgba(255,255,255,0.2);
+        border-top-color: #f3f7ff;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+</style>
+  </head>
+  <body data-page="calendar">
+    <div class="adx-shell" id="adx-shell">
+      <div class="adx-backdrop" id="adx-backdrop"></div>
+
+      <!-- ============ Sidebar ============ -->
+      <aside class="adx-sidebar">
+        <a class="adx-brand" href="index.html" style="text-decoration:none;color:#fff;">
+          <img src="bhflogo.jpg" alt="BHF logo" />
+          <span class="adx-brand-text">
+            <strong>BHF</strong>
+            <span id="adx-brand-sub">TRAINING &amp; CERTIFICATE</span>
+          </span>
+        </a>
+        <nav class="adx-nav" aria-label="Admin sections">
+          <a href="admin.html" id="adx-nav-dashboard"><span class="adx-nav-icon">📊</span> Dashboard</a>
+          <a href="manage-users.html"><span class="adx-nav-icon">👥</span> User Management</a>
+          <a href="manage-instructors.html"><span class="adx-nav-icon">👩‍🏫</span> Instructor Management</a>
+          <a href="manage-courses.html"><span class="adx-nav-icon">📘</span> Course Management</a>
+          <a href="quiz-management.html"><span class="adx-nav-icon">📝</span> Quiz Management</a>
+          <a href="certificates.html"><span class="adx-nav-icon">🏆</span> Certificates</a>
+          <a href="reports-analytics.html"><span class="adx-nav-icon">📈</span> Reports &amp; Analytics</a>
+          <a href="calendar.html" class="is-active"><span class="adx-nav-icon">📅</span> Calendar</a>
+          <a href="index.html"><span class="adx-nav-icon">🏠</span> Browse Home</a>
+          <div class="adx-nav-sub">
+            <a href="login.html?from=admin"><span class="adx-nav-icon">🔐</span> Login Page</a>
+            <a href="signup.html?from=admin"><span class="adx-nav-icon">📝</span> Create Account</a>
+            <a href="#" id="open-walkin-modal"><span class="adx-nav-icon">🧑‍🎓</span> Walk-in Registration</a>
+          </div>
+        </nav>
+        <div class="adx-sidebar-footer">
+          <a href="login.html" id="nav-auth-link" class="login-link" style="display:none;"><span class="adx-nav-icon">🔑</span> Login</a>
+          <a href="login.html" id="logout-button"><span class="adx-nav-icon">🚪</span> Logout</a>
+        </div>
+      </aside>
+
+      <!-- ============ Main column ============ -->
+      <div class="adx-main">
+        <header class="adx-topbar">
+          <div class="adx-topbar-left">
+            <button class="adx-hamburger" id="adx-hamburger" type="button" aria-label="Toggle menu">☰</button>
+            <h1>Calendar</h1>
+          </div>
+          <div class="adx-topbar-right">
+            <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙 Dark mode</button>
+            <a href="admin.html#adx-notifications" class="adx-bell" aria-label="Notifications" id="adx-bell-link">
+              🔔
+              <span class="adx-bell-count" id="adx-bell-count">0</span>
+            </a>
+            <div class="adx-profile">
+              <div class="adx-profile-avatar" id="adx-profile-avatar">A</div>
+              <div>
+                <p class="adx-profile-name" id="adx-profile-name">Admin</p>
+                <p class="adx-profile-role" id="adx-profile-role">Administrator</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="adx-content">
+          <p class="adx-breadcrumb"><a href="admin.html" id="adx-breadcrumb-dashboard">Dashboard</a> &nbsp;›&nbsp; Calendar</p>
+
+          <div class="adx-page-head">
+            <div>
+              <h2>Calendar</h2>
+              <p>View and manage important events, schedules, deadlines, and exams.</p>
+            </div>
+            <div class="adx-page-head-actions">
+              <button class="btn btn-secondary" id="cal-add-event-btn" type="button">+ Add Event</button>
+              <button class="btn btn-primary" id="cal-add-exam-btn" type="button">+ Add Exam</button>
+            </div>
+          </div>
+
+          <!-- ============ Stat cards ============ -->
+          <div class="adx-stats-grid">
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <span class="adx-stat-icon" style="background:rgba(43,108,176,0.12);">📅</span>
+              </div>
+              <span class="adx-stat-value" id="cal-stat-events">0</span>
+              <span class="adx-stat-label">Upcoming Events</span>
+              <span class="adx-stat-sub">in next 7 days</span>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <span class="adx-stat-icon" style="background:rgba(43,108,176,0.12);">📝</span>
+              </div>
+              <span class="adx-stat-value" id="cal-stat-exams">0</span>
+              <span class="adx-stat-label">Exams Scheduled</span>
+              <span class="adx-stat-sub">in next 7 days</span>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <span class="adx-stat-icon" style="background:rgba(255,159,10,0.15);">⏰</span>
+              </div>
+              <span class="adx-stat-value" id="cal-stat-deadlines">0</span>
+              <span class="adx-stat-label">Course Deadlines</span>
+              <span class="adx-stat-sub">in next 7 days</span>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <span class="adx-stat-icon" style="background:rgba(43,168,74,0.14);">🎉</span>
+              </div>
+              <span class="adx-stat-value" id="cal-stat-holidays">0</span>
+              <span class="adx-stat-label">Holidays</span>
+              <span class="adx-stat-sub">in next 30 days</span>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <span class="adx-stat-icon" style="background:rgba(228,72,63,0.12);">🗓️</span>
+              </div>
+              <span class="adx-stat-value" id="cal-stat-total">0</span>
+              <span class="adx-stat-label">Total Events</span>
+              <span class="adx-stat-sub">this month</span>
+            </div>
+          </div>
+
+          <!-- ============ Toolbar ============ -->
+          <div class="cal-toolbar">
+            <div class="cal-nav-group">
+              <button class="cal-icon-btn" id="cal-prev" type="button" aria-label="Previous">‹</button>
+              <button class="cal-icon-btn" id="cal-next" type="button" aria-label="Next">›</button>
+              <button class="cal-today-btn" id="cal-today" type="button">Today</button>
+            </div>
+            <div class="cal-month-label" id="cal-month-label">—</div>
+            <div class="cal-view-switch" id="cal-view-switch">
+              <button class="cal-view-btn is-active" data-view="month" type="button">Month</button>
+              <button class="cal-view-btn" data-view="week" type="button">Week</button>
+              <button class="cal-view-btn" data-view="day" type="button">Day</button>
+              <button class="cal-view-btn" data-view="list" type="button">List</button>
+            </div>
+          </div>
+
+          <!-- ============ Calendar + sidebar ============ -->
+          <div class="cal-layout">
+            <div class="cal-main-card">
+              <div id="cal-weekday-row" class="cal-weekday-row">
+                <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+              </div>
+              <div id="cal-view-body">
+                <p class="adx-empty">Loading calendar…</p>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:1.25rem;">
+              <div class="adx-card">
+                <div class="adx-card-head">
+                  <h3>Upcoming Events</h3>
+                  <button class="adx-link-btn" id="cal-upcoming-viewall" type="button">View All</button>
+                </div>
+                <div id="cal-upcoming-list">
+                  <p class="adx-empty">Loading…</p>
+                </div>
+              </div>
+
+              <div class="adx-card">
+                <h3>Calendar Filters</h3>
+                <p class="adx-card-sub">Narrow down what's shown</p>
+                <div class="form-group">
+                  <label for="cal-filter-type">Event Type</label>
+                  <select class="adx-select" id="cal-filter-type">
+                    <option value="all">All Types</option>
+                    <option value="event">Event</option>
+                    <option value="exam">Exam</option>
+                    <option value="deadline">Deadline</option>
+                    <option value="holiday">Holiday</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="cal-filter-course">Course</label>
+                  <select class="adx-select" id="cal-filter-course">
+                    <option value="all">All Courses</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="cal-filter-instructor">Instructor</label>
+                  <select class="adx-select" id="cal-filter-instructor">
+                    <option value="all">All Instructors</option>
+                  </select>
+                </div>
+                <button class="btn btn-secondary" id="cal-filter-reset" type="button" style="width:100%; padding:0.6rem;">Reset</button>
+              </div>
+
+              <div class="adx-card">
+                <h3>Calendar Legend</h3>
+                <div class="cal-legend-item">
+                  <span class="cal-legend-dot" style="background:var(--cal-event);"></span>
+                  <div><p class="cal-legend-title">Event</p><p class="cal-legend-sub">General events and meetings</p></div>
+                </div>
+                <div class="cal-legend-item">
+                  <span class="cal-legend-dot" style="background:var(--cal-exam);"></span>
+                  <div><p class="cal-legend-title">Exam</p><p class="cal-legend-sub">Scheduled exams and quizzes</p></div>
+                </div>
+                <div class="cal-legend-item">
+                  <span class="cal-legend-dot" style="background:var(--cal-deadline-dot);"></span>
+                  <div><p class="cal-legend-title">Deadline</p><p class="cal-legend-sub">Course deadlines and submissions</p></div>
+                </div>
+                <div class="cal-legend-item">
+                  <span class="cal-legend-dot" style="background:var(--cal-holiday);"></span>
+                  <div><p class="cal-legend-title">Holiday</p><p class="cal-legend-sub">Holidays and special dates</p></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ Events List table ============ -->
+          <div class="adx-card" style="margin-top:1.25rem;">
+            <div class="adx-card-head">
+              <h3>Events List</h3>
+              <button class="adx-link-btn" id="cal-table-viewall" type="button">View All Events</button>
+            </div>
+            <div class="adx-table-wrap">
+              <table class="adx-table">
+                <thead>
+                  <tr>
+                    <th>Event</th>
+                    <th>Type</th>
+                    <th>Course</th>
+                    <th>Date &amp; Time</th>
+                    <th>Created By</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="cal-events-table-body">
+                  <tr><td colspan="6" class="adx-empty">Loading events…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Add / Edit Event modal (Event / Deadline / Holiday) ============ -->
+    <div id="cal-event-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="cal-event-modal-title">
+      <div class="dashboard-modal-card cal-modal-card">
+        <button class="dashboard-modal-close" type="button" data-cal-close aria-label="Close dialog">×</button>
+        <h3 id="cal-event-modal-title">Add Event</h3>
+        <form id="cal-event-form">
+          <input type="hidden" id="cal-event-id" value="" />
+          <div class="form-group">
+            <label for="cal-event-title">Title</label>
+            <input type="text" id="cal-event-title" placeholder="e.g. Instructor Meeting" required />
+          </div>
+          <div class="cal-form-row">
+            <div class="form-group">
+              <label for="cal-event-type">Type</label>
+              <select class="adx-select" id="cal-event-type">
+                <option value="event">Event</option>
+                <option value="deadline">Deadline</option>
+                <option value="holiday">Holiday</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="cal-event-date">Date</label>
+              <input type="date" id="cal-event-date" required />
+            </div>
+          </div>
+          <div class="cal-form-row">
+            <div class="form-group">
+              <label for="cal-event-time">Time (optional)</label>
+              <input type="time" id="cal-event-time" />
+            </div>
+            <div class="form-group">
+              <label for="cal-event-course">Course (optional)</label>
+              <select class="adx-select" id="cal-event-course">
+                <option value="">— None —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="cal-event-instructor">Instructor (optional)</label>
+            <select class="adx-select" id="cal-event-instructor">
+              <option value="">— None —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="cal-event-notes">Description / Notes</label>
+            <textarea id="cal-event-notes" rows="3" placeholder="Optional details…"></textarea>
+          </div>
+          <p class="form-note" id="cal-event-note"></p>
+          <div class="cal-modal-actions">
+            <button class="btn btn-secondary" id="cal-event-delete" type="button" style="display:none; background:rgba(228,72,63,0.1); color:#b33a3a; border-color:rgba(228,72,63,0.25);">Delete</button>
+            <div class="cal-modal-actions-right">
+              <button class="btn btn-secondary" type="button" data-cal-close>Cancel</button>
+              <button class="btn btn-primary" type="submit">Save</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============ Add / Edit Exam modal ============ -->
+    <div id="cal-exam-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="cal-exam-modal-title">
+      <div class="dashboard-modal-card cal-modal-card">
+        <button class="dashboard-modal-close" type="button" data-cal-close aria-label="Close dialog">×</button>
+        <h3 id="cal-exam-modal-title">Add Exam</h3>
+        <form id="cal-exam-form">
+          <input type="hidden" id="cal-exam-id" value="" />
+          <div class="form-group">
+            <label for="cal-exam-course">Course</label>
+            <select class="adx-select" id="cal-exam-course" required>
+              <option value="">Choose a course</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="cal-exam-title">Exam Title (optional)</label>
+            <input type="text" id="cal-exam-title" placeholder="e.g. Networking Quiz 1 (defaults to course name)" />
+          </div>
+          <div class="cal-form-row">
+            <div class="form-group">
+              <label for="cal-exam-date">Exam Date</label>
+              <input type="date" id="cal-exam-date" required />
+            </div>
+            <div class="form-group">
+              <label for="cal-exam-time">Exam Time (optional)</label>
+              <input type="time" id="cal-exam-time" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="cal-exam-instructor">Instructor (optional)</label>
+            <select class="adx-select" id="cal-exam-instructor">
+              <option value="">— None —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="cal-exam-notes">Notes</label>
+            <textarea id="cal-exam-notes" rows="3" placeholder="Optional details…"></textarea>
+          </div>
+          <p class="form-note" id="cal-exam-note"></p>
+          <div class="cal-modal-actions">
+            <button class="btn btn-secondary" id="cal-exam-delete" type="button" style="display:none; background:rgba(228,72,63,0.1); color:#b33a3a; border-color:rgba(228,72,63,0.25);">Delete</button>
+            <div class="cal-modal-actions-right">
+              <button class="btn btn-secondary" type="button" data-cal-close>Cancel</button>
+              <button class="btn btn-primary" type="submit">Save</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+        <!-- ============ Walk-in Registration Modal ============ -->
+    <div id="walk-in-modal" class="walk-in-modal">
+      <div class="walk-in-modal-content">
+        <h2>📝 Walk-in Student Registration</h2>
+        
+        <div class="walk-in-note">
+          <strong>Note:</strong> A temporary password will be generated and sent to the student's email along with login credentials and certificate information.
+        </div>
+
+        <form id="walk-in-form" style="display: none;">
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-first-name">First Name *</label>
+              <input type="text" id="walk-in-first-name" placeholder="e.g., John" required />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-last-name">Last Name *</label>
+              <input type="text" id="walk-in-last-name" placeholder="e.g., Doe" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-email">Email Address *</label>
+            <input type="email" id="walk-in-email" placeholder="student@example.com" required />
+          </div>
+
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-phone">Phone Number</label>
+              <input type="tel" id="walk-in-phone" placeholder="+1 (555) 000-0000" />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-date">Registration Date *</label>
+              <input type="date" id="walk-in-date" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-course">Enroll in Course</label>
+            <select id="walk-in-course">
+              <option value="">-- Select a course (optional) --</option>
+            </select>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-notes">Additional Notes</label>
+            <textarea id="walk-in-notes" placeholder="Any additional information about the student..."></textarea>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label>
+              <input type="checkbox" id="walk-in-send-email" checked />
+              Send login credentials email to student
+            </label>
+          </div>
+
+          <div class="walk-in-modal-buttons">
+            <button type="button" class="btn-secondary" id="close-walkin-modal">Cancel</button>
+            <button type="submit" class="btn-primary">Create Account</button>
+          </div>
+        </form>
+
+        <div id="walk-in-loading" class="walk-in-loading">
+          <div class="walk-in-spinner"></div>
+          <p style="margin-top: 0.8rem; color: var(--muted);">Creating student account...</p>
+        </div>
+
+        <div id="walk-in-success" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+            <h3 style="margin: 0 0 0.5rem; color: #2BA84A;">Student Account Created!</h3>
+            <p id="walk-in-success-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="close-walkin-success" class="btn-primary" style="width: 100%; padding: 0.7rem;">Close</button>
+          </div>
+        </div>
+
+        <div id="walk-in-error" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: #E4483F;">❌</div>
+            <h3 style="margin: 0 0 0.5rem; color: #E4483F;">Registration Failed</h3>
+            <p id="walk-in-error-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="retry-walkin" class="btn-primary" style="width: 100%; padding: 0.7rem;">Try Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- script.js manages auth/session (login pill, logout button) -->
+    <script type="module" src="script.js"></script>
+    <script>
+      if (typeof updateHeaderAuthLink === 'function') {
+        updateHeaderAuthLink();
+      }
+      // Mobile sidebar toggle
+      const adxShell = document.getElementById('adx-shell');
+      const adxHamburger = document.getElementById('adx-hamburger');
+      const adxBackdrop = document.getElementById('adx-backdrop');
+      adxHamburger?.addEventListener('click', () => adxShell.classList.toggle('adx-sidebar-open'));
+      adxBackdrop?.addEventListener('click', () => adxShell.classList.remove('adx-sidebar-open'));
+    </script>
+
+    <!-- This page's own module: guards the route, pulls live Firestore data,
+         and renders the stat cards, calendar grid, agenda views, sidebar,
+         and events table. Reuses the shared "examSchedule" collection (so
+         exams added anywhere in the app show up here) and adds a new
+         "calendarEvents" collection for Events / Deadlines / Holidays. -->
+    <script type="module">
+      import { db } from "./firebase-init.js";
+      import {
+        collection,
+        getDocs,
+        addDoc,
+        updateDoc,
+        deleteDoc,
+        doc
+      } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+      /* ---------- Role-aware "Super Admin" branding ----------
+         This page is shared between admin.html and superadmin.html.
+         When it's opened by/for a super admin, swap the sidebar brand
+         label, Dashboard link, notification bell, and profile block
+         over to the Super Admin look instead of the default Admin one,
+         so the top nav reflects who's actually signed in.
+
+         Applied in two passes:
+         1) Synchronously, right away, if the link we arrived on already
+            says ?from=superadmin — this is the normal case (clicked from
+            the Super Admin sidebar) and needs no waiting, so there's no
+            flash of the default Admin look before this runs.
+         2) After auth is ready, as a fallback for direct loads/refreshes
+            that don't carry the query param, based on the real role. */
+      const applySuperAdminBranding = () => {
+        const dashboardHref = "superadmin.html";
+        document.querySelector(".adx-sidebar")?.classList.add("is-superadmin");
+        const brandSub = document.getElementById("adx-brand-sub");
+        if (brandSub) brandSub.textContent = "SUPER ADMIN";
+        const navDash = document.getElementById("adx-nav-dashboard");
+        if (navDash) {
+          navDash.href = dashboardHref;
+          navDash.innerHTML = '<span class="adx-nav-icon">👑</span> Dashboard';
+        }
+        const breadcrumbDash = document.getElementById("adx-breadcrumb-dashboard");
+        if (breadcrumbDash) breadcrumbDash.href = dashboardHref;
+        const bellLink = document.getElementById("adx-bell-link");
+        if (bellLink) bellLink.href = `${dashboardHref}#adx-notifications`;
+        const profileAvatar = document.getElementById("adx-profile-avatar");
+        const profileName = document.getElementById("adx-profile-name");
+        const profileRole = document.getElementById("adx-profile-role");
+        if (profileAvatar) profileAvatar.textContent = "S";
+        if (profileName) profileName.textContent = "Super Admin";
+        if (profileRole) profileRole.textContent = "Master Administrator";
+      };
+
+      const cameFromSuperAdmin = new URLSearchParams(window.location.search).get("from") === "superadmin";
+      if (cameFromSuperAdmin) applySuperAdminBranding();
+
+      /* ---------- Route guard: admins only ---------- */
+      const isLocalPreview =
+        location.protocol === "file:" ||
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1";
+
+      const currentAuthForBranding = (window.getAuth && window.getAuth()) || null;
+      if (!cameFromSuperAdmin && currentAuthForBranding?.role === "superadmin") {
+        applySuperAdminBranding();
+      }
+
+      if (window.authReadyPromise) await window.authReadyPromise;
+
+      if (!isLocalPreview) {
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+          window.location.href = "login.html";
+        } else if (!window.isAdmin || !window.isAdmin()) {
+          window.location.href = "dashboard.html";
+        }
+      }
+
+      if (!cameFromSuperAdmin) {
+        const currentAuthForBrandingAfter = (window.getAuth && window.getAuth()) || null;
+        if (currentAuthForBrandingAfter?.role === "superadmin") applySuperAdminBranding();
+      }
+
+      /* ---------- Helpers ---------- */
+      const escapeHtml = (str) =>
+        String(str ?? "").replace(/[&<>"']/g, (c) => ({
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+        }[c]));
+
+      const fetchCollection = async (name) => {
+        try {
+          const snapshot = await getDocs(collection(db, name));
+          return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+        } catch (error) {
+          console.error(`Failed to load "${name}" from Firestore`, error);
+          return [];
+        }
+      };
+
+      const pad2 = (n) => String(n).padStart(2, "0");
+      const isoFromParts = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
+      const todayDate = new Date();
+      const todayStr = isoFromParts(todayDate.getFullYear(), todayDate.getMonth(), todayDate.getDate());
+      const addDaysToIso = (iso, n) => {
+        const d = new Date(`${iso}T00:00:00`);
+        d.setDate(d.getDate() + n);
+        return isoFromParts(d.getFullYear(), d.getMonth(), d.getDate());
+      };
+      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const weekdayNamesShort = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const formatDateLabel = (iso) => {
+        if (!iso) return "—";
+        const d = new Date(`${iso}T00:00:00`);
+        if (Number.isNaN(d.getTime())) return iso;
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      };
+      const formatTimeLabel = (t) => {
+        if (!t) return "";
+        const [h, m] = t.split(":").map(Number);
+        if (Number.isNaN(h)) return t;
+        const period = h >= 12 ? "PM" : "AM";
+        const h12 = h % 12 === 0 ? 12 : h % 12;
+        return `${h12}:${pad2(m || 0)} ${period}`;
+      };
+      const typeLabel = (t) => ({ event: "Event", exam: "Exam", deadline: "Deadline", holiday: "Holiday" }[t] || t);
+      const typeIcon = (t) => ({ event: "🟢", exam: "🔵", deadline: "🟠", holiday: "🔴" }[t] || "•");
+
+      /* ---------- State ---------- */
+      let courses = [];
+      let instructors = [];
+      let examSchedule = [];
+      let calendarEvents = [];
+      let unified = [];
+
+      const state = {
+        year: todayDate.getFullYear(),
+        month: todayDate.getMonth(),
+        view: "month",
+        selectedDate: todayStr,
+        filters: { type: "all", course: "all", instructor: "all" },
+        tableExpanded: false
+      };
+
+      /* ---------- Data loading ---------- */
+      const reloadAllData = async () => {
+        const [courseList, instructorList, examList, eventList] = await Promise.all([
+          (async () => {
+            if (window.coursesReadyPromise) { try { await window.coursesReadyPromise; } catch (e) {} }
+            if (typeof window.getCourseCatalog === "function") return window.getCourseCatalog();
+            return fetchCollection("courses");
+          })(),
+          fetchCollection("instructors"),
+          fetchCollection("examSchedule"),
+          fetchCollection("calendarEvents")
+        ]);
+        courses = courseList || [];
+        instructors = instructorList || [];
+        examSchedule = examList || [];
+        calendarEvents = eventList || [];
+        buildUnified();
+      };
+
+      const buildUnified = () => {
+        const fromExams = examSchedule
+          .filter((e) => e.examDate)
+          .map((e) => ({
+            id: e.id,
+            source: "exam",
+            type: "exam",
+            title: e.title || e.course || "Exam",
+            date: e.examDate,
+            time: e.examTime || "",
+            course: e.course || "",
+            instructor: e.instructor || "",
+            notes: e.notes || "",
+            createdBy: e.createdBy || "Admin"
+          }));
+        const fromEvents = calendarEvents
+          .filter((e) => e.date)
+          .map((e) => ({
+            id: e.id,
+            source: "calendarEvents",
+            type: e.type || "event",
+            title: e.title || "Untitled",
+            date: e.date,
+            time: e.time || "",
+            course: e.course || "",
+            instructor: e.instructor || "",
+            notes: e.notes || "",
+            createdBy: e.createdBy || "Admin"
+          }));
+        unified = [...fromExams, ...fromEvents].sort((a, b) => {
+          const cmp = (a.date || "").localeCompare(b.date || "");
+          if (cmp !== 0) return cmp;
+          return (a.time || "").localeCompare(b.time || "");
+        });
+      };
+
+      const filteredUnified = () => unified.filter((e) => {
+        if (state.filters.type !== "all" && e.type !== state.filters.type) return false;
+        if (state.filters.course !== "all" && e.course !== state.filters.course) return false;
+        if (state.filters.instructor !== "all" && e.instructor !== state.filters.instructor) return false;
+        return true;
+      });
+
+      /* ---------- Populate filter / form selects ---------- */
+      const populateSelects = () => {
+        const courseTitles = [...new Set(courses.map((c) => c.title).filter(Boolean))];
+        const instructorNames = [...new Set(instructors.map((i) => i.name || (i.email ? i.email.split("@")[0] : "")).filter(Boolean))];
+
+        const courseOptionsHtml = (includeAll, extra) =>
+          (includeAll ? `<option value="all">All Courses</option>` : `<option value="">${extra || "— None —"}</option>`) +
+          courseTitles.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+        const instructorOptionsHtml = (includeAll, extra) =>
+          (includeAll ? `<option value="all">All Instructors</option>` : `<option value="">${extra || "— None —"}</option>`) +
+          instructorNames.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+
+        const filterCourseSel = document.getElementById("cal-filter-course");
+        const filterInstSel = document.getElementById("cal-filter-instructor");
+        const evCourseSel = document.getElementById("cal-event-course");
+        const evInstSel = document.getElementById("cal-event-instructor");
+        const examCourseSel = document.getElementById("cal-exam-course");
+        const examInstSel = document.getElementById("cal-exam-instructor");
+
+        const prevFilterCourse = filterCourseSel.value || "all";
+        const prevFilterInst = filterInstSel.value || "all";
+        filterCourseSel.innerHTML = courseOptionsHtml(true);
+        filterInstSel.innerHTML = instructorOptionsHtml(true);
+        filterCourseSel.value = [...filterCourseSel.options].some((o) => o.value === prevFilterCourse) ? prevFilterCourse : "all";
+        filterInstSel.value = [...filterInstSel.options].some((o) => o.value === prevFilterInst) ? prevFilterInst : "all";
+
+        evCourseSel.innerHTML = courseOptionsHtml(false);
+        evInstSel.innerHTML = instructorOptionsHtml(false);
+        examCourseSel.innerHTML = `<option value="">Choose a course</option>` + courseTitles.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+        examInstSel.innerHTML = instructorOptionsHtml(false);
+      };
+
+      /* ---------- Stat cards (always reflect the full, unfiltered dataset) ---------- */
+      const renderStats = () => {
+        const in7 = (d) => d >= todayStr && d <= addDaysToIso(todayStr, 7);
+        const in30 = (d) => d >= todayStr && d <= addDaysToIso(todayStr, 30);
+        const thisMonthStart = isoFromParts(todayDate.getFullYear(), todayDate.getMonth(), 1);
+        const thisMonthEnd = isoFromParts(todayDate.getFullYear(), todayDate.getMonth() + 1, 0);
+
+        document.getElementById("cal-stat-events").textContent = unified.filter((e) => e.type === "event" && in7(e.date)).length;
+        document.getElementById("cal-stat-exams").textContent = unified.filter((e) => e.type === "exam" && in7(e.date)).length;
+        document.getElementById("cal-stat-deadlines").textContent = unified.filter((e) => e.type === "deadline" && in7(e.date)).length;
+        document.getElementById("cal-stat-holidays").textContent = unified.filter((e) => e.type === "holiday" && in30(e.date)).length;
+        document.getElementById("cal-stat-total").textContent = unified.filter((e) => e.date >= thisMonthStart && e.date <= thisMonthEnd).length;
+      };
+
+      /* ---------- Toolbar label ---------- */
+      const renderToolbarLabel = () => {
+        const label = document.getElementById("cal-month-label");
+        const weekdayRow = document.getElementById("cal-weekday-row");
+        if (state.view === "month") {
+          label.textContent = `${monthNames[state.month]} ${state.year}`;
+          weekdayRow.style.display = "grid";
+        } else if (state.view === "week") {
+          const start = startOfWeek(state.selectedDate);
+          const end = addDaysToIso(start, 6);
+          label.textContent = `${formatDateLabel(start)} – ${formatDateLabel(end)}`;
+          weekdayRow.style.display = "none";
+        } else if (state.view === "day") {
+          label.textContent = formatDateLabel(state.selectedDate);
+          weekdayRow.style.display = "none";
+        } else {
+          label.textContent = "All Events";
+          weekdayRow.style.display = "none";
+        }
+      };
+
+      const startOfWeek = (iso) => {
+        const d = new Date(`${iso}T00:00:00`);
+        d.setDate(d.getDate() - d.getDay());
+        return isoFromParts(d.getFullYear(), d.getMonth(), d.getDate());
+      };
+
+      /* ---------- Month view ---------- */
+      const renderMonthView = () => {
+        const body = document.getElementById("cal-view-body");
+        const { year, month } = state;
+        const firstOfMonth = new Date(year, month, 1);
+        const startPad = firstOfMonth.getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+        const cells = [];
+        for (let i = 0; i < startPad; i++) {
+          const dayNum = daysInPrevMonth - startPad + 1 + i;
+          const pm = month === 0 ? 11 : month - 1;
+          const py = month === 0 ? year - 1 : year;
+          cells.push({ iso: isoFromParts(py, pm, dayNum), dayNum, outside: true });
+        }
+        for (let d = 1; d <= daysInMonth; d++) {
+          cells.push({ iso: isoFromParts(year, month, d), dayNum: d, outside: false });
+        }
+        while (cells.length % 7 !== 0 || cells.length < 42) {
+          const last = cells[cells.length - 1];
+          const d = new Date(`${last.iso}T00:00:00`);
+          d.setDate(d.getDate() + 1);
+          cells.push({ iso: isoFromParts(d.getFullYear(), d.getMonth(), d.getDate()), dayNum: d.getDate(), outside: true });
+          if (cells.length >= 42) break;
+        }
+
+        const events = filteredUnified();
+        const byDate = {};
+        events.forEach((e) => { (byDate[e.date] = byDate[e.date] || []).push(e); });
+
+        const grid = document.createElement("div");
+        grid.className = "cal-grid";
+        cells.forEach((cell) => {
+          const dayEl = document.createElement("div");
+          dayEl.className = "cal-day" + (cell.outside ? " is-outside" : "") + (cell.iso === todayStr ? " is-today" : "");
+          dayEl.dataset.date = cell.iso;
+
+          const num = document.createElement("div");
+          num.className = "cal-day-num";
+          num.textContent = cell.dayNum;
+          dayEl.appendChild(num);
+
+          const dayEvents = (byDate[cell.iso] || []);
+          const shown = dayEvents.slice(0, 3);
+          shown.forEach((ev) => {
+            const pill = document.createElement("div");
+            pill.className = `cal-pill cal-pill-${ev.type}`;
+            pill.innerHTML = `<span class="dot cal-dot-${ev.type}"></span><span>${escapeHtml(ev.title)}</span>`;
+            pill.addEventListener("click", (evt) => { evt.stopPropagation(); openEditModal(ev); });
+            dayEl.appendChild(pill);
+          });
+          if (dayEvents.length > 3) {
+            const more = document.createElement("div");
+            more.className = "cal-more";
+            more.textContent = `+${dayEvents.length - 3} more`;
+            more.addEventListener("click", (evt) => {
+              evt.stopPropagation();
+              state.selectedDate = cell.iso;
+              setView("day");
+            });
+            dayEl.appendChild(more);
+          }
+
+          dayEl.addEventListener("click", () => openAddEventModal(cell.iso));
+          grid.appendChild(dayEl);
+        });
+
+        body.innerHTML = "";
+        body.appendChild(grid);
+      };
+
+      /* ---------- Agenda renderer (shared by week / day / list) ---------- */
+      const renderAgenda = (events, opts = {}) => {
+        const body = document.getElementById("cal-view-body");
+        if (!events.length) {
+          body.innerHTML = `<p class="adx-empty">${opts.emptyText || "No events found."}</p>`;
+          return;
+        }
+        const groups = {};
+        events.forEach((e) => { (groups[e.date] = groups[e.date] || []).push(e); });
+        const dates = Object.keys(groups).sort();
+
+        const wrap = document.createElement("div");
+        dates.forEach((iso) => {
+          const groupEl = document.createElement("div");
+          groupEl.className = "cal-agenda-group";
+          const heading = document.createElement("p");
+          heading.className = "cal-agenda-heading";
+          const d = new Date(`${iso}T00:00:00`);
+          heading.textContent = `${weekdayNamesShort[d.getDay()]}, ${formatDateLabel(iso)}`;
+          groupEl.appendChild(heading);
+
+          groups[iso].forEach((ev) => {
+            const item = document.createElement("div");
+            item.className = "cal-agenda-item";
+            item.innerHTML = `
+              <span class="cal-agenda-dot cal-dot-${ev.type}" style="background:var(--cal-${ev.type === 'deadline' ? 'deadline-dot' : ev.type});"></span>
+              <div class="cal-agenda-main">
+                <p class="cal-agenda-title">${escapeHtml(ev.title)}</p>
+                <p class="cal-agenda-meta">${ev.time ? formatTimeLabel(ev.time) + " · " : ""}${ev.course ? escapeHtml(ev.course) : typeLabel(ev.type)}</p>
+              </div>
+              <span class="cal-agenda-badge cal-pill-${ev.type}">${typeLabel(ev.type)}</span>
+            `;
+            item.addEventListener("click", () => openEditModal(ev));
+            groupEl.appendChild(item);
+          });
+          wrap.appendChild(groupEl);
+        });
+        body.innerHTML = "";
+        body.appendChild(wrap);
+      };
+
+      const renderWeekView = () => {
+        const start = startOfWeek(state.selectedDate);
+        const end = addDaysToIso(start, 6);
+        const events = filteredUnified().filter((e) => e.date >= start && e.date <= end);
+        renderAgenda(events, { emptyText: "No events scheduled this week." });
+      };
+
+      const renderDayView = () => {
+        const events = filteredUnified().filter((e) => e.date === state.selectedDate);
+        renderAgenda(events, { emptyText: "No events scheduled for this day." });
+      };
+
+      const renderListView = () => {
+        const events = filteredUnified().filter((e) => e.date >= todayStr);
+        renderAgenda(events, { emptyText: "No upcoming events." });
+      };
+
+      const renderCalendarBody = () => {
+        renderToolbarLabel();
+        if (state.view === "month") renderMonthView();
+        else if (state.view === "week") renderWeekView();
+        else if (state.view === "day") renderDayView();
+        else renderListView();
+      };
+
+      /* ---------- Sidebar: Upcoming Events ---------- */
+      const renderUpcomingSidebar = () => {
+        const list = document.getElementById("cal-upcoming-list");
+        const events = filteredUnified().filter((e) => e.date >= todayStr).slice(0, 5);
+        if (!events.length) {
+          list.innerHTML = `<p class="adx-empty">No upcoming events.</p>`;
+          return;
+        }
+        list.innerHTML = events.map((ev) => `
+          <div class="cal-upcoming-item" data-id="${ev.id}" data-source="${ev.source}">
+            <span class="cal-upcoming-dot" style="background:var(--cal-${ev.type === 'deadline' ? 'deadline-dot' : ev.type});"></span>
+            <div>
+              <p class="cal-upcoming-title">${escapeHtml(ev.title)}</p>
+              <p class="cal-upcoming-meta">${typeLabel(ev.type)} · ${formatDateLabel(ev.date)}${ev.time ? " · " + formatTimeLabel(ev.time) : ""}</p>
+            </div>
+          </div>
+        `).join("");
+        list.querySelectorAll(".cal-upcoming-item").forEach((el) => {
+          el.addEventListener("click", () => {
+            const ev = unified.find((u) => u.id === el.dataset.id && u.source === el.dataset.source);
+            if (ev) openEditModal(ev);
+          });
+        });
+      };
+
+      /* ---------- Events List table ---------- */
+      const renderEventsTable = () => {
+        const tbody = document.getElementById("cal-events-table-body");
+        const all = filteredUnified();
+        const rows = state.tableExpanded ? all : all.slice(0, 8);
+        document.getElementById("cal-table-viewall").textContent = state.tableExpanded ? "Show Less" : "View All Events";
+
+        if (!rows.length) {
+          tbody.innerHTML = `<tr><td colspan="6" class="adx-empty">No events found.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = rows.map((ev) => `
+          <tr>
+            <td><strong>${escapeHtml(ev.title)}</strong></td>
+            <td><span class="cal-agenda-badge cal-pill-${ev.type}">${typeLabel(ev.type)}</span></td>
+            <td>${ev.course ? escapeHtml(ev.course) : "—"}</td>
+            <td>${formatDateLabel(ev.date)}${ev.time ? " · " + formatTimeLabel(ev.time) : ""}</td>
+            <td>${escapeHtml(ev.createdBy || "Admin")}</td>
+            <td>
+              <button class="adx-icon-btn" data-edit-id="${ev.id}" data-edit-source="${ev.source}" title="Edit">✏️</button>
+              <button class="adx-icon-btn" data-del-id="${ev.id}" data-del-source="${ev.source}" title="Delete">🗑️</button>
+            </td>
+          </tr>
+        `).join("");
+
+        tbody.querySelectorAll("[data-edit-id]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const ev = unified.find((u) => u.id === btn.dataset.editId && u.source === btn.dataset.editSource);
+            if (ev) openEditModal(ev);
+          });
+        });
+        tbody.querySelectorAll("[data-del-id]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const ev = unified.find((u) => u.id === btn.dataset.delId && u.source === btn.dataset.delSource);
+            if (ev) deleteEvent(ev);
+          });
+        });
+      };
+
+      /* ---------- Master re-render ---------- */
+      const renderAll = () => {
+        renderStats();
+        renderCalendarBody();
+        renderUpcomingSidebar();
+        renderEventsTable();
+      };
+
+      /* ---------- View switching / navigation ---------- */
+      const setView = (view) => {
+        state.view = view;
+        document.querySelectorAll(".cal-view-btn").forEach((b) => b.classList.toggle("is-active", b.dataset.view === view));
+        renderCalendarBody();
+      };
+      document.getElementById("cal-view-switch").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-view]");
+        if (btn) setView(btn.dataset.view);
+      });
+
+      document.getElementById("cal-prev").addEventListener("click", () => {
+        if (state.view === "month") {
+          state.month -= 1;
+          if (state.month < 0) { state.month = 11; state.year -= 1; }
+        } else if (state.view === "week") {
+          state.selectedDate = addDaysToIso(state.selectedDate, -7);
+        } else if (state.view === "day") {
+          state.selectedDate = addDaysToIso(state.selectedDate, -1);
+        }
+        renderCalendarBody();
+      });
+      document.getElementById("cal-next").addEventListener("click", () => {
+        if (state.view === "month") {
+          state.month += 1;
+          if (state.month > 11) { state.month = 0; state.year += 1; }
+        } else if (state.view === "week") {
+          state.selectedDate = addDaysToIso(state.selectedDate, 7);
+        } else if (state.view === "day") {
+          state.selectedDate = addDaysToIso(state.selectedDate, 1);
+        }
+        renderCalendarBody();
+      });
+      document.getElementById("cal-today").addEventListener("click", () => {
+        state.year = todayDate.getFullYear();
+        state.month = todayDate.getMonth();
+        state.selectedDate = todayStr;
+        renderCalendarBody();
+      });
+
+      /* ---------- Filters ---------- */
+      const filterTypeSel = document.getElementById("cal-filter-type");
+      const filterCourseSel = document.getElementById("cal-filter-course");
+      const filterInstSel = document.getElementById("cal-filter-instructor");
+      const onFilterChange = () => {
+        state.filters.type = filterTypeSel.value;
+        state.filters.course = filterCourseSel.value;
+        state.filters.instructor = filterInstSel.value;
+        renderCalendarBody();
+        renderUpcomingSidebar();
+        renderEventsTable();
+      };
+      filterTypeSel.addEventListener("change", onFilterChange);
+      filterCourseSel.addEventListener("change", onFilterChange);
+      filterInstSel.addEventListener("change", onFilterChange);
+      document.getElementById("cal-filter-reset").addEventListener("click", () => {
+        filterTypeSel.value = "all"; filterCourseSel.value = "all"; filterInstSel.value = "all";
+        onFilterChange();
+      });
+
+      /* ---------- View All links ---------- */
+      document.getElementById("cal-upcoming-viewall").addEventListener("click", () => setView("list"));
+      document.getElementById("cal-table-viewall").addEventListener("click", () => {
+        state.tableExpanded = !state.tableExpanded;
+        renderEventsTable();
+      });
+
+      /* ---------- Modal helpers ---------- */
+      const eventModal = document.getElementById("cal-event-modal");
+      const examModal = document.getElementById("cal-exam-modal");
+      const closeModals = () => { eventModal.classList.add("hidden"); examModal.classList.add("hidden"); };
+      document.querySelectorAll("[data-cal-close]").forEach((btn) => btn.addEventListener("click", closeModals));
+      [eventModal, examModal].forEach((m) => m.addEventListener("click", (e) => { if (e.target === m) closeModals(); }));
+
+      const openAddEventModal = (dateIso) => {
+        document.getElementById("cal-event-modal-title").textContent = "Add Event";
+        document.getElementById("cal-event-id").value = "";
+        document.getElementById("cal-event-title").value = "";
+        document.getElementById("cal-event-type").value = "event";
+        document.getElementById("cal-event-date").value = dateIso || todayStr;
+        document.getElementById("cal-event-time").value = "";
+        document.getElementById("cal-event-course").value = "";
+        document.getElementById("cal-event-instructor").value = "";
+        document.getElementById("cal-event-notes").value = "";
+        document.getElementById("cal-event-note").textContent = "";
+        document.getElementById("cal-event-delete").style.display = "none";
+        eventModal.classList.remove("hidden");
+      };
+
+      const openEditEventModal = (ev) => {
+        document.getElementById("cal-event-modal-title").textContent = "Edit " + typeLabel(ev.type);
+        document.getElementById("cal-event-id").value = ev.id;
+        document.getElementById("cal-event-title").value = ev.title;
+        document.getElementById("cal-event-type").value = ev.type;
+        document.getElementById("cal-event-date").value = ev.date;
+        document.getElementById("cal-event-time").value = ev.time || "";
+        document.getElementById("cal-event-course").value = ev.course || "";
+        document.getElementById("cal-event-instructor").value = ev.instructor || "";
+        document.getElementById("cal-event-notes").value = ev.notes || "";
+        document.getElementById("cal-event-note").textContent = "";
+        document.getElementById("cal-event-delete").style.display = "inline-flex";
+        eventModal.classList.remove("hidden");
+      };
+
+      const openAddExamModal = (dateIso) => {
+        document.getElementById("cal-exam-modal-title").textContent = "Add Exam";
+        document.getElementById("cal-exam-id").value = "";
+        document.getElementById("cal-exam-course").value = "";
+        document.getElementById("cal-exam-title").value = "";
+        document.getElementById("cal-exam-date").value = dateIso || todayStr;
+        document.getElementById("cal-exam-time").value = "";
+        document.getElementById("cal-exam-instructor").value = "";
+        document.getElementById("cal-exam-notes").value = "";
+        document.getElementById("cal-exam-note").textContent = "";
+        document.getElementById("cal-exam-delete").style.display = "none";
+        examModal.classList.remove("hidden");
+      };
+
+      const openEditExamModal = (ev) => {
+        document.getElementById("cal-exam-modal-title").textContent = "Edit Exam";
+        document.getElementById("cal-exam-id").value = ev.id;
+        document.getElementById("cal-exam-course").value = ev.course || "";
+        document.getElementById("cal-exam-title").value = (ev.title && ev.title !== ev.course) ? ev.title : "";
+        document.getElementById("cal-exam-date").value = ev.date;
+        document.getElementById("cal-exam-time").value = ev.time || "";
+        document.getElementById("cal-exam-instructor").value = ev.instructor || "";
+        document.getElementById("cal-exam-notes").value = ev.notes || "";
+        document.getElementById("cal-exam-note").textContent = "";
+        document.getElementById("cal-exam-delete").style.display = "inline-flex";
+        examModal.classList.remove("hidden");
+      };
+
+      const openEditModal = (ev) => {
+        if (ev.type === "exam") openEditExamModal(ev);
+        else openEditEventModal(ev);
+      };
+
+      document.getElementById("cal-add-event-btn").addEventListener("click", () => openAddEventModal(state.selectedDate || todayStr));
+      document.getElementById("cal-add-exam-btn").addEventListener("click", () => openAddExamModal(state.selectedDate || todayStr));
+
+      /* ---------- Save / Delete: generic Event (Event / Deadline / Holiday) ---------- */
+      document.getElementById("cal-event-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const note = document.getElementById("cal-event-note");
+        const id = document.getElementById("cal-event-id").value;
+        const payload = {
+          title: document.getElementById("cal-event-title").value.trim(),
+          type: document.getElementById("cal-event-type").value,
+          date: document.getElementById("cal-event-date").value,
+          time: document.getElementById("cal-event-time").value || "",
+          course: document.getElementById("cal-event-course").value || "",
+          instructor: document.getElementById("cal-event-instructor").value || "",
+          notes: document.getElementById("cal-event-notes").value.trim() || ""
+        };
+        if (!payload.title || !payload.date) {
+          note.textContent = "Title and date are required.";
+          note.className = "form-note error";
+          return;
+        }
+        try {
+          if (id) {
+            await updateDoc(doc(db, "calendarEvents", id), payload);
+            window.showToast?.("Event updated.", "success");
+          } else {
+            await addDoc(collection(db, "calendarEvents"), { ...payload, createdBy: "Admin", createdAt: new Date().toISOString() });
+            window.createNotification?.("event", `${typeLabel(payload.type)} added: "${payload.title}" on ${payload.date}`);
+            window.showToast?.(`${typeLabel(payload.type)} added.`, "success");
+          }
+          closeModals();
+          await reloadAllData();
+          populateSelects();
+          renderAll();
+          window.refreshAdminNotificationBadge?.();
+        } catch (err) {
+          console.error("Failed to save calendar event", err);
+          note.textContent = "Unable to save. Please try again.";
+          note.className = "form-note error";
+        }
+      });
+
+      document.getElementById("cal-event-delete").addEventListener("click", async () => {
+        const id = document.getElementById("cal-event-id").value;
+        if (!id) return;
+        if (!window.confirm("Delete this item? This cannot be undone.")) return;
+        try {
+          await deleteDoc(doc(db, "calendarEvents", id));
+          window.showToast?.("Deleted.", "info");
+          closeModals();
+          await reloadAllData();
+          populateSelects();
+          renderAll();
+        } catch (err) {
+          console.error("Failed to delete calendar event", err);
+        }
+      });
+
+      /* ---------- Save / Delete: Exam (shared "examSchedule" collection) ---------- */
+      document.getElementById("cal-exam-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const note = document.getElementById("cal-exam-note");
+        const id = document.getElementById("cal-exam-id").value;
+        const courseTitle = document.getElementById("cal-exam-course").value;
+        const examDate = document.getElementById("cal-exam-date").value;
+        if (!courseTitle || !examDate) {
+          note.textContent = "Choose a course and a date.";
+          note.className = "form-note error";
+          return;
+        }
+        const courseObj = courses.find((c) => c.title === courseTitle);
+        const payload = {
+          course: courseTitle,
+          category: courseObj?.category || "General",
+          title: document.getElementById("cal-exam-title").value.trim() || courseTitle,
+          examDate,
+          examTime: document.getElementById("cal-exam-time").value || "",
+          instructor: document.getElementById("cal-exam-instructor").value || "",
+          notes: document.getElementById("cal-exam-notes").value.trim() || ""
+        };
+        try {
+          if (id) {
+            await updateDoc(doc(db, "examSchedule", id), payload);
+            window.showToast?.("Exam updated.", "success");
+          } else {
+            await addDoc(collection(db, "examSchedule"), { ...payload, createdAt: new Date().toISOString() });
+            window.createNotification?.("exam", `Exam scheduled for "${courseTitle}" on ${examDate}`);
+            window.showToast?.(`Exam scheduled: ${courseTitle}`, "success");
+          }
+          closeModals();
+          await reloadAllData();
+          populateSelects();
+          renderAll();
+          window.refreshAdminNotificationBadge?.();
+        } catch (err) {
+          console.error("Failed to save exam", err);
+          note.textContent = "Unable to save. Please try again.";
+          note.className = "form-note error";
+        }
+      });
+
+      document.getElementById("cal-exam-delete").addEventListener("click", async () => {
+        const id = document.getElementById("cal-exam-id").value;
+        if (!id) return;
+        if (!window.confirm("Remove this scheduled exam? This cannot be undone.")) return;
+        try {
+          await deleteDoc(doc(db, "examSchedule", id));
+          window.showToast?.("Exam removed.", "info");
+          closeModals();
+          await reloadAllData();
+          populateSelects();
+          renderAll();
+        } catch (err) {
+          console.error("Failed to remove exam", err);
+        }
+      });
+
+      /* ---------- Generic delete (used by the Events List table) ---------- */
+      const deleteEvent = async (ev) => {
+        const confirmMsg = ev.type === "exam" ? "Remove this scheduled exam?" : "Delete this item?";
+        if (!window.confirm(confirmMsg)) return;
+        try {
+          const coll = ev.source === "exam" ? "examSchedule" : "calendarEvents";
+          await deleteDoc(doc(db, coll, ev.id));
+          window.showToast?.("Deleted.", "info");
+          await reloadAllData();
+          populateSelects();
+          renderAll();
+        } catch (err) {
+          console.error("Failed to delete item", err);
+        }
+      };
+
+      /* ---------- Boot ---------- */
+      (async () => {
+        await reloadAllData();
+        populateSelects();
+        renderAll();
+        window.refreshAdminNotificationBadge?.();
+      })();
+          /* ---------- Walk-in Registration Modal ---------- */
+      const walkinModal = document.getElementById("walk-in-modal");
+      const openWalkinBtn = document.getElementById("open-walkin-modal");
+      const closeWalkinBtn = document.getElementById("close-walkin-modal");
+      const walkinForm = document.getElementById("walk-in-form");
+      const walkinLoading = document.getElementById("walk-in-loading");
+      const walkinSuccess = document.getElementById("walk-in-success");
+      const walkinError = document.getElementById("walk-in-error");
+
+      const walkinDateInput = document.getElementById("walk-in-date");
+      if (walkinDateInput) {
+        walkinDateInput.valueAsDate = new Date();
+      }
+
+      // Populate course dropdown (fetched independently so this modal
+      // works the same on every admin page, not just the dashboard)
+      const walkinCourseSelect = document.getElementById("walk-in-course");
+      if (walkinCourseSelect) {
+        getDocs(collection(db, "courses"))
+          .then((snapshot) => {
+            snapshot.docs.forEach((docSnap) => {
+              const c = docSnap.data();
+              const option = document.createElement("option");
+              option.value = c.title || "Untitled course";
+              option.textContent = c.title || "Untitled course";
+              walkinCourseSelect.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Failed to load courses for walk-in form", error);
+          });
+      }
+
+      const openWalkinModal = () => {
+        walkinModal.classList.add("is-open");
+        walkinForm.style.display = "block";
+        walkinLoading.classList.remove("is-active");
+        walkinSuccess.style.display = "none";
+        walkinError.style.display = "none";
+        walkinForm.reset();
+        if (walkinDateInput) walkinDateInput.valueAsDate = new Date();
+      };
+
+      const closeWalkinModal = () => {
+        walkinModal.classList.remove("is-open");
+      };
+
+      openWalkinBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openWalkinModal();
+      });
+      closeWalkinBtn?.addEventListener("click", closeWalkinModal);
+      document.getElementById("close-walkin-success")?.addEventListener("click", closeWalkinModal);
+      document.getElementById("retry-walkin")?.addEventListener("click", () => {
+        walkinForm.style.display = "block";
+        walkinError.style.display = "none";
+        walkinLoading.classList.remove("is-active");
+      });
+
+      walkinModal?.addEventListener("click", (e) => {
+        if (e.target === walkinModal) closeWalkinModal();
+      });
+
+      walkinForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const firstName = document.getElementById("walk-in-first-name")?.value.trim();
+        const lastName = document.getElementById("walk-in-last-name")?.value.trim();
+        const email = document.getElementById("walk-in-email")?.value.trim();
+        const phone = document.getElementById("walk-in-phone")?.value.trim() || "";
+        const enrollmentCourse = document.getElementById("walk-in-course")?.value || "";
+        const notes = document.getElementById("walk-in-notes")?.value.trim() || "";
+        const sendEmail = document.getElementById("walk-in-send-email")?.checked ?? true;
+
+        if (!firstName || !lastName || !email) {
+          alert("Please fill in first name, last name, and email.");
+          return;
+        }
+
+        walkinForm.style.display = "none";
+        walkinLoading.classList.add("is-active");
+
+        try {
+          const result = await window.createWalkinStudent({
+            firstName,
+            lastName,
+            email,
+            phone,
+            enrollmentCourse,
+            notes,
+            sendEmail
+          });
+
+          walkinLoading.classList.remove("is-active");
+          walkinSuccess.style.display = "block";
+
+          const successMsg = `
+            <strong>✓ ${result.fullName}</strong> registered successfully!<br/>
+            Email: ${result.email}<br/>
+            Certificate ID: ${result.certificateCode}<br/>
+            ${result.enrollmentCourse ? `Course: ${result.enrollmentCourse}` : ""}
+          `;
+          document.getElementById("walk-in-success-message").innerHTML = successMsg;
+
+          console.log("Walk-in Student Account Created:", result);
+          window.showToast?.(`Walk-in student ${result.fullName} registered successfully!`, "success");
+        } catch (error) {
+          console.error("Walk-in registration failed:", error);
+          walkinLoading.classList.remove("is-active");
+          walkinError.style.display = "block";
+          document.getElementById("walk-in-error-message").textContent = error.message || "Registration failed. Please try again.";
+          window.showToast?.(error.message || "Registration failed", "error");
+        }
+      });
+
+</script>
+  </body>
+</html>

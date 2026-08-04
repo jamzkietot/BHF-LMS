@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Instructor Portal | BHF Certification Academy</title>
+    <meta name="description" content="Manage your certification courses, track your teaching impact, and upload new content from the BHF instructor portal." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* =========================================================
+         Instructor Portal — reuses the shared "adx-" admin shell
+         design system (same as admin.html / manage-instructors.html)
+         plus a small "ix-" prefixed set of page-specific styles.
+      ========================================================= */
+      * { box-sizing: border-box; }
+      body { background: var(--bg); font-family: 'Inter', sans-serif; }
+
+      .adx-shell { display: flex; min-height: 100vh; }
+
+      /* ---------- Sidebar ---------- */
+      .adx-sidebar {
+        width: 264px; flex-shrink: 0; background: var(--accent-dark); color: #fff;
+        display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
+        z-index: 40; transition: transform 0.25s ease;
+      }
+      .adx-brand { display: flex; align-items: center; gap: 0.65rem; padding: 1.4rem 1.3rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .adx-brand img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; }
+      .adx-brand-text strong { display: block; font-size: 0.95rem; line-height: 1.2; }
+      .adx-brand-text span { font-size: 0.68rem; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; }
+      .adx-nav { flex: 1; overflow-y: auto; padding: 0.85rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+      .adx-nav a {
+        display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 12px;
+        color: rgba(255,255,255,0.78); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .adx-nav a .adx-nav-icon { font-size: 1.05rem; width: 22px; text-align: center; }
+      .adx-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+      .adx-nav a.is-active { background: var(--accent); color: var(--accent-dark); }
+      .adx-sidebar-footer { padding: 0.85rem 1.3rem 1.3rem; border-top: 1px solid rgba(255,255,255,0.08); }
+      .adx-sidebar-footer a {
+        display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.75); text-decoration: none;
+        font-weight: 600; font-size: 0.88rem; padding: 0.5rem 0;
+      }
+      .adx-sidebar-footer a:hover { color: #fff; }
+
+      /* ---------- Main column ---------- */
+      .adx-main { margin-left: 264px; flex: 1; min-width: 0; }
+      .adx-topbar {
+        position: sticky; top: 0; z-index: 30; background: #fff; border-bottom: 1px solid rgba(15,34,72,0.08);
+        display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.75rem;
+      }
+      .adx-topbar-left { display: flex; align-items: center; gap: 0.85rem; }
+      .adx-hamburger { display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--accent-dark); }
+      .adx-topbar h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--accent-dark); margin: 0; }
+      .adx-topbar-right { display: flex; align-items: center; gap: 1.1rem; }
+      .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(15,34,72,0.12);
+        background: var(--surface-3);
+        color: var(--accent-dark);
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+      .adx-topbar-right .theme-toggle:hover {
+        background: var(--surface-2);
+        border-color: rgba(15,34,72,0.2);
+      }
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle {
+        border-color: rgba(255,255,255,0.12);
+        background: rgba(22,37,61,0.8);
+        color: #f3f7ff;
+      }
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle:hover {
+        background: rgba(30,45,70,0.95);
+      }
+      .adx-profile { display: flex; align-items: center; gap: 0.65rem; }
+      .adx-profile-avatar {
+        width: 38px; height: 38px; border-radius: 50%; background: var(--accent-dark);
+        color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem;
+      }
+      .adx-profile-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.1; }
+      .adx-profile-role { font-size: 0.72rem; color: var(--muted); }
+
+      .adx-content { padding: 1.5rem 1.75rem 4rem; max-width: 1400px; }
+
+      /* ---------- Hero ---------- */
+      .ix-hero {
+        position: relative; overflow: hidden; border-radius: 26px; padding: 2.4rem 2.2rem;
+        background: linear-gradient(120deg, var(--accent-dark) 0%, #16305c 55%, var(--accent-dark) 100%);
+        color: #fff; margin-bottom: 1.5rem;
+        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
+      }
+      .ix-hero::before {
+        content: ""; position: absolute; inset: 0;
+        background: radial-gradient(circle at 85% 20%, rgba(255,213,0,0.18), transparent 55%);
+        pointer-events: none;
+      }
+      .ix-hero-copy { position: relative; max-width: 640px; }
+      .ix-hero-eyebrow {
+        display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.72rem; font-weight: 800;
+        letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+        background: rgba(255,255,255,0.08); padding: 0.35rem 0.75rem; border-radius: 999px; margin-bottom: 0.9rem;
+      }
+      .ix-hero h1 {
+        font-family: 'Playfair Display', serif; font-size: clamp(1.6rem, 2.6vw, 2.3rem);
+        margin: 0 0 0.6rem; line-height: 1.15;
+      }
+      .ix-hero p { margin: 0; color: rgba(255,255,255,0.82); font-size: 0.98rem; line-height: 1.65; max-width: 560px; }
+      .ix-hero-chips { position: relative; display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 1.15rem; }
+      .ix-hero-chip {
+        display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600;
+        color: #fff; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.16);
+        padding: 0.45rem 0.85rem; border-radius: 999px; backdrop-filter: blur(2px);
+      }
+      .ix-hero-chip strong { font-family: 'Playfair Display', serif; font-size: 0.98rem; color: var(--accent); }
+      .ix-hero-cta { position: relative; display: flex; flex-direction: column; gap: 0.6rem; align-items: flex-start; }
+      .ix-hero-cta .btn { font-size: 0.95rem; padding: 0.9rem 1.6rem; box-shadow: 0 14px 30px rgba(0,0,0,0.25); }
+      .ix-hero-cta small { color: rgba(255,255,255,0.65); font-size: 0.76rem; }
+
+      /* ---------- 3-step feature strip ---------- */
+      .ix-feature-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+      @media (max-width: 900px) { .ix-feature-grid { grid-template-columns: 1fr; } }
+      .ix-feature-card {
+        background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07);
+        box-shadow: 0 10px 26px rgba(15,34,72,0.05); padding: 1.3rem 1.3rem 1.4rem;
+        display: flex; flex-direction: column; gap: 0.5rem;
+      }
+      .ix-feature-icon {
+        width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 1.15rem;
+      }
+      .ix-feature-card h3 { margin: 0.2rem 0 0; font-family: 'Playfair Display', serif; color: var(--accent-dark); font-size: 1.05rem; }
+      .ix-feature-card p { margin: 0; color: var(--muted); font-size: 0.85rem; line-height: 1.55; }
+      .ix-section-title { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.9rem; }
+      .ix-section-title h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); font-size: 1.15rem; margin: 0; }
+      .ix-section-title span { color: var(--muted); font-size: 0.82rem; }
+
+      .ix-action-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+      .ix-action-card {
+        position: relative; background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07);
+        box-shadow: 0 10px 24px rgba(15,34,72,0.06); padding: 1.25rem 1.2rem 1.2rem;
+        display: flex; flex-direction: column; gap: 0.55rem; overflow: hidden;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+      }
+      .ix-action-card::before {
+        content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        background: linear-gradient(90deg, var(--accent), var(--cert-accent));
+      }
+      .ix-action-card:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(15,34,72,0.12); }
+      .ix-action-icon { font-size: 1.4rem; line-height: 1; }
+      .ix-action-card h4 { margin: 0; font-family: 'Playfair Display', serif; color: var(--accent-dark); font-size: 1.05rem; }
+      .ix-action-card p { margin: 0; color: var(--muted); font-size: 0.83rem; line-height: 1.55; flex: 1; }
+      .ix-action-card .btn { align-self: flex-start; margin-top: 0.2rem; }
+      @media (max-width: 900px) { .ix-action-grid { grid-template-columns: 1fr; } }
+
+      /* ---------- Stat + card system ---------- */
+      .adx-stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+      @media (max-width: 700px) { .adx-stats-grid { grid-template-columns: 1fr; } }
+      .adx-stat-card {
+        background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07);
+        box-shadow: 0 10px 26px rgba(15,34,72,0.06); padding: 1.15rem 1.2rem;
+        display: flex; flex-direction: column; gap: 0.45rem;
+      }
+      .adx-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 1.1rem; }
+      .adx-stat-value { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--accent-dark); line-height: 1; }
+      .adx-stat-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+
+      .adx-card {
+        background: #fff; border-radius: 22px; border: 1px solid rgba(15,34,72,0.07);
+        box-shadow: 0 10px 26px rgba(15,34,72,0.05); padding: 1.4rem 1.4rem 1.5rem; margin-bottom: 1.25rem;
+      }
+      .adx-card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+      .adx-card-head h3 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0; font-size: 1.15rem; }
+      .adx-card-sub { color: var(--muted); font-size: 0.82rem; margin: 0.2rem 0 0; }
+      .ix-badge {
+        display: inline-block; padding: 0.25rem 0.7rem; border-radius: 999px; background: rgba(43,108,176,0.1);
+        color: var(--cert-accent-dark); font-size: 0.75rem; font-weight: 700;
+      }
+      .ix-empty { color: var(--muted); font-size: 0.88rem; padding: 0.6rem 0; }
+
+      .ix-cta-band {
+        position: relative; overflow: hidden; border-radius: 24px; padding: 2rem 2.2rem;
+        background: linear-gradient(120deg, var(--accent) 0%, #ffe98a 100%);
+        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+      }
+      .ix-cta-band::before {
+        content: ""; position: absolute; inset: 0;
+        background: radial-gradient(circle at 8% 30%, rgba(255,255,255,0.5), transparent 55%);
+        pointer-events: none;
+      }
+      .ix-cta-copy { position: relative; max-width: 620px; }
+      .ix-cta-copy h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); font-size: clamp(1.25rem, 2vw, 1.55rem); margin: 0.7rem 0 0.5rem; line-height: 1.2; }
+      .ix-cta-copy p { margin: 0; color: rgba(15,34,72,0.75); font-size: 0.92rem; line-height: 1.6; }
+      .ix-cta-btn { position: relative; background: var(--accent-dark); color: #fff; box-shadow: 0 14px 30px rgba(15,34,72,0.25); white-space: nowrap; }
+
+      .ix-visually-hidden {
+        position: absolute; width: 1px; height: 1px; overflow: hidden;
+        clip: rect(0 0 0 0); white-space: nowrap; border: 0; padding: 0; margin: -1px;
+      }
+
+      /* ---------- Mobile sidebar toggle ---------- */
+      .adx-backdrop { display: none; position: fixed; inset: 0; background: rgba(6,14,32,0.45); z-index: 35; }
+      @media (max-width: 900px) {
+        .adx-hamburger { display: inline-flex; }
+        .adx-sidebar { transform: translateX(-100%); }
+        .adx-main { margin-left: 0; }
+        .adx-shell.adx-sidebar-open .adx-sidebar { transform: translateX(0); }
+        .adx-shell.adx-sidebar-open .adx-backdrop { display: block; }
+        .ix-hero { flex-direction: column; align-items: flex-start; }
+      }
+    </style>
+  </head>
+  <body data-page="instructor">
+    <div class="adx-shell" id="adx-shell">
+      <div class="adx-backdrop" id="adx-backdrop"></div>
+
+      <!-- ============ Sidebar ============ -->
+      <aside class="adx-sidebar">
+        <a class="adx-brand" href="index.html" style="text-decoration:none;color:#fff;">
+          <img src="bhflogo.jpg" alt="BHF logo" />
+          <span class="adx-brand-text">
+            <strong>BHF</strong>
+            <span>TRAINING &amp; CERTIFICATE</span>
+          </span>
+        </a>
+        <nav class="adx-nav" aria-label="Instructor sections">
+          <a href="instructor.html" class="is-active"><span class="adx-nav-icon">📊</span> My Dashboard</a>
+          <a href="#ix-my-courses"><span class="adx-nav-icon">📘</span> My Published Courses</a>
+          <a href="add-course.html"><span class="adx-nav-icon">➕</span> Upload Course</a>
+          <a href="programs.html"><span class="adx-nav-icon">🎓</span> Browse Programs</a>
+        </nav>
+        <div class="adx-sidebar-footer">
+          <a href="login.html" id="nav-auth-link" class="login-link" style="display:none;"><span class="adx-nav-icon">🔑</span> Login</a>
+          <a href="login.html" id="logout-button"><span class="adx-nav-icon">🚪</span> Logout</a>
+        </div>
+      </aside>
+
+      <!-- ============ Main column ============ -->
+      <div class="adx-main">
+        <header class="adx-topbar">
+          <div class="adx-topbar-left">
+            <button class="adx-hamburger" id="adx-hamburger" type="button" aria-label="Toggle menu">☰</button>
+            <h1>Instructor Portal</h1>
+          </div>
+          <div class="adx-topbar-right">
+            <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙 Dark mode</button>
+            <div class="adx-profile">
+              <div class="adx-profile-avatar" id="ix-profile-avatar">I</div>
+              <div>
+                <p class="adx-profile-name" id="ix-profile-name">Instructor</p>
+                <p class="adx-profile-role">Instructor</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="adx-content">
+
+          <!-- ============ Hero ============ -->
+          <section class="ix-hero">
+            <div class="ix-hero-copy">
+              <span class="ix-hero-eyebrow">✦ Instructor Portal</span>
+              <h1 id="ix-hero-title">Welcome back!</h1>
+              <p>Build your certification program in one place — add the course, break it into modules, and set your exam questions. Once you publish, it's live for learners.</p>
+              <div class="ix-hero-chips">
+                <span class="ix-hero-chip">📘 <strong id="ix-hero-courses">0</strong> Courses Live</span>
+                <span class="ix-hero-chip">🧩 <strong id="ix-hero-modules">0</strong> Modules</span>
+                <span class="ix-hero-chip">📝 <strong id="ix-hero-questions">0</strong> Exam Questions</span>
+              </div>
+            </div>
+            <div class="ix-hero-cta">
+              <a class="btn btn-primary" href="add-course.html">🚀 Upload New Course</a>
+              <small>Course details, modules &amp; exam questions in one flow</small>
+            </div>
+          </section>
+
+          <!-- ============ Quick upload actions ============ -->
+          <div class="ix-section-title">
+            <h2>Quick Actions</h2>
+            <span>Jump straight into the part of the builder you need</span>
+          </div>
+          <div class="ix-action-grid">
+            <div class="ix-action-card">
+              <span class="ix-action-icon">📄</span>
+              <h4>Upload Course PDF</h4>
+              <p>Upload a PDF with the full course outline, modules, and exam questions to import everything automatically.</p>
+              <a class="btn btn-primary" href="add-course.html?embed=1">+ Upload Course PDF</a>
+            </div>
+            <div class="ix-action-card">
+              <span class="ix-action-icon">🧩</span>
+              <h4>Upload Module</h4>
+              <p>Add a new learning module to an existing course and keep learners progressing smoothly.</p>
+              <a class="btn btn-secondary" href="add-course.html?embed=1&focus=modules">+ Upload Module</a>
+            </div>
+            <div class="ix-action-card">
+              <span class="ix-action-icon">📝</span>
+              <h4>Upload Exam</h4>
+              <p>Build and publish exam questions for your course so learners can be assessed quickly.</p>
+              <a class="btn btn-secondary" href="add-course.html?embed=1&focus=questions">+ Upload Exam</a>
+            </div>
+          </div>
+
+          <!-- ============ 3-step workflow strip ============ -->
+          <div class="ix-section-title">
+            <h2>How It Works</h2>
+            <span>Every course you publish follows the same simple flow</span>
+          </div>
+          <div class="ix-feature-grid">
+            <div class="ix-feature-card">
+              <div class="ix-feature-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">📘</div>
+              <h3>1. Course</h3>
+              <p>Set the title, category, description, level, and thumbnail for your certification program.</p>
+            </div>
+            <div class="ix-feature-card">
+              <div class="ix-feature-icon" style="background:rgba(124,77,255,0.14); color:#7C4DFF;">🧩</div>
+              <h3>2. Modules</h3>
+              <p>Break your course into clear, structured modules so learners can progress step by step.</p>
+            </div>
+            <div class="ix-feature-card">
+              <div class="ix-feature-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">📝</div>
+              <h3>3. Exam</h3>
+              <p>Add the exam questions and correct answers learners must pass to earn their certificate.</p>
+            </div>
+          </div>
+
+          <!-- ============ Stat cards ============ -->
+          <div class="adx-stats-grid">
+            <div class="adx-stat-card">
+              <div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">📘</div>
+              <div class="adx-stat-value" id="ix-stat-courses">0</div>
+              <div class="adx-stat-label">Courses Uploaded</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-icon" style="background:rgba(124,77,255,0.14); color:#7C4DFF;">🧩</div>
+              <div class="adx-stat-value" id="ix-stat-modules">0</div>
+              <div class="adx-stat-label">Modules Published</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">📝</div>
+              <div class="adx-stat-value" id="ix-stat-questions">0</div>
+              <div class="adx-stat-label">Exam Questions Set</div>
+            </div>
+          </div>
+
+          <!-- ============ My Published Courses ============ -->
+          <div class="adx-card" id="ix-my-courses">
+            <div class="adx-card-head">
+              <div>
+                <h3>My Published Courses</h3>
+                <p class="adx-card-sub">Every course you've published, with its modules and exam questions bundled in. Edit to update content, or delete to take it down.</p>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span class="ix-badge" id="instructor-courses-count-badge">0 Courses</span>
+                <a class="btn btn-primary" href="add-course.html">+ Upload Course</a>
+              </div>
+            </div>
+            <div id="instructor-course-list-panel">
+              <p class="ix-empty">Loading your courses…</p>
+            </div>
+          </div>
+
+          <!-- ============ Closing CTA band ============ -->
+          <section class="ix-cta-band">
+            <div class="ix-cta-copy">
+              <span class="ix-hero-eyebrow" style="color:var(--accent-dark); background:rgba(255,255,255,0.35);">✦ Grow Your Reach</span>
+              <h2>Every course you publish reaches more learners.</h2>
+              <p>Keep your certification catalog fresh — new courses, updated modules, and sharper exams all help your students succeed.</p>
+            </div>
+            <a class="btn btn-primary ix-cta-btn" href="add-course.html">🚀 Upload New Course</a>
+          </section>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- script.js manages auth/session and contains the full instructor
+         data logic (window.initInstructorCourses) -->
+    <script type="module" src="script.js"></script>
+    <script>
+      if (typeof updateHeaderAuthLink === 'function') {
+        updateHeaderAuthLink();
+      }
+      // Mobile sidebar toggle
+      const adxShell = document.getElementById('adx-shell');
+      const adxHamburger = document.getElementById('adx-hamburger');
+      const adxBackdrop = document.getElementById('adx-backdrop');
+      adxHamburger?.addEventListener('click', () => adxShell.classList.toggle('adx-sidebar-open'));
+      adxBackdrop?.addEventListener('click', () => adxShell.classList.remove('adx-sidebar-open'));
+    </script>
+
+    <!-- This page's own module: guards the route (instructors/admins only),
+         populates the profile pill and hero greeting, kicks off the course
+         panel script.js already defines, and tallies modules/questions so
+         it's obvious this is a course + module + exam workspace. -->
+    <script type="module">
+      const isLocalPreview =
+        location.protocol === "file:" ||
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1";
+
+      // Wait for auth AND the actual Firestore data (courses, certs, categories)
+      // to finish loading — not just auth — otherwise this can render before
+      // the instructor's courses have arrived and get stuck showing the
+      // "Loading your courses…" placeholder.
+      if (window.dataReadyPromise) {
+        await window.dataReadyPromise;
+      } else if (window.authReadyPromise) {
+        await window.authReadyPromise;
+      }
+
+      if (!isLocalPreview) {
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+          window.location.href = "login.html";
+        } else if (!window.isAdminOrInstructor || !window.isAdminOrInstructor()) {
+          window.location.href = "dashboard.html";
+        }
+      }
+
+      /* ---------- Profile pill + hero greeting ---------- */
+      const auth = window.getAuth ? window.getAuth() : null;
+      const hour = new Date().getHours();
+      const timeGreeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+      if (auth) {
+        const label = auth.name || (auth.email ? auth.email.split("@")[0] : "Instructor");
+        const firstName = label.trim().split(/\s+/)[0];
+        const nameEl = document.getElementById("ix-profile-name");
+        const avatarEl = document.getElementById("ix-profile-avatar");
+        const heroTitle = document.getElementById("ix-hero-title");
+        if (nameEl) nameEl.textContent = label;
+        if (avatarEl) avatarEl.textContent = label.trim().charAt(0).toUpperCase() || "I";
+        if (heroTitle) heroTitle.textContent = `${timeGreeting}, ${firstName}!`;
+      }
+
+      /* ---------- Kick off the courses panel script.js already wires up ---------- */
+      const renderMyCourses = () => {
+        if (typeof window.initInstructorCourses === "function") {
+          window.initInstructorCourses();
+        }
+      };
+      renderMyCourses();
+
+      /* ---------- Tally modules/questions across this instructor's courses ---------- */
+      const syncStats = () => {
+        const courseBadge = document.getElementById("instructor-courses-count-badge");
+        const statCourses = document.getElementById("ix-stat-courses");
+        const heroCourses = document.getElementById("ix-hero-courses");
+        if (courseBadge) {
+          const n = parseInt(courseBadge.textContent, 10);
+          const value = Number.isFinite(n) ? n : 0;
+          if (statCourses) statCourses.textContent = value;
+          if (heroCourses) heroCourses.textContent = value;
+        }
+        // Modules/exam questions are rendered inline per course card once
+        // initInstructorCourses() finishes — count them straight from the DOM
+        // so this works regardless of what script.js exposes on window.
+        const moduleCount = document.querySelectorAll("#instructor-course-list-panel [data-module-count]").length
+          ? Array.from(document.querySelectorAll("#instructor-course-list-panel [data-module-count]"))
+              .reduce((sum, el) => sum + (parseInt(el.dataset.moduleCount, 10) || 0), 0)
+          : null;
+        const questionCount = document.querySelectorAll("#instructor-course-list-panel [data-question-count]").length
+          ? Array.from(document.querySelectorAll("#instructor-course-list-panel [data-question-count]"))
+              .reduce((sum, el) => sum + (parseInt(el.dataset.questionCount, 10) || 0), 0)
+          : null;
+        const statModules = document.getElementById("ix-stat-modules");
+        const statQuestions = document.getElementById("ix-stat-questions");
+        const heroModules = document.getElementById("ix-hero-modules");
+        const heroQuestions = document.getElementById("ix-hero-questions");
+        if (moduleCount !== null) {
+          if (statModules) statModules.textContent = moduleCount;
+          if (heroModules) heroModules.textContent = moduleCount;
+        }
+        if (questionCount !== null) {
+          if (statQuestions) statQuestions.textContent = questionCount;
+          if (heroQuestions) heroQuestions.textContent = questionCount;
+        }
+      };
+      syncStats();
+      // Self-heal: re-render the course list a few times over the next few
+      // seconds in case the very first render ran a beat before Firestore
+      // data landed. Cheap and idempotent — safe to call repeatedly.
+      let syncTicks = 0;
+      const syncTimer = setInterval(() => {
+        renderMyCourses();
+        syncStats();
+        syncTicks += 1;
+        if (syncTicks >= 5) clearInterval(syncTimer);
+      }, 1000);
+
+      // Also re-render whenever the tab regains focus/visibility (e.g. the
+      // instructor publishes a course in another tab, or returns here via
+      // the browser's back/forward cache) so the list never looks stale.
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          renderMyCourses();
+          syncStats();
+        }
+      });
+      window.addEventListener("pageshow", () => {
+        renderMyCourses();
+        syncStats();
+      });
+    </script>
+  </body>
+</html>

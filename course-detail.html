@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Course | BHF Certification Academy</title>
+    <meta name="description" content="Complete course modules and take your certification exam." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  </head>
+  <body data-page="course-detail">
+    <div class="payment-modal" id="paymentModal" hidden>
+        <div class="payment-modal-backdrop"></div>
+        <div class="payment-modal-body">
+            <div class="payment-modal-header">
+                <div class="payment-modal-heading">
+                    <span class="payment-modal-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"></rect><path d="M2 10h20"></path><path d="M6 15h4"></path></svg>
+                    </span>
+                    <div>
+                        <h2 id="paymentModalTitle">Course Payment</h2>
+                        <p class="payment-modal-subtitle">Choose a payment method below to unlock this course instantly.</p>
+                    </div>
+                </div>
+                <button class="close-modal-btn" type="button" aria-label="Close payment modal">✕</button>
+            </div>
+            <div class="payment-modal-copy-row">
+                <p id="paymentModalCourseInfo" class="payment-modal-copy">Complete payment to enroll in this course.</p>
+                <div class="payment-price-badge">₱500<span>PHP</span></div>
+            </div>
+            <div class="payment-options">
+                <article class="payment-option payment-option--featured">
+                    <span class="payment-option-badge">Most Popular</span>
+                    <div class="payment-option-icon payment-option-icon--gcash" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 9V7a5 5 0 0 0-10 0v2"></path><rect x="3" y="9" width="18" height="12" rx="2.5"></rect><circle cx="12" cy="15" r="1.6"></circle></svg>
+                    </div>
+                    <h3>GCash</h3>
+                    <p class="payment-option-desc">Fast &amp; secure e-wallet transfer</p>
+                    <div class="payment-option-details">
+                        <p><span>Account name</span><strong>BHF Academy</strong></p>
+                        <p><span>Number</span><strong>0981 401 9810</strong></p>
+                    </div>
+                    <img class="payment-option-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=GCash%20BHF%20Academy%2009814019810" alt="GCash QR code" />
+                    <button type="button" class="btn btn-primary payment-app-btn" id="gcashOpenBtn">Pay with GCash</button>
+                </article>
+                <article class="payment-option">
+                    <div class="payment-option-icon payment-option-icon--bank" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10 12 4l9 6"></path><path d="M5 10v9"></path><path d="M19 10v9"></path><path d="M9 14v5"></path><path d="M15 14v5"></path><path d="M3 21h18"></path></svg>
+                    </div>
+                    <h3>Bank Transfer</h3>
+                    <p class="payment-option-desc">Direct deposit via BDO</p>
+                    <div class="payment-option-details">
+                        <p><span>Bank</span><strong>BDO</strong></p>
+                        <p><span>Account name</span><strong>BHF Academy</strong></p>
+                        <p><span>Account No.</span><strong>0123 4567 890</strong></p>
+                    </div>
+                    <img class="payment-option-qr" src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=BDO%20BHF%20Academy%2001234567890" alt="Bank transfer QR code" />
+                </article>
+            </div>
+            <div class="payment-security-note">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+                <span>Your payment is manually verified by our team — keep your receipt or screenshot for reference.</span>
+            </div>
+            <div class="payment-actions">
+                <button class="btn btn-primary" id="confirmPaymentBtn">I Have Paid — Continue</button>
+                <button class="btn btn-secondary" id="cancelPaymentBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <script>
+      if (new URLSearchParams(window.location.search).get('view') === 'certificate') {
+        document.body.classList.add('certificate-only');
+      }
+    </script>
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="bhflogo.jpg" alt="BHF logo" />
+        <span class="brand-text-full">BHF Certification Academy</span>
+        <span class="brand-text-short">BHF</span>
+      </a>
+      <button id="nav-hamburger" class="nav-hamburger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-main-links">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="topbar-actions">
+        <nav class="nav-links">
+          <div class="nav-main-links" id="nav-main-links">
+            <a href="index.html">Home</a>
+            <a href="programs.html">Programs</a>
+            <a href="index.html#verify">Verify</a>
+          </div>
+          <div class="nav-account-links">
+            <button id="user-notifications-button" class="btn btn-secondary btn-notification" type="button" aria-label="Notifications">🔔</button>
+            <a href="login.html" id="nav-auth-link" class="login-link">Login</a>
+            <a href="login.html" id="logout-button" class="btn btn-secondary" style="display:none;">Logout</a>
+            <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <div id="course-loading-overlay" class="course-loading-overlay">
+        <div class="course-loading-spinner" aria-hidden="true"></div>
+        <p class="course-loading-text">Loading course details&hellip;</p>
+      </div>
+      <script>
+        // Defined immediately (not deferred) so it exists no matter which
+        // later script ends up calling it, and guarded with a safety
+        // timeout so a genuine error further down the page can never
+        // leave the learner stuck looking at a spinner forever.
+        window.hideCourseLoadingOverlay = function hideCourseLoadingOverlay() {
+          var overlay = document.getElementById('course-loading-overlay');
+          if (overlay) overlay.classList.add('is-hidden');
+        };
+        window.setTimeout(window.hideCourseLoadingOverlay, 8000);
+      </script>
+
+      <div class="breadcrumb">
+        <a href="programs.html">&larr; Back to Programs</a>
+      </div>
+
+      <span class="pill" id="course-pill">Category</span>
+      <h1 id="course-heading">Loading course&hellip;</h1>
+
+      <img id="course-hero-img" class="course-detail-img" src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80" alt="Course illustration" />
+
+      <!-- ============ STAGE: OVERVIEW ============ -->
+      <section id="stage-overview" class="detail-section">
+        <h2>About this course</h2>
+        <p id="course-description">Loading description&hellip;</p>
+
+        <h2>What you'll learn</h2>
+        <ul id="course-outcomes" class="course-outcomes"></ul>
+
+        <div id="course-materials-panel" hidden>
+          <h2>Study materials</h2>
+          <p id="course-materials-note">Download the program materials and quizzes below.</p>
+          <a id="course-materials-link" class="btn btn-secondary" href="#" target="_blank" rel="noopener noreferrer">Open PDF</a>
+        </div>
+
+        <p class="detail-note">
+          This course includes <strong id="overview-module-count">0</strong> learning modules followed by a
+          <strong id="overview-exam-count">0</strong>-item certification exam. A passing score of <strong>90%</strong>
+          (<strong id="overview-pass-count">0</strong>/<span id="overview-exam-count-2">0</span>) is required to earn
+          your certificate. You may retake the exam as many times as needed.
+        </p>
+
+        <button id="start-course-btn" class="btn btn-primary">Start Course</button>
+      </section>
+
+      <script>
+        // Instant first paint, straight from the same-browser cache that
+        // script.js saves to localStorage every time it loads courses from
+        // Firestore ("bhf_courses_snapshot"). This runs immediately, right
+        // here in normal page parsing — NOT deferred, NOT a module — so it
+        // executes before script.js has even started downloading, let alone
+        // finished its own Firestore round trip. That's what makes this
+        // "immediate": on any repeat visit (which is the vast majority of
+        // real traffic — the same admin/instructor/learner opening the same
+        // course again), the real title/image/description/outcomes replace
+        // the "Loading…" placeholders before the browser has finished
+        // painting the page at all, instead of after a network fetch.
+        //
+        // This intentionally duplicates a small slice of the field-fallback
+        // logic in the main course-loading script further down (image/
+        // description/outcomes/exam-count fallbacks) so it can run
+        // standalone without waiting on script.js. It is safe to duplicate:
+        // the later script re-renders all of this anyway once the live
+        // Firestore listener resolves, correcting anything stale (e.g. an
+        // edit made from another device since this cache was last saved).
+        // This block only ever produces a strictly-better first paint; it
+        // never overrides fresher data because it always runs first.
+        (function instantCoursePaint() {
+          try {
+            var courseTitle = new URLSearchParams(window.location.search).get('course') || '';
+            if (!courseTitle) return;
+            var normalized = courseTitle.trim().toLowerCase();
+
+            var raw = localStorage.getItem('bhf_courses_snapshot');
+            var cached = raw ? JSON.parse(raw) : [];
+            if (!Array.isArray(cached) || !cached.length) return;
+
+            var course = cached.find(function (c) {
+              return (c.title || '').trim().toLowerCase() === normalized;
+            });
+            if (!course) return;
+
+            document.title = courseTitle + " | BHF Certification Academy";
+
+            var pillEl = document.getElementById('course-pill');
+            if (pillEl && course.category) pillEl.textContent = course.category;
+
+            var headingEl = document.getElementById('course-heading');
+            if (headingEl) headingEl.textContent = courseTitle;
+
+            var imgEl = document.getElementById('course-hero-img');
+            if (imgEl && course.img) {
+              imgEl.src = course.img;
+              imgEl.alt = courseTitle;
+            }
+
+            var descEl = document.getElementById('course-description');
+            if (descEl && course.description) descEl.textContent = course.description;
+
+            var outcomes = (course.learning && course.learning.length)
+              ? course.learning
+              : (course.outcomes && course.outcomes.length ? course.outcomes : []);
+            var outcomesEl = document.getElementById('course-outcomes');
+            if (outcomesEl && outcomes.length) {
+              outcomesEl.innerHTML = '';
+              outcomes.forEach(function (o) {
+                var li = document.createElement('li');
+                li.textContent = o;
+                outcomesEl.appendChild(li);
+              });
+            }
+
+            var examQuestions = (course.examQuestions && course.examQuestions.length)
+              ? course.examQuestions
+              : (course.questions && course.questions.length
+                  ? course.questions
+                  : (course.quizQuestions || []));
+            var moduleCount = Array.isArray(course.modules) ? course.modules.length : 0;
+            var examTotal = examQuestions.length;
+            if (moduleCount || examTotal) {
+              var modCountEl = document.getElementById('overview-module-count');
+              if (modCountEl) modCountEl.textContent = moduleCount;
+              var examCountEl = document.getElementById('overview-exam-count');
+              if (examCountEl) examCountEl.textContent = examTotal;
+              var examCount2El = document.getElementById('overview-exam-count-2');
+              if (examCount2El) examCount2El.textContent = examTotal;
+              var passCountEl = document.getElementById('overview-pass-count');
+              if (passCountEl) passCountEl.textContent = Math.ceil(examTotal * 0.9);
+            }
+          } catch (err) {
+            // Cache miss, corrupted cache, or storage blocked — no problem,
+            // the "Loading…" placeholders stay put and the main script
+            // further down will fill everything in as soon as it can.
+            console.warn('Instant course paint skipped:', err);
+          }
+        })();
+      </script>
+
+      <!-- ============ STAGE: MODULES ============ -->
+      <section id="stage-modules" class="detail-section" hidden>
+        <h2>Course Modules</h2>
+        <div class="progress-track">
+          <div class="progress-track-bar" id="module-progress-bar"></div>
+        </div>
+        <p id="module-progress-label" class="progress-value"></p>
+
+        <div id="module-list" class="module-list"></div>
+
+        <button id="to-exam-btn" class="btn btn-primary" disabled>
+          Continue to Certification Exam
+        </button>
+      </section>
+
+      <!-- ============ STAGE: EXAM ============ -->
+      <section id="stage-exam" class="detail-section" hidden>
+        <h2>Certification Exam</h2>
+        <p class="detail-note" id="exam-intro-note">
+          Answer all questions, then submit. You need 90% to pass.
+        </p>
+
+        <div id="exam-question-area" class="exam-question-area"></div>
+
+        <div class="progress-track">
+          <div class="progress-track-bar" id="exam-progress-bar"></div>
+        </div>
+        <p id="exam-progress-label" class="progress-value"></p>
+
+        <div class="exam-actions">
+          <button id="exam-prev-btn" class="btn btn-secondary">← Previous</button>
+          <button id="exam-next-btn" class="btn btn-secondary">Next →</button>
+          <button id="exam-submit-btn" class="btn btn-primary" hidden>Submit Exam</button>
+        </div>
+      </section>
+
+      <!-- ============ STAGE: RESULTS ============ -->
+      <section id="stage-results" class="detail-section" hidden>
+        <div class="results-layout">
+          <div class="score-ring-wrap">
+            <svg viewBox="0 0 140 140" class="score-ring">
+              <circle cx="70" cy="70" r="60" class="score-ring-track" />
+              <circle cx="70" cy="70" r="60" class="score-ring-fill" id="score-ring-fill" />
+            </svg>
+            <div class="score-ring-label">
+              <strong id="score-percent">0%</strong>
+              <span id="score-fraction">0 / 20</span>
+            </div>
+          </div>
+          <div class="results-copy">
+            <h2 id="results-heading">Result</h2>
+            <p id="results-message" class="detail-note"></p>
+            <div id="results-actions" class="results-actions"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ STAGE: CERTIFICATE ============ -->
+      <section id="stage-certificate" class="detail-section" hidden>
+        <div class="certificate-card">
+          <div class="certificate-inner">
+            <div class="certificate-header">
+              <div class="certificate-logo-rounded">
+                <span class="certificate-logo-text">BHF</span>
+              </div>
+              <div class="certificate-brand-text">
+                <div class="certificate-brand-title">Baguio Home for the Faithful</div>
+                <div class="certificate-brand-subtitle">Growing in Faith. Transforming Lives.</div>
+              </div>
+            </div>
+
+            <div class="certificate-title-block">
+              <h1 class="certificate-main-title">BHF Certifications</h1>
+              <p class="certificate-subtitle">Certificate of Completion</p>
+            </div>
+
+            <div class="certificate-body">
+              <h2 id="certificate-name" class="certificate-recipient">Recipient Name</h2>
+              <p class="certificate-note">Has successfully completed the certification requirements and is authorized as a</p>
+
+              <div class="certificate-program-row">
+                <div class="certificate-program-text">
+                  <strong id="certificate-course">Course Title</strong>
+                  <p class="certificate-program-meta" id="certificate-program">Online Certification Program</p>
+                </div>
+                <svg class="certificate-badge-icon" viewBox="0 0 200 190" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <g stroke="var(--cert-accent)" stroke-width="2.4" stroke-linecap="round" fill="none">
+                    <path d="M70 150 C40 150 20 130 18 100" />
+                    <path d="M30 108 L18 100 L28 92" />
+                    <path d="M35 122 L22 116 L30 106" />
+                    <path d="M42 135 L28 132 L34 120" />
+                    <path d="M52 145 L38 145 L42 132" />
+                    <path d="M62 150 L48 152 L50 138" />
+                  </g>
+                  <g stroke="var(--cert-accent)" stroke-width="2.4" stroke-linecap="round" fill="none">
+                    <path d="M130 150 C160 150 180 130 182 100" />
+                    <path d="M170 108 L182 100 L172 92" />
+                    <path d="M165 122 L178 116 L170 106" />
+                    <path d="M158 135 L172 132 L166 120" />
+                    <path d="M148 145 L162 145 L158 132" />
+                    <path d="M138 150 L152 152 L150 138" />
+                  </g>
+                  <circle cx="100" cy="80" r="46" fill="var(--accent-dark)" />
+                  <circle cx="100" cy="80" r="38" fill="#ffffff" stroke="var(--cert-accent)" stroke-width="2" />
+                  <path d="M82 80 L94 92 L120 64" stroke="var(--cert-accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                  <g fill="var(--cert-accent)">
+                    <path d="M86 158 l2.4 5 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z" />
+                    <path d="M100 162 l2.6 5.4 6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.3-4.2 6-.9z" />
+                    <path d="M114 158 l2.4 5 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z" />
+                  </g>
+                </svg>
+              </div>
+
+              <p class="certificate-valid-through">Valid Through <strong id="certificate-expiry">Expiry Date</strong></p>
+            </div>
+
+            <div class="certificate-footer">
+              <div class="certificate-footer-col certificate-footer-left">
+                <p class="certificate-detail-label">Validate this certificate's authenticity at</p>
+                <p class="certificate-verify-link">bhf-training-and-certificate.web.app</p>
+                <p class="certificate-detail-label" style="margin-top: 0.6rem;">Certificate ID <span class="certificate-id-value" id="certificate-id-display">BHF-000000</span></p>
+                <p class="certificate-detail-label" style="margin-top: 0.6rem;">Date Completed <span class="certificate-id-value" id="certificate-date">Completion Date</span></p>
+              </div>
+
+              <div class="certificate-footer-col certificate-footer-right">
+                <svg class="certificate-signature-svg" viewBox="0 0 180 50" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M8,35 C16,10 24,42 32,18 C40,-4 46,40 54,22 C62,6 70,32 78,16 C86,2 92,34 100,20 C108,8 114,30 122,18 C128,10 134,24 140,16 C146,10 152,20 158,14"
+                    fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" />
+                </svg>
+                <p class="certificate-detail certificate-signatory" id="certificate-signatory">Charles Wang</p>
+                <p class="certificate-detail-label">Program Director</p>
+              </div>
+            </div>
+            <p class="certificate-status-note" id="certificate-status-note">This certificate request is pending upload. An administrator will upload your certificate file once it is ready.</p>
+          </div>
+          <div class="certificate-ribbon"></div>
+
+          <div class="certificate-actions certificate-actions-center">
+            <button id="download-cert-btn" class="btn btn-primary">Print / Download</button>
+            <button id="return-dashboard-btn" class="btn btn-secondary">Back to Dashboard</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+        <footer class="footer" id="contact">
+          <div class="footer-grid">
+            <div class="footer-col footer-brand">
+              <img class="footer-logo" src="bhflogo.jpg" alt="BHF logo" />
+              <p class="footer-brand-name">BHF</p>
+              <p class="footer-brand-sub">Group of Companies</p>
+              <span class="footer-underline"></span>
+              <p class="footer-desc">Empowering employees through quality training, professional certification, and continuous learning.</p>
+            </div>
+
+            <div class="footer-col">
+              <span class="footer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 10.5V16c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-5.5"/><path d="M21 9v6"/><circle cx="21" cy="16.5" r="1"/></svg>
+              </span>
+              <h3>Our Platform</h3>
+              <span class="footer-underline"></span>
+              <p class="footer-desc">Your all-in-one platform for employee training, certification, and professional growth. Learn anytime, anywhere.</p>
+            </div>
+
+            <div class="footer-col">
+              <span class="footer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="2.5" y="14" width="4" height="6" rx="1.5"/><rect x="17.5" y="14" width="4" height="6" rx="1.5"/><path d="M20 20a4 4 0 0 1-4 3h-2"/></svg>
+              </span>
+              <h3>Contact Us</h3>
+              <span class="footer-underline"></span>
+              <p class="footer-contact">
+                <a href="mailto:hrd.bhfbgo@gmail.com">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></svg>
+                  hrd.bhfbgo@gmail.com
+                </a>
+              </p>
+              <p class="footer-contact">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4l1.5 4.5L7 10.5a12 12 0 0 0 6.5 6.5l1.5-2.5L20 16v4a1 1 0 0 1-1 1c-8.3 0-15-6.7-15-15a1 1 0 0 1 1-1Z"/></svg>
+                <a href="tel:+639177187582">0917 718 7582</a>
+              </p>
+              <p class="footer-contact">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
+                <a href="https://www.google.com/maps/place/217+Bonifacio+Residences/@16.4165544,120.5991646,17z/data=!3m1!4b1!4m6!3m5!1s0x3391a1f06a154c2f:0x6115f00fe12d79be!8m2!3d16.4165544!4d120.5991646!16s%2Fg%2F11rvlzsdjk?entry=ttu&g_ep=EgoyMDI2MDcyMS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer">Barangay, 217 Upper Bonifacio St, Baguio, 2600 Benguet</a>
+              </p>
+            </div>
+
+            <div class="footer-col">
+              <span class="footer-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3Z"/></svg>
+              </span>
+              <h3>Follow Us</h3>
+              <span class="footer-underline"></span>
+              <div class="footer-social">
+                <a href="#" target="_blank" rel="noopener" aria-label="Facebook">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.6h2.6l.4-3h-3v-1.9c0-.87.24-1.46 1.5-1.46h1.6V4.35c-.28-.04-1.22-.12-2.32-.12-2.3 0-3.88 1.4-3.88 3.98v2.2H8.9v3h2.5V21h2.1Z"/></svg>
+                </a>
+                <a href="#" target="_blank" rel="noopener" aria-label="LinkedIn">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.94 8.5H4.1V20h2.84V8.5ZM5.52 4a1.64 1.64 0 1 0 0 3.28 1.64 1.64 0 0 0 0-3.28ZM20 20h-2.84v-5.9c0-1.4-.5-2.36-1.76-2.36-.96 0-1.53.65-1.78 1.27-.09.22-.11.53-.11.84V20H10.7s.04-9.86 0-10.88h2.83v1.54a2.8 2.8 0 0 1 2.55-1.4c1.86 0 3.26 1.22 3.26 3.83V20Z"/></svg>
+                </a>
+                <a href="#" target="_blank" rel="noopener" aria-label="YouTube">
+                  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.6a2.7 2.7 0 0 0-1.9-1.9C18 5.2 12 5.2 12 5.2s-6 0-7.7.5A2.7 2.7 0 0 0 2.4 7.6 28.3 28.3 0 0 0 2 12a28.3 28.3 0 0 0 .4 4.4 2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 0 0 1.9-1.9A28.3 28.3 0 0 0 22 12a28.3 28.3 0 0 0-.4-4.4ZM10 14.9V9.1L15.3 12 10 14.9Z"/></svg>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="footer-bottom">
+            <div class="footer-bottom-content">
+              <p class="footer-copy">© 2026 BHF Group of Companies. All Rights Reserved.</p>
+            </div>
+            <span class="footer-legal-sep footer-bottom-sep">|</span>
+            <div class="footer-bottom-links">
+              <div class="footer-legal">
+                <a href="#">Privacy Policy</a>
+                <span class="footer-legal-sep">|</span>
+                <a href="#">Terms of Service</a>
+              </div>
+            </div>
+          </div>
+        </footer>
+
+    <script type="module" src="script.js"></script>
+    <script defer>
+      if (typeof updateHeaderAuthLink === 'function') {
+        updateHeaderAuthLink();
+      }
+
+      /* =========================================================
+         COURSE CONTENT DATA
+         Add more entries here to extend the same flow to other
+         courses. Each key matches the `course` query param used
+         on programs.html (the course title).
+      ========================================================= */
+      const PASS_PERCENT = 0.9; // 90% required to pass, scales to however many questions exist
+
+      const COURSE_DATA = {
+        // Add your own course entries here, e.g.:
+        // "Your Course Title": {
+        //   image: "...",
+        //   description: "...",
+        //   outcomes: [ ... ],
+        //   modules: [ ... ]
+        // }
+      };
+
+      /* Generic fallback for courses not yet authored in detail */
+      function genericCourseData(title, category) {
+        const modules = Array.from({ length: 5 }, (_, index) => ({
+          title: `Module ${index + 1}: ${category} Essentials`,
+          content:
+            `This module covers the core concepts of ${title} in ${category}. You will learn practical skills, best practices, and examples that prepare you for exam success.`
+        }));
+
+        const questions = Array.from({ length: 20 }, (_, index) => ({
+          q: `Question ${index + 1}: What is one important concept in ${category}?`,
+          options: [
+            `Understanding key service standards`,
+            `Avoiding all customer contact`,
+            `Ignoring policies`,
+            `Using outdated tools`
+          ],
+          correct: 0
+        }));
+
+        return {
+          image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80",
+          description:
+            `This course provides an introductory certificate pathway for ${title}. Study the essential skills, complete the modules, and pass the exam to earn certification.`,
+          outcomes: [
+            `Understand key ${category.toLowerCase()} concepts`,
+            `Complete practical course modules`,
+            `Prepare for the certification exam`,
+            `Receive a completion certificate`
+          ],
+          modules,
+          questions
+        };
+      }
+
+      /* ---------- Read course from query string ---------- */
+      const params = new URLSearchParams(window.location.search);
+      const courseTitle = params.get('course') || 'Course';
+      const savedCourse = typeof findSavedCourse === 'function' ? findSavedCourse(courseTitle) : null;
+      // savedCourse only reflects Firestore-managed course data. Built-in
+      // catalog courses (like free intro courses) may not have a Firestore
+      // record at all, so fall back to the static catalog for access rules.
+      const catalogCourse = (window.BHF_COURSES || []).find(
+        (c) => (c.title || '').trim().toLowerCase() === courseTitle.trim().toLowerCase()
+      ) || null;
+      let effectiveCourseLevel = savedCourse?.level || catalogCourse?.level || 'Intermediate';
+      let effectiveCourseAccessRule = savedCourse?.accessRule || catalogCourse?.accessRule;
+      const courseCategory = savedCourse?.category || params.get('category') || 'BHF Certification Academy';
+
+      const data = savedCourse
+        ? {
+            image: savedCourse.img || COURSE_DATA[courseTitle]?.image || catalogCourse?.img || 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=900&q=80',
+            description: savedCourse.description || COURSE_DATA[courseTitle]?.description || `This course provides an introductory certification pathway for ${courseTitle}.`,
+            outcomes: savedCourse.learning || savedCourse.outcomes || COURSE_DATA[courseTitle]?.outcomes || [
+              `Understand key concepts for ${courseTitle}.`,
+              `Complete practical modules and review the material.`,
+              `Prepare for the certification exam.`,
+              `Earn a completion certificate.`
+            ],
+            modules: savedCourse.modules && savedCourse.modules.length ? savedCourse.modules : [],
+            // The exam a learner takes at the end of the course. The course
+            // builder (add-course.html) saves this under `examQuestions` —
+            // this used to only check the legacy `questions` field (which
+            // the builder never actually writes) and then fall back to the
+            // module quiz bank, so real exam content uploaded via the Exam
+            // PDF/box never reached this page at all. Now it's read
+            // correctly, with the old fallbacks kept only as a safety net
+            // for courses saved before this fix.
+            questions: savedCourse.examQuestions && savedCourse.examQuestions.length
+              ? savedCourse.examQuestions
+              : (savedCourse.questions && savedCourse.questions.length
+                  ? savedCourse.questions
+                  : (savedCourse.quizQuestions && savedCourse.quizQuestions.length ? savedCourse.quizQuestions : (COURSE_DATA[courseTitle]?.questions || []))),
+            // The dedicated module-quiz question bank the instructor uploads
+            // as its own step in the course builder — kept separate from the
+            // final exam questions above so module quizzes actually show
+            // what was uploaded for them instead of borrowing exam content.
+            quizQuestions: savedCourse.quizQuestions && savedCourse.quizQuestions.length ? savedCourse.quizQuestions : []
+          }
+        : {
+            ...(COURSE_DATA[courseTitle] || genericCourseData(courseTitle, courseCategory)),
+            // Prefer the picture already shown for this course on the
+            // Programs page (catalogCourse.img) over the generic stock
+            // photo, whenever this course has no Firestore-saved record
+            // and no hand-authored COURSE_DATA image of its own.
+            image: catalogCourse?.img || (COURSE_DATA[courseTitle] || genericCourseData(courseTitle, courseCategory)).image
+          };
+
+      // True only when we're about to show made-up placeholder content
+      // (no Firestore-saved course found in the local cache yet, and no
+      // hand-authored COURSE_DATA entry for this exact title either).
+      // This is the scenario reported as "shows the default template
+      // instead of my published course": the local courses snapshot
+      // (used for an instant first paint) can be stale or empty on a
+      // fresh visit, so `savedCourse` above comes back null even though
+      // the course really has been published. In that case we must NOT
+      // treat the generic placeholder as real, authored content — we
+      // render a lightweight loading state instead (see below) and only
+      // fall back to this placeholder once the live Firestore check
+      // below has actually run and still found nothing.
+      const isPlaceholderData = !savedCourse && !COURSE_DATA[courseTitle];
+
+      // isAuthored/data get re-checked once Firestore data has loaded (see
+      // the "Pick up admin edits" block below), so this needs to stay
+      // reassignable instead of a const. Placeholder data must never make
+      // the Start button clickable — otherwise a learner who clicks
+      // "Start" in the brief window before the real course loads would
+      // begin the generic filler modules/exam instead of the real ones.
+      let isAuthored = !isPlaceholderData && data.modules.length > 0 && data.questions.length > 0;
+
+      document.title = courseTitle + " | BHF Certification Academy";
+      document.getElementById('course-pill').textContent = courseCategory;
+      document.getElementById('course-heading').textContent = courseTitle;
+      document.getElementById('course-hero-img').src = data.image;
+      document.getElementById('course-hero-img').alt = courseTitle;
+
+      function updateOverviewCounts() {
+        document.getElementById('overview-module-count').textContent = data.modules.length;
+        const examTotal = data.questions.length;
+        const passNeeded = Math.ceil(examTotal * PASS_PERCENT);
+        document.getElementById('overview-exam-count').textContent = examTotal;
+        document.getElementById('overview-exam-count-2').textContent = examTotal;
+        document.getElementById('overview-pass-count').textContent = passNeeded;
+      }
+
+      // Pulled into a function so it can be called again if a saved course
+      // arrives after this first render (see below).
+      function renderOutcomes() {
+        const outcomesList = document.getElementById('course-outcomes');
+        outcomesList.innerHTML = '';
+        if (data.outcomes.length) {
+          data.outcomes.forEach(o => {
+            const li = document.createElement('li');
+            li.textContent = o;
+            outcomesList.appendChild(li);
+          });
+          outcomesList.style.display = '';
+        } else {
+          outcomesList.style.display = 'none';
+        }
+      }
+
+      if (isPlaceholderData) {
+        // Don't show made-up description/outcomes/counts at all — a brief,
+        // honest "loading" state until the real Firestore check below
+        // either confirms the published course or genuinely finds nothing.
+        document.getElementById('course-description').textContent = 'Loading course details…';
+        document.getElementById('overview-module-count').textContent = '…';
+        document.getElementById('overview-exam-count').textContent = '…';
+        document.getElementById('overview-exam-count-2').textContent = '…';
+        document.getElementById('overview-pass-count').textContent = '…';
+        const outcomesList = document.getElementById('course-outcomes');
+        outcomesList.innerHTML = '<li>Loading course details…</li>';
+      } else {
+        document.getElementById('course-description').textContent = data.description;
+        updateOverviewCounts();
+        renderOutcomes();
+      }
+
+      function renderMaterials() {
+        const panel = document.getElementById('course-materials-panel');
+        const link = document.getElementById('course-materials-link');
+        const note = document.getElementById('course-materials-note');
+        const materialsUrl = savedCourse?.materialsUrl || data.materialsUrl || '';
+        const materialsFileData = savedCourse?.materialsFileData || data.materialsFileData || '';
+        if (materialsUrl || materialsFileData) {
+          panel.hidden = false;
+          link.href = materialsUrl || materialsFileData;
+          link.textContent = materialsUrl ? 'Open PDF' : 'Open uploaded PDF';
+          note.textContent = materialsUrl ? 'Download the uploaded study materials and quizzes for this program.' : 'This program includes an uploaded PDF with study materials and quiz content.';
+        } else {
+          panel.hidden = true;
+        }
+      }
+      if (!isPlaceholderData) {
+        renderOutcomes();
+      }
+      renderMaterials();
+
+      const startBtn = document.getElementById('start-course-btn');
+      function refreshStartButtonState() {
+        if (!isAuthored) {
+          startBtn.disabled = true;
+          startBtn.textContent = "Content Coming Soon";
+        } else {
+          const needsPayment = window.courseRequiresPayment ? window.courseRequiresPayment({ title: courseTitle, level: effectiveCourseLevel, accessRule: effectiveCourseAccessRule }) : false;
+          const userEmail = window.getAuth ? window.getAuth()?.email : '';
+          const canAccess = !needsPayment || (userEmail && window.hasPurchasedCourseAccess && window.hasPurchasedCourseAccess(courseTitle, userEmail));
+          startBtn.disabled = !canAccess;
+          startBtn.textContent = canAccess ? "Start Course" : "Pay to Access";
+        }
+      }
+      refreshStartButtonState();
+
+      /* ---------- Payment modal (GCash / bank transfer) ---------- */
+      let pendingPaymentCallback = null;
+
+      function openCoursePaymentModal(title, category, onConfirm) {
+        const modal = document.getElementById('paymentModal');
+        if (!modal) {
+          // No modal available for some reason — don't block the user.
+          if (onConfirm) onConfirm();
+          return;
+        }
+        const modalTitle = document.getElementById('paymentModalTitle');
+        const courseInfo = document.getElementById('paymentModalCourseInfo');
+        if (modalTitle) modalTitle.textContent = `Payment for ${title}`;
+        if (courseInfo) courseInfo.textContent = `Complete payment of ₱500 for ${title} to unlock this course.`;
+        modal.dataset.courseTitle = title;
+        modal.dataset.courseCategory = category || '';
+        pendingPaymentCallback = onConfirm;
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeCoursePaymentModal() {
+        const modal = document.getElementById('paymentModal');
+        if (!modal) return;
+        modal.hidden = true;
+        document.body.style.overflow = 'auto';
+        pendingPaymentCallback = null;
+      }
+
+      function confirmCoursePayment() {
+        const modal = document.getElementById('paymentModal');
+        if (!modal) return;
+        const userEmail = window.getAuth ? window.getAuth()?.email : '';
+        if (!userEmail) {
+          window.location.href = 'login.html';
+          return;
+        }
+        const paidTitle = modal.dataset.courseTitle;
+        if (paidTitle && window.markCourseAccessPaid) {
+          window.markCourseAccessPaid(paidTitle, userEmail);
+        }
+        const callback = pendingPaymentCallback;
+        closeCoursePaymentModal();
+        refreshStartButtonState();
+        if (typeof callback === 'function') callback();
+      }
+
+      (function initCoursePaymentModal() {
+        const modal = document.getElementById('paymentModal');
+        if (!modal) return;
+        const confirmBtn = document.getElementById('confirmPaymentBtn');
+        const cancelBtn = document.getElementById('cancelPaymentBtn');
+        const closeBtn = modal.querySelector('.close-modal-btn');
+        const gcashBtn = document.getElementById('gcashOpenBtn');
+        confirmBtn?.addEventListener('click', confirmCoursePayment);
+        cancelBtn?.addEventListener('click', closeCoursePaymentModal);
+        closeBtn?.addEventListener('click', closeCoursePaymentModal);
+        modal.addEventListener('click', (event) => {
+          if (event.target === modal) closeCoursePaymentModal();
+        });
+        gcashBtn?.addEventListener('click', (event) => {
+          event.preventDefault();
+          openGCashApp();
+        });
+      })();
+
+      // Opens the official GCash website in a new tab so the user can
+      // complete their payment.
+      function openGCashApp() {
+        window.open('https://www.gcash.com/', '_blank', 'noopener');
+      }
+
+      /* ---------- Progress storage ---------- */
+      const slug = courseTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+      (async function initProgress() {
+      try {
+      // This inline script runs immediately while the page is still being
+      // parsed, but script.js (which defines findSavedCourse/getModulesFor
+      // and loads courses from Firestore) is a deferred module — it hasn't
+      // run yet at that point, and even once it has, the Firestore fetch is
+      // still async. That meant admin edits (description, image, modules,
+      // exam questions) never showed up here even though they saved fine.
+      //
+      // The previous version of this check — `if (window.coursesReadyPromise)`
+      // — looked correct but was actually broken: at the exact instant this
+      // line runs, script.js's deferred module hasn't executed yet, so
+      // window.coursesReadyPromise doesn't exist yet either. The `if` was
+      // false almost every single time, so the wait-and-refresh logic below
+      // silently never ran, and the page stayed on generic placeholder
+      // content forever. Poll for the global to actually show up (it will,
+      // within milliseconds, once script.js finishes loading) instead of
+      // just checking once and giving up.
+      const coursesReadyPromiseAvailable = await (async () => {
+        const start = Date.now();
+        while (!window.coursesReadyPromise && Date.now() - start < 5000) {
+          await new Promise((resolve) => setTimeout(resolve, 25));
+        }
+        return Boolean(window.coursesReadyPromise);
+      })();
+      if (coursesReadyPromiseAvailable) {
+        await window.coursesReadyPromise;
+      }
+      const refreshedSavedCourse = typeof findSavedCourse === 'function' ? findSavedCourse(courseTitle) : null;
+      if (refreshedSavedCourse) {
+        effectiveCourseLevel = refreshedSavedCourse.level || effectiveCourseLevel;
+        effectiveCourseAccessRule = refreshedSavedCourse.accessRule || effectiveCourseAccessRule;
+        data.image = refreshedSavedCourse.img || data.image;
+        data.description = refreshedSavedCourse.description || data.description;
+        data.outcomes = (refreshedSavedCourse.learning && refreshedSavedCourse.learning.length)
+          ? refreshedSavedCourse.learning
+          : (refreshedSavedCourse.outcomes && refreshedSavedCourse.outcomes.length ? refreshedSavedCourse.outcomes : data.outcomes);
+        data.modules = Array.isArray(refreshedSavedCourse.modules) ? refreshedSavedCourse.modules : [];
+        data.quizQuestions = Array.isArray(refreshedSavedCourse.quizQuestions) ? refreshedSavedCourse.quizQuestions : [];
+        data.questions = (Array.isArray(refreshedSavedCourse.examQuestions) && refreshedSavedCourse.examQuestions.length)
+          ? refreshedSavedCourse.examQuestions
+          : ((Array.isArray(refreshedSavedCourse.questions) && refreshedSavedCourse.questions.length)
+              ? refreshedSavedCourse.questions
+              : data.quizQuestions);
+
+        document.getElementById('course-pill').textContent = refreshedSavedCourse.category || courseCategory;
+        document.getElementById('course-hero-img').src = data.image;
+        document.getElementById('course-description').textContent = data.description;
+        updateOverviewCounts();
+        renderOutcomes();
+
+        isAuthored = data.modules.length > 0 && data.questions.length > 0;
+        refreshStartButtonState();
+
+        // If the learner already clicked "Start" before this real course
+        // data finished loading (common on a first visit / cold cache),
+        // the module list was already built once using the generic
+        // placeholder content. Rebuild it now so it reflects what was
+        // actually uploaded instead of staying stuck on placeholder text
+        // like "Module 1: ... Essentials" / "core concepts of <title>...".
+        // moduleListEl (declared further down in this same function) isn't
+        // safe to reference yet at this point — even after the awaits
+        // above, we're still earlier in this function's own execution
+        // order than its declaration, which throws a
+        // "Cannot access before initialization" error. Look the element up
+        // directly instead.
+        const moduleListNode = document.getElementById('module-list');
+        if (moduleListNode && moduleListNode.children.length) {
+          renderModules();
+          updateModuleProgress();
+        }
+      } else if (isPlaceholderData) {
+        // The live Firestore check has now actually run and there really
+        // is no published course under this title — only now is it
+        // accurate to show the generic placeholder content that was
+        // computed earlier but deliberately withheld from the page.
+        document.getElementById('course-description').textContent = data.description;
+        updateOverviewCounts();
+        renderOutcomes();
+        isAuthored = data.modules.length > 0 && data.questions.length > 0;
+        refreshStartButtonState();
+      }
+
+      // Wait for Firebase to resolve who's signed in before picking a
+      // per-user progress key (auth is now async via Firebase, not an
+      // instant localStorage read).
+      if (window.authReadyPromise) {
+        await window.authReadyPromise;
+      }
+
+      // Get current authenticated user
+      const getCurrentUserEmail = () => {
+        const auth = window.getAuth ? window.getAuth() : null;
+        return auth?.email ? auth.email.toLowerCase().replace(/[^a-z0-9]/g, '') : null;
+      };
+
+      const userEmail = getCurrentUserEmail();
+      // Storage key must include the user's email so progress never leaks
+      // between accounts. If we somehow don't have a signed-in user at this
+      // point, keep progress in memory only for this page view instead of
+      // falling back to a shared, un-scoped key that every visitor would read.
+      const storageKey = userEmail ? `bhf_progress_${userEmail}_${slug}` : null;
+
+      // One-time cleanup: earlier versions of this app stored progress under
+      // a shared key with no user email at all, so every visitor read and
+      // wrote the same record. Remove that legacy key so it can never leak
+      // a past user's "completed"/passed state into a different account again.
+      try {
+        localStorage.removeItem(`bhf_progress_${slug}`);
+      } catch (e) {
+        // ignore
+      }
+
+      function getProgressSignature() {
+        return JSON.stringify({
+          modules: Array.isArray(data.modules)
+            ? data.modules.map((m) => ({
+                title: String(m.title || '').trim(),
+                pdfName: String(m.pdfName || '').trim(),
+                quizPdfName: String(m.quizPdfName || '').trim(),
+                quizLength: Array.isArray(m.quiz) ? m.quiz.length : 0
+              }))
+            : []
+        });
+      }
+
+      function loadProgress() {
+        if (!storageKey) return { completedModules: [], lastScore: null, passed: false, progressSignature: getProgressSignature() };
+        try {
+          const stored = JSON.parse(localStorage.getItem(storageKey));
+          const currentSignature = getProgressSignature();
+          if (!stored || stored.progressSignature !== currentSignature) {
+            return { completedModules: [], lastScore: null, passed: false, progressSignature: currentSignature };
+          }
+          return { completedModules: [], lastScore: null, passed: false, progressSignature: currentSignature, ...stored };
+        } catch (e) {
+          return { completedModules: [], lastScore: null, passed: false, progressSignature: getProgressSignature() };
+        }
+      }
+      function saveProgress(progress) {
+        if (!storageKey) return; // not signed in — nothing to persist
+        progress.progressSignature = getProgressSignature();
+        localStorage.setItem(storageKey, JSON.stringify(progress));
+      }
+      let progress = loadProgress();
+
+      /* ---------- Stage elements ---------- */
+      const stages = {
+        overview: document.getElementById('stage-overview'),
+        modules: document.getElementById('stage-modules'),
+        exam: document.getElementById('stage-exam'),
+        results: document.getElementById('stage-results'),
+        certificate: document.getElementById('stage-certificate')
+      };
+      function showStage(name) {
+        if (name !== 'certificate') {
+          document.body.classList.remove('certificate-only');
+        }
+
+        Object.values(stages).forEach(s => s.hidden = true);
+        if (stages[name]) {
+          stages[name].hidden = false;
+          window.scrollTo({ top: stages[name].offsetTop - 100, behavior: 'smooth' });
+        }
+      }
+
+      /* ---------- MODULES STAGE ---------- */
+      /* ---------- MODULES STAGE ---------- */
+      const moduleListEl = document.getElementById('module-list');
+      const moduleProgressBar = document.getElementById('module-progress-bar');
+      const moduleProgressLabel = document.getElementById('module-progress-label');
+      const toExamBtn = document.getElementById('to-exam-btn');
+
+      const MODULE_QUIZ_PASS = 4; // must get 4 of 5 correct to pass a module quiz
+      let activeQuiz = null; // { moduleIdx, questions, answers, submitted }
+
+      // Pulls 5 quiz questions for a module. Uses module.quiz if defined,
+      // otherwise draws from the course's uploaded Quiz Questions bank
+      // (falls back to the exam bank only for older courses saved before
+      // Quiz Questions existed as their own step).
+      function normalizeQuizOptionText(text) {
+        return text
+          .replace(/^[*✓✔✅\s]+/, '')
+          .replace(/[\s*✓✔✅]+$/g, '')
+          .replace(/\(\s*correct(?:\s*answer)?\s*\)$/i, '')
+          .replace(/\[\s*correct(?:\s*answer)?\s*\]$/i, '')
+          .replace(/[-–—]\s*correct(?:\s*answer)?$/i, '')
+          .trim();
+      }
+
+      function getModuleQuizQuestions(idx) {
+        const module = data.modules[idx];
+        if (module.quiz && module.quiz.length) {
+          return module.quiz.slice(0, 5).map(item => ({
+            q: item.q,
+            options: item.options.map(normalizeQuizOptionText),
+            correct: item.answer !== undefined ? item.answer : item.correct
+          }));
+        }
+        const pool = (data.quizQuestions && data.quizQuestions.length) ? data.quizQuestions : (data.questions || []);
+        if (!pool.length) return [];
+        const start = (idx * 5) % pool.length;
+        const picked = [];
+        for (let i = 0; i < 5; i++) picked.push(pool[(start + i) % pool.length]);
+        return picked.map(item => ({
+          q: item.q,
+          options: item.options.map(normalizeQuizOptionText),
+          correct: item.answer !== undefined ? item.answer : item.correct
+        }));
+      }
+
+      function moduleState(idx) {
+        if (progress.completedModules.includes(idx)) return 'completed';
+        if (idx === 0 || progress.completedModules.includes(idx - 1)) return 'available';
+        return 'locked';
+      }
+
+      function renderModules() {
+        moduleListEl.innerHTML = '';
+        data.modules.forEach((m, idx) => {
+          const state = moduleState(idx);
+          const item = document.createElement('div');
+          item.className = 'module-item' + (state === 'completed' ? ' module-item-done' : '');
+
+          let actionHtml = '';
+          if (state === 'completed') {
+            actionHtml = `<span class="module-status">Completed ✓ — Quiz Passed</span>`;
+          } else if (state === 'locked') {
+            actionHtml = `<button class="btn btn-secondary" disabled>🔒 Complete previous module first</button>`;
+          } else {
+            actionHtml = `<button class="btn btn-secondary module-quiz-start-btn" data-idx="${idx}">Take Module Quiz (5 Questions)</button>`;
+          }
+
+          let bodyHtml = '';
+          if (m.type === 'pdf' && m.pdfData) {
+            bodyHtml = `
+              <div class="module-pdf-viewer" style="margin:0.75rem 0;">
+                <iframe src="${m.pdfData}" title="${(m.title || 'Module PDF').replace(/"/g, '&quot;')}" style="width:100%; height:600px; border:1px solid var(--border-color, #ddd); border-radius:8px;"></iframe>
+                <p class="detail-note" style="margin-top:0.5rem;">
+                  <a href="${m.pdfData}" download="${(m.pdfName || 'module.pdf').replace(/"/g, '&quot;')}">Download this module's PDF</a>
+                </p>
+              </div>
+            `;
+          } else {
+            bodyHtml = `<p>${m.content}</p>`;
+          }
+          // module-specific quiz links removed per request
+
+          item.innerHTML = `
+            <div class="module-item-header">
+              <h3>${m.title}</h3>
+              <span class="module-status">${state === 'completed' ? 'Completed' : state === 'locked' ? 'Locked' : 'Not started'}</span>
+            </div>
+            ${bodyHtml}
+            <div class="module-action">${actionHtml}</div>
+            <div class="module-quiz-area" id="module-quiz-${idx}" hidden></div>
+          `;
+          moduleListEl.appendChild(item);
+        });
+
+        moduleListEl.querySelectorAll('.module-quiz-start-btn').forEach(btn => {
+          btn.addEventListener('click', () => startModuleQuiz(parseInt(btn.dataset.idx, 10)));
+        });
+        // Attach open/download handlers for module quiz PDFs (open via Blob URL)
+        moduleListEl.querySelectorAll('.module-quiz-open').forEach(a => {
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            const idx = parseInt(a.dataset.idx, 10);
+            openModuleQuiz(idx);
+          });
+        });
+        moduleListEl.querySelectorAll('.module-quiz-download').forEach(a => {
+          a.addEventListener('click', (e) => {
+            e.preventDefault();
+            const idx = parseInt(a.dataset.idx, 10);
+            downloadModuleQuiz(idx);
+          });
+        });
+      }
+
+      function startModuleQuiz(idx) {
+        const questions = getModuleQuizQuestions(idx);
+        activeQuiz = { moduleIdx: idx, questions, answers: new Array(questions.length).fill(null), submitted: false };
+        renderModuleQuiz(idx);
+
+        const area = document.getElementById(`module-quiz-${idx}`);
+        if (area) area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+        function dataURLToBlob(dataURL) {
+          try {
+            const parts = dataURL.split(',');
+            const meta = parts[0] || '';
+            const base64 = parts[1] || '';
+            const m = meta.match(/:(.*?);/);
+            const mime = m ? m[1] : 'application/pdf';
+            const binary = atob(base64);
+            const len = binary.length;
+            const u8 = new Uint8Array(len);
+            for (let i = 0; i < len; i++) u8[i] = binary.charCodeAt(i);
+            return new Blob([u8], { type: mime });
+          } catch (err) {
+            console.error('dataURLToBlob failed', err);
+            return null;
+          }
+        }
+
+        function openModuleQuiz(idx) {
+          const m = data.modules[idx];
+          if (!m || !m.quizPdfData) { alert('No module quiz uploaded.'); return; }
+          const blob = dataURLToBlob(m.quizPdfData);
+          if (!blob) { alert('Unable to open module quiz.'); return; }
+          const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
+          setTimeout(() => URL.revokeObjectURL(url), 30 * 1000);
+        }
+
+        function downloadModuleQuiz(idx) {
+          const m = data.modules[idx];
+          if (!m || !m.quizPdfData) { alert('No module quiz uploaded.'); return; }
+          const blob = dataURLToBlob(m.quizPdfData);
+          if (!blob) { alert('Unable to download module quiz.'); return; }
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = m.quizPdfName || 'module-quiz.pdf';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 30 * 1000);
+        }
+
+      function renderModuleQuiz(idx) {
+        const area = document.getElementById(`module-quiz-${idx}`);
+        if (!area || !activeQuiz || activeQuiz.moduleIdx !== idx) return;
+        area.hidden = false;
+
+        const { questions, answers, submitted } = activeQuiz;
+
+        if (!submitted) {
+          area.innerHTML = `
+            <div class="module-quiz-box">
+              <h4>Module Quiz — ${questions.length} Questions</h4>
+              <p class="detail-note">Score at least ${MODULE_QUIZ_PASS}/${questions.length} to pass and unlock the next module.</p>
+              ${questions.map((q, qi) => `
+                <div class="exam-question">
+                  <p class="exam-question-text">${qi + 1}. ${q.q}</p>
+                  <div class="exam-options">
+                    ${q.options.map((opt, oi) => `
+                      <label class="exam-option ${answers[qi] === oi ? 'exam-option-selected' : ''}">
+                        <input type="radio" name="mq-${idx}-${qi}" value="${oi}" ${answers[qi] === oi ? 'checked' : ''} />
+                        <span>${opt}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+              `).join('')}
+              <div class="exam-actions">
+                <button class="btn btn-primary module-quiz-submit-btn">Submit Quiz</button>
+                <button class="btn btn-secondary module-quiz-cancel-btn">Cancel</button>
+              </div>
+            </div>
+          `;
+
+          area.querySelectorAll('input[type="radio"]').forEach(input => {
+            input.addEventListener('change', () => {
+              const qIdx = parseInt(input.name.split('-')[2], 10);
+              activeQuiz.answers[qIdx] = parseInt(input.value, 10);
+              renderModuleQuiz(idx);
+            });
+          });
+
+          area.querySelector('.module-quiz-submit-btn')?.addEventListener('click', () => {
+            if (activeQuiz.answers.includes(null)) {
+              alert('Please answer all questions before submitting.');
+              return;
+            }
+            activeQuiz.submitted = true;
+            renderModuleQuiz(idx);
+          });
+
+          area.querySelector('.module-quiz-cancel-btn')?.addEventListener('click', () => {
+            activeQuiz = null;
+            area.hidden = true;
+            area.innerHTML = '';
+          });
+        } else {
+          const correctCount = questions.reduce((sum, q, qi) => sum + (answers[qi] === q.correct ? 1 : 0), 0);
+          const passed = correctCount >= MODULE_QUIZ_PASS;
+          const modulePct = Math.round((correctCount / questions.length) * 100);
+
+          area.innerHTML = `
+            <div class="module-quiz-box">
+              <h4>${passed ? 'You passed! ✓' : 'Not quite — try again'}</h4>
+              <p class="detail-note">You scored ${correctCount} out of ${questions.length}.</p>
+              ${questions.map((q, qi) => {
+                const userAnswer = answers[qi];
+                return `
+                  <div class="exam-question">
+                    <p class="exam-question-text">${qi + 1}. ${q.q}</p>
+                    <div class="exam-options">
+                      ${q.options.map((opt, oi) => {
+                        const cls = oi === userAnswer ? 'exam-option exam-option-selected' : 'exam-option';
+                        return `<label class="${cls}"><span>${opt}</span></label>`;
+                      }).join('')}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+              <div class="exam-actions">
+                <div class="score-ring-wrap score-ring-wrap-sm">
+                  <svg viewBox="0 0 140 140" class="score-ring">
+                    <circle cx="70" cy="70" r="60" class="score-ring-track" />
+                    <circle cx="70" cy="70" r="60" class="score-ring-fill ${passed ? 'score-ring-pass' : 'score-ring-fail'}" id="module-score-ring-fill-${idx}" />
+                  </svg>
+                  <div class="score-ring-label">
+                    <strong>${modulePct}%</strong>
+                  </div>
+                </div>
+                <div class="module-quiz-score-text">
+                  <strong>${correctCount} / ${questions.length}</strong>
+                  <span>Correct Answers</span>
+                </div>
+                ${passed
+                  ? `<button class="btn btn-primary module-quiz-continue-btn">Continue</button>`
+                  : `<button class="btn btn-primary module-quiz-retry-btn">Retry Quiz</button>`}
+              </div>
+            </div>
+          `;
+
+          {
+            const circumference = 2 * Math.PI * 60;
+            const ringFill = document.getElementById(`module-score-ring-fill-${idx}`);
+            if (ringFill) {
+              ringFill.style.strokeDasharray = `${circumference}`;
+              ringFill.style.strokeDashoffset = `${circumference}`;
+              requestAnimationFrame(() => {
+                const offset = circumference - (modulePct / 100) * circumference;
+                ringFill.style.transition = 'stroke-dashoffset 1s ease';
+                ringFill.style.strokeDashoffset = offset;
+              });
+            }
+          }
+
+          area.querySelector('.module-quiz-continue-btn')?.addEventListener('click', () => {
+          if (!progress.completedModules.includes(idx)) {
+            progress.completedModules.push(idx);
+            saveProgress(progress);
+          }
+          activeQuiz = null;
+          renderModules();
+          updateModuleProgress();
+          goToNextModule(idx);
+        });
+
+          area.querySelector('.module-quiz-retry-btn')?.addEventListener('click', () => startModuleQuiz(idx));
+        }
+      }
+
+      // After a module quiz is passed, jump the user straight to the next
+      // module (which just unlocked) instead of leaving them stranded on
+      // the module they finished. If that was the last module, scroll to
+      // the "Continue to Exam" button instead.
+      function goToNextModule(idx) {
+        const nextIdx = idx + 1;
+        const nextEl = moduleListEl.children[nextIdx];
+
+        const target = nextEl || toExamBtn;
+        if (!target) return;
+
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Brief highlight so it's obvious where we landed.
+        target.classList.add('module-item-highlight');
+        setTimeout(() => target.classList.remove('module-item-highlight'), 1500);
+
+        // If the next module's quiz was already open before, auto-open it
+        // again so the learner can start right away.
+        if (nextEl) {
+          const quizBtn = nextEl.querySelector('.module-quiz-start-btn');
+          if (quizBtn) quizBtn.focus();
+        }
+      }
+
+      function updateModuleProgress() {
+        const total = data.modules.length;
+        const done = progress.completedModules.length;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        moduleProgressBar.style.width = pct + '%';
+        moduleProgressLabel.textContent = `${done} of ${total} modules completed`;
+        toExamBtn.disabled = done < total;
+      }
+
+      startBtn.addEventListener('click', () => {
+        if (!isAuthored) return;
+        const userEmail = window.getAuth ? window.getAuth()?.email : '';
+        const needsPayment = window.courseRequiresPayment ? window.courseRequiresPayment({ title: courseTitle, level: effectiveCourseLevel, accessRule: effectiveCourseAccessRule }) : false;
+        const proceedToCourse = () => {
+          renderModules();
+          updateModuleProgress();
+          showStage('modules');
+        };
+        if (needsPayment && (!userEmail || !(window.hasPurchasedCourseAccess && window.hasPurchasedCourseAccess(courseTitle, userEmail)))) {
+          if (!userEmail) {
+            window.location.href = 'login.html';
+            return;
+          }
+          openCoursePaymentModal(courseTitle, courseCategory, proceedToCourse);
+          return;
+        }
+        proceedToCourse();
+      });
+
+      function continueToExam() {
+        updateModuleProgress();
+        if (!toExamBtn.disabled) {
+          startExam();
+          showStage('exam');
+        }
+      }
+
+      toExamBtn.addEventListener('click', continueToExam);
+      window.continueToExam = continueToExam;
+
+      /* ---------- EXAM STAGE ---------- */
+      let examAnswers = [];
+      let currentQ = 0;
+
+      const examQuestionArea = document.getElementById('exam-question-area');
+      const examProgressBar = document.getElementById('exam-progress-bar');
+      const examProgressLabel = document.getElementById('exam-progress-label');
+      const examPrevBtn = document.getElementById('exam-prev-btn');
+      const examNextBtn = document.getElementById('exam-next-btn');
+      const examSubmitBtn = document.getElementById('exam-submit-btn');
+
+      function startExam() {
+        const examTotal = data.questions.length;
+        const passNeeded = Math.ceil(examTotal * PASS_PERCENT);
+        const introNote = document.getElementById('exam-intro-note');
+        if (introNote) introNote.textContent = `Answer all ${examTotal} questions, then submit. You need 90% (${passNeeded}/${examTotal}) to pass.`;
+        examAnswers = new Array(data.questions.length).fill(null);
+        currentQ = 0;
+        renderQuestion();
+      }
+
+      function renderQuestion() {
+        const total = data.questions.length;
+        const q = data.questions[currentQ];
+        examProgressBar.style.width = `${((currentQ + 1) / total) * 100}%`;
+        examProgressLabel.textContent = `Question ${currentQ + 1} of ${total}`;
+
+        examQuestionArea.innerHTML = `
+          <div class="exam-question">
+            <p class="exam-question-text">${currentQ + 1}. ${q.q}</p>
+            <div class="exam-options">
+              ${q.options.map((opt, i) => `
+                <label class="exam-option ${examAnswers[currentQ] === i ? 'exam-option-selected' : ''}">
+                  <input type="radio" name="q${currentQ}" value="${i}" ${examAnswers[currentQ] === i ? 'checked' : ''} />
+                  <span>${opt}</span>
+                </label>
+              `).join('')}
+            </div>
+          </div>
+        `;
+
+        examQuestionArea.querySelectorAll(`input[name="q${currentQ}"]`).forEach(input => {
+          input.addEventListener('change', () => {
+            examAnswers[currentQ] = parseInt(input.value, 10);
+            renderQuestion();
+          });
+        });
+
+        examPrevBtn.disabled = currentQ === 0;
+        const isLast = currentQ === total - 1;
+        examNextBtn.hidden = isLast;
+        examSubmitBtn.hidden = !isLast;
+      }
+
+      examPrevBtn.addEventListener('click', () => {
+        if (currentQ > 0) { currentQ--; renderQuestion(); }
+      });
+      examNextBtn.addEventListener('click', () => {
+        if (currentQ < data.questions.length - 1) { currentQ++; renderQuestion(); }
+      });
+      examSubmitBtn.addEventListener('click', () => {
+        const unanswered = examAnswers.findIndex(a => a === null);
+        if (unanswered !== -1) {
+          currentQ = unanswered;
+          renderQuestion();
+          examQuestionArea.scrollIntoView({ behavior: 'smooth' });
+          return;
+        }
+        gradeExam();
+      });
+
+      const certificateSection = document.getElementById('stage-certificate');
+      const certificateCodeDisplay = document.getElementById('certificate-code-display');
+      const certificateIdDisplay = document.getElementById('certificate-id-display');
+      const certificateNameDisplay = document.getElementById('certificate-name');
+      const certificateCourseDisplay = document.getElementById('certificate-course');
+      const certificateProgramDisplay = document.getElementById('certificate-program');
+      const certificateSignatoryDisplay = document.getElementById('certificate-signatory');
+      const certificateDateDisplay = document.getElementById('certificate-date');
+      const certificateExpiryDisplay = document.getElementById('certificate-expiry');
+      const certificateStatusNote = document.getElementById('certificate-status-note');
+      const downloadCertBtn = document.getElementById('download-cert-btn');
+      const returnDashboardBtn = document.getElementById('return-dashboard-btn');
+      let currentDisplayedCertificate = null;
+
+      function showCertificate(certificate) {
+        currentDisplayedCertificate = certificate;
+        if (certificateCodeDisplay) {
+          certificateCodeDisplay.title = `Certificate ID: ${certificate.code}`;
+        }
+        certificateIdDisplay.textContent = certificate.code;
+        certificateNameDisplay.textContent = certificate.name;
+        certificateCourseDisplay.textContent = certificate.course;
+        certificateDateDisplay.textContent = certificate.date;
+        let expiryLabel = certificate.expiryDate;
+        if (!expiryLabel) {
+          const issued = certificate.issuedAt ? new Date(certificate.issuedAt) : new Date(certificate.date);
+          if (!isNaN(issued.getTime())) {
+            const fallbackExpiry = new Date(issued);
+            fallbackExpiry.setDate(fallbackExpiry.getDate() + 365);
+            expiryLabel = fallbackExpiry.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+          }
+        }
+        certificateExpiryDisplay.textContent = expiryLabel || 'Not set';
+        const isPendingUpload = certificate.status === 'pending-upload' || !certificate.certificateFileUrl;
+        if (certificateStatusNote) {
+          certificateStatusNote.textContent = isPendingUpload
+            ? 'Certificate Available soon'
+            : 'A certificate file has been uploaded and is available for download.';
+        }
+        // Don't offer a download until an admin has actually uploaded the
+        // certificate file — previously this button fell back to
+        // screenshotting the on-screen template, which let learners
+        // "download" a certificate before it was ever issued/approved.
+        if (downloadCertBtn) {
+          downloadCertBtn.hidden = isPendingUpload;
+        }
+        if (window.applyCertificateTemplate) {
+          window.applyCertificateTemplate();
+        }
+        document.body.classList.add('certificate-only');
+        showStage('certificate');
+      }
+
+      downloadCertBtn?.addEventListener('click', () => {
+        const certName = (window.getAuth ? window.getAuth()?.displayName || window.getAuth()?.email || 'certificate' : 'certificate').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+        if (currentDisplayedCertificate?.certificateFileUrl) {
+          const url = currentDisplayedCertificate.certificateFileUrl;
+          const extension = /data:application\/pdf|\.pdf($|[?#])/i.test(url) ? 'pdf' : 'png';
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `certificate-${certName}.${extension}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          return;
+        }
+        window.downloadCertificate('stage-certificate', `certificate-${certName}`);
+      });
+      returnDashboardBtn?.addEventListener('click', () => {
+        window.location.href = 'dashboard.html';
+      });
+
+      /* ---------- GRADING (immediate) ---------- */
+      function gradeExam() {
+        let correctCount = 0;
+        data.questions.forEach((q, i) => {
+          const correctIndex = q.answer !== undefined ? q.answer : q.correct;
+          if (examAnswers[i] === correctIndex) correctCount++;
+        });
+        const total = data.questions.length;
+        const pct = Math.round((correctCount / total) * 100);
+        const passed = correctCount >= Math.ceil(total * PASS_PERCENT);
+
+        progress.lastScore = { correctCount, total, pct, passed, date: new Date().toISOString() };
+        if (passed) progress.passed = true;
+        saveProgress(progress);
+
+        renderResults(correctCount, total, pct, passed);
+        showStage('results');
+      }
+
+      async function renderResults(correctCount, total, pct, passed) {
+        const circumference = 2 * Math.PI * 60;
+        const fillEl = document.getElementById('score-ring-fill');
+        fillEl.style.strokeDasharray = `${circumference}`;
+        fillEl.style.strokeDashoffset = `${circumference}`;
+        fillEl.classList.toggle('score-ring-pass', passed);
+        fillEl.classList.toggle('score-ring-fail', !passed);
+
+        document.getElementById('score-percent').textContent = pct + '%';
+        document.getElementById('score-fraction').textContent = `${correctCount} / ${total}`;
+
+        const heading = document.getElementById('results-heading');
+        const message = document.getElementById('results-message');
+        const actions = document.getElementById('results-actions');
+        actions.innerHTML = '';
+
+        if (passed) {
+          heading.textContent = "Congratulations, you passed!";
+          message.textContent = `You scored ${pct}% (${correctCount}/${total}), meeting the 90% requirement. Your exam result has been recorded and an admin will upload your certificate for "${courseTitle}" once it is ready.`;
+
+          // The certificate isn't actually issued yet at this point — an
+          // admin still has to upload it — so instead of a "View
+          // Certificate" button (which used to self-generate a placeholder
+          // certificate the learner could "download" before it was ever
+          // approved), just show a plain status note here.
+          const certPendingNote = document.createElement('p');
+          certPendingNote.className = 'detail-note certificate-pending-note';
+          certPendingNote.textContent = 'Certificate Available Soon. Please check your User Profile later.';
+          actions.appendChild(certPendingNote);
+        } else {
+          heading.textContent = "Not quite a pass yet";
+          message.textContent = `You scored ${pct}% (${correctCount}/${total}). A score of 90% (${Math.ceil(total * PASS_PERCENT)}/${total}) is required to pass. Review the modules and try again — you can retake the exam right away.`;
+          const retakeBtn = document.createElement('button');
+          retakeBtn.className = 'btn btn-primary';
+          retakeBtn.textContent = 'Retake Exam';
+          retakeBtn.addEventListener('click', () => {
+            startExam();
+            showStage('exam');
+          });
+          actions.appendChild(retakeBtn);
+
+          const reviewBtn = document.createElement('button');
+          reviewBtn.className = 'btn btn-secondary';
+          reviewBtn.textContent = 'Review Modules';
+          reviewBtn.addEventListener('click', () => {
+            renderModules();
+            showStage('modules');
+          });
+          actions.appendChild(reviewBtn);
+        }
+
+        // animate ring after paint
+        requestAnimationFrame(() => {
+          const offset = circumference - (pct / 100) * circumference;
+          fillEl.style.transition = 'stroke-dashoffset 1s ease';
+          fillEl.style.strokeDashoffset = offset;
+        });
+      }
+
+      /* ---------- Direct link straight to the certificate ---------- */
+      /* Lets the Dashboard's "View Certificate" button jump right to the
+         certificate view (course-detail.html?course=...&view=certificate)
+         instead of having to redo the results screen. */
+      // script.js is an ES module (deferred) and this inline script can start
+      // running before it finishes loading/attaching window.getAuth,
+      // window.findUserCertificate, and window.certificatesReadyPromise.
+      // Without this wait, that timing race made the link silently fall back
+      // to the results ("Congratulations, you passed!") screen instead of
+      // showing the certificate directly. Poll briefly for those globals
+      // instead of giving up the first time they're not there yet.
+      async function waitForGlobals(conditionFn, { timeout = 5000, interval = 50 } = {}) {
+        const start = Date.now();
+        while (!conditionFn() && Date.now() - start < timeout) {
+          await new Promise((resolve) => setTimeout(resolve, interval));
+        }
+        return conditionFn();
+      }
+
+      async function tryShowCertificateFromLink() {
+        if (params.get('view') !== 'certificate') return false;
+
+        const ready = await waitForGlobals(
+          () => window.getAuth && window.findUserCertificate && window.certificatesReadyPromise
+        );
+        if (!ready) return false;
+
+        const auth = window.getAuth();
+        if (!auth) return false;
+
+        await window.certificatesReadyPromise;
+        let certificate = null;
+        if (window.fetchUserCertificate) {
+          certificate = await window.fetchUserCertificate(auth.email, courseTitle);
+        } else {
+          certificate = window.findUserCertificate(auth.email, courseTitle);
+        }
+        if (!certificate) return false;
+        showCertificate(certificate);
+        return true;
+      }
+
+      /* ---------- Resume where the learner left off ---------- */
+      const shownDirectCertificate = await tryShowCertificateFromLink();
+      if (shownDirectCertificate) {
+        // Certificate is already on screen — skip the normal resume logic.
+      } else if (isAuthored && progress.completedModules.length > 0 && progress.completedModules.length < data.modules.length) {
+        renderModules();
+        updateModuleProgress();
+        showStage('modules');
+      } else if (isAuthored && progress.completedModules.length === data.modules.length && progress.lastScore) {
+        renderModules();
+        updateModuleProgress();
+        renderResults(progress.lastScore.correctCount, progress.lastScore.total, progress.lastScore.pct, progress.lastScore.passed);
+        showStage('results');
+      }
+
+      // Everything above has now settled — the real, published course
+      // data (or a confirmed "not found" placeholder) is on screen, and
+      // the correct stage (overview/modules/results/certificate) has
+      // been picked for a returning learner. Only now does the loading
+      // overlay come down, so nobody ever sees a flash of default/generic
+      // content or the wrong stage before it's replaced.
+      } finally {
+        hideCourseLoadingOverlay();
+      }
+      })();
+    </script>
+  </body>
+</html>
