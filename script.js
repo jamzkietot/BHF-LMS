@@ -701,6 +701,27 @@ const addSavedCategory = async (name) => {
   return newCategory;
 };
 
+// Updates a category's own Firestore doc (e.g. its "img" field) rather than
+// a page-scoped selector override. Mirrors updateSavedCourse's reasoning:
+// category cards on both the Home and Programs pages are rebuilt from
+// scratch on every render (search, live category/course updates, async
+// data load), so a positional CSS-selector override can't reliably survive
+// that. Writing straight to the category doc makes it the single source of
+// truth — the new image shows up everywhere that category is rendered
+// (Home's Featured Programs AND Programs' full list) and survives reloads.
+const updateSavedCategory = async (name, updates) => {
+  const normalized = normalizeCategoryName(name);
+  const existing = categoriesCache.find((c) => normalizeCategoryName(c.name) === normalized);
+  if (!existing) return null;
+  await updateDoc(doc(db, "categories", existing.id), updates);
+  // Update the local cache (and its localStorage mirror) immediately,
+  // same reasoning as addSavedCategory/removeSavedCategory above.
+  categoriesCache = categoriesCache.map((c) => (c.id === existing.id ? { ...c, ...updates } : c));
+  saveCategoriesSnapshot(categoriesCache);
+  try { document.dispatchEvent(new CustomEvent('categories:updated')); } catch (e) {}
+  return categoriesCache.find((c) => c.id === existing.id) || null;
+};
+
 const removeSavedCategory = async (name) => {
   const normalized = normalizeCategoryName(name);
   const existing = categoriesCache.find((c) => normalizeCategoryName(c.name) === normalized);
@@ -4170,6 +4191,8 @@ function initAdminInlineEdit() {
       if (lastEdit.courseTitle) {
         await updateSavedCourse(lastEdit.courseTitle, { img: lastEdit.previousValue || '' });
         window.renderCourses?.();
+      } else if (lastEdit.categoryName) {
+        await updateSavedCategory(lastEdit.categoryName, { img: lastEdit.previousValue || '' });
       } else {
         applyOverrideValue(lastEdit.selector, lastEdit.type, lastEdit.previousValue || '');
         if (lastEdit.previousValue == null) {
@@ -4304,11 +4327,67 @@ function initAdminInlineEdit() {
             pushEditHistory({ pageKey: targetPage, selector, type: 'image', previousValue, newValue: url, courseTitle });
             showToast('Course image updated and saved.', 'success');
             window.renderCourses?.();
+            // Also cascade this course's new picture up to its category's
+            // shared image (same field the Home page's Featured Programs
+            // card and the Programs page's category card both read from —
+            // see updateSavedCategory). This is what makes "I edited this
+            // course's thumbnail" show up on the Home page: the category
+            // card doesn't have its own separate picture unless an admin
+            // deliberately set one, so by default it just mirrors whichever
+            // course thumbnail in that category was edited most recently.
+            // Best-effort: a category card image is a nice-to-have, so this
+            // never blocks or fails the course image save above it.
+            const courseCategory = (updated.category || '').trim();
+            if (courseCategory) {
+              try {
+                const categoryUpdated = await updateSavedCategory(courseCategory, { img: url });
+                if (!categoryUpdated) await addSavedCategory(courseCategory).then(() => updateSavedCategory(courseCategory, { img: url }));
+              } catch (categoryErr) {
+                console.warn('Failed to cascade course image to category', categoryErr);
+              }
+            }
           } else {
             showToast("Couldn't find that course to save the image. Try again from the course list.", 'error');
           }
         } catch (err) {
           console.error('Failed to save course image', err);
+          showToast("Image updated here, but saving to the server failed. It won't survive a reload.", 'error');
+        }
+        return;
+      }
+
+      // Program category card images (the "department"/"Featured Programs"
+      // cards on both programs.html and the Home page) have the same
+      // rebuilt-on-every-render problem as course thumbnails above, PLUS
+      // they're shared across two different pages/containers with
+      // different card sets (Home only shows the top 4 by enrollment), so
+      // a page-scoped selector override can never reliably reach both. So
+      // this also saves straight to the category's own `img` field —
+      // shared, single source of truth — which is why editing a program
+      // picture here now shows up on the Home page too, automatically.
+      const categoryName = el.dataset.category || el.closest('[data-category]')?.dataset.category;
+      if (categoryName) {
+        el.src = url;
+        showToast('Saving image…', 'success');
+        try {
+          let updated = await updateSavedCategory(categoryName, { img: url });
+          if (!updated) {
+            // No Firestore "categories" doc exists yet for this category
+            // (it's still only inferred from BHF_COURSES defaults) — same
+            // situation as a course with no saved doc yet. Create it now,
+            // seeded with the new image, so the edit has somewhere
+            // permanent to live.
+            await addSavedCategory(categoryName);
+            updated = await updateSavedCategory(categoryName, { img: url });
+          }
+          if (updated) {
+            pushEditHistory({ pageKey: targetPage, selector, type: 'image', previousValue, newValue: url, categoryName });
+            showToast('Program image updated and saved.', 'success');
+          } else {
+            showToast("Couldn't find that program category to save the image. Try again.", 'error');
+          }
+        } catch (err) {
+          console.error('Failed to save category image', err);
           showToast("Image updated here, but saving to the server failed. It won't survive a reload.", 'error');
         }
         return;
@@ -4975,16 +5054,20 @@ if (page === "home") {
     }
   }
 
-  /* Program Categories preview on the homepage. This used to be six
-     hand-written cards with no connection to the "categories" collection
-     at all, so newly-added categories (from the Admin panel or the
-     Instructor Portal) never showed up here no matter how many times they
-     were published. Now it's built the same way programs.html builds its
-     department cards: from BHF_COURSES defaults + getSavedCategories(). */
+  /* Featured Programs preview on the homepage. Instead of listing every
+     category (which just duplicated programs.html), this now shows only
+     the top HOME_FEATURED_LIMIT categories ranked by enrollment count, so
+     it's an actual "featured/most popular" snapshot. Enrollment counts
+     come from live Firestore enrollment records (getEnrollmentRecords()),
+     which each carry a "category" field. New categories added later are
+     automatically eligible — they'll surface here on their own once they
+     pick up enough enrollments; until then they simply rank lower and stay
+     out of the top 4 (see programs.html for the full list). */
   const homeProgramsGrid = document.getElementById('home-programs-grid');
   const homeCategoryImages = {
     "Information Technology": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80"
   };
+  const HOME_FEATURED_LIMIT = 4;
   const renderHomePrograms = () => {
     if (!homeProgramsGrid) return;
     const defaultCats = Array.from(new Set((typeof BHF_COURSES !== 'undefined' ? BHF_COURSES : []).map((c) => c.category).filter(Boolean)));
@@ -5002,9 +5085,45 @@ if (page === "home") {
       return;
     }
 
-    homeProgramsGrid.innerHTML = categories.map((category) => {
+    // Saved category images (set via Edit Mode, stored on the category's
+    // own Firestore doc — see updateSavedCategory) take priority over the
+    // hardcoded homeCategoryImages map, so an admin-edited program picture
+    // shows up here AND on the Programs page, since both read from the
+    // same category record.
+    const savedCategoryImages = (typeof getSavedCategories === 'function' ? getSavedCategories() : [])
+      .reduce((map, c) => {
+        if (c.name && c.img) map[c.name] = c.img;
+        return map;
+      }, {});
+
+    // Count enrollments per category (case/whitespace-insensitive match,
+    // same normalization used above for categories vs. catalog courses).
+    const enrollmentRecords = typeof getEnrollmentRecords === 'function' ? (getEnrollmentRecords() || []) : [];
+    const enrollmentCounts = {};
+    enrollmentRecords.forEach((record) => {
+      const normalizedCategory = ((record && record.category) || '').trim().toLowerCase();
+      if (!normalizedCategory) return;
+      enrollmentCounts[normalizedCategory] = (enrollmentCounts[normalizedCategory] || 0) + 1;
+    });
+
+    // Stable sort by enrollment count, descending. Categories with no
+    // enrollments yet (count 0) keep their original relative order, so
+    // brand-new categories don't jump around — they just wait their turn
+    // until they earn enough enrollments to crack the top 4.
+    const featuredCategories = categories
+      .map((category, index) => ({
+        category,
+        index,
+        count: enrollmentCounts[category.trim().toLowerCase()] || 0
+      }))
+      .sort((a, b) => (b.count - a.count) || (a.index - b.index))
+      .slice(0, HOME_FEATURED_LIMIT)
+      .map((entry) => entry.category);
+
+    homeProgramsGrid.innerHTML = featuredCategories.map((category) => {
       const matchingCourses = catalog.filter((course) => (course.category || 'General') === category);
-      const img = homeCategoryImages[category]
+      const img = savedCategoryImages[category]
+        || homeCategoryImages[category]
         || matchingCourses.find((c) => c.img)?.img
         || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80';
       const desc = matchingCourses.length
@@ -5012,7 +5131,7 @@ if (page === "home") {
         : 'New program category — courses coming soon.';
       return `
         <article class="program-card reveal is-visible" data-category="${category.replace(/"/g, '&quot;')}">
-          <img class="program-card-img" src="${img}" alt="${category} training" loading="lazy" />
+          <img class="program-card-img" src="${img}" alt="${category} training" loading="lazy" data-category="${category.replace(/"/g, '&quot;')}" />
           <h3>${category}</h3>
           <p>${desc}</p>
           <a href="programs.html">Learn More</a>
@@ -5029,14 +5148,14 @@ if (page === "home") {
     }
   };
 
-  // Categories/courses load asynchronously (see the bootstrap() IIFE
-  // above), and this "home" block runs before that finishes, so render
-  // once immediately with whatever's cached, then again once the real
-  // data is in so newly-added categories actually appear without a
-  // second page reload. renderHomePrograms() itself re-applies saved
-  // overrides after each render (see reapplyHomeOverrides above) so
-  // admin edits to these cards survive both the async data reload and
-  // a full page reload.
+  // Categories/courses/enrollments load asynchronously (see the
+  // bootstrap() IIFE above), and this "home" block runs before that
+  // finishes, so render once immediately with whatever's cached, then
+  // again once the real data is in so ranking reflects live enrollment
+  // counts without a second page reload. renderHomePrograms() itself
+  // re-applies saved overrides after each render (see reapplyHomeOverrides
+  // above) so admin edits to these cards survive both the async data
+  // reload and a full page reload.
   renderHomePrograms();
   if (window.dataReadyPromise) {
     window.dataReadyPromise.then(renderHomePrograms);
@@ -5048,6 +5167,10 @@ if (page === "home") {
   // Courses now stream in live too (see watchCourses()), so a freshly
   // uploaded course shows up here right away as well.
   document.addEventListener('courses:updated', renderHomePrograms);
+  // Enrollments stream in live too (see watchEnrollments() /
+  // "enrollments:updated"), so the "most enrolled" ranking stays current
+  // as new sign-ups come in, without needing a reload.
+  document.addEventListener('enrollments:updated', renderHomePrograms);
 }
 
 if (page === "signup") {
@@ -5130,12 +5253,26 @@ if (page === "programs") {
       visibleCourses.map((course) => (course.category || "General")).filter(Boolean)
     ));
 
+    // Saved category images (set via Edit Mode, stored on the category's
+    // own Firestore doc — see updateSavedCategory) take priority over the
+    // hardcoded categoryImages map, so an admin-edited program picture
+    // shows up here AND on the Home page's Featured Programs, since both
+    // read from the same category record.
+    const savedCategoryImages = (typeof getSavedCategories === 'function' ? getSavedCategories() : [])
+      .reduce((map, c) => {
+        if (c.name && c.img) map[c.name] = c.img;
+        return map;
+      }, {});
+
     if (departmentsGrid) {
       departmentsGrid.innerHTML = categories.map((category) => {
         const matching = visibleCourses.filter((course) => (course.category || "General") === category);
+        const img = savedCategoryImages[category]
+          || categoryImages[category]
+          || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80';
         return `
-          <article class="department-card">
-            <img src="${categoryImages[category] || 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80'}" alt="${category}">
+          <article class="department-card" data-category="${category.replace(/"/g, '&quot;')}">
+            <img src="${img}" alt="${category}" data-category="${category.replace(/"/g, '&quot;')}">
             <div class="department-card-content">
               <h3>${category}</h3>
               <p>${matching.length} courses available for ${category.toLowerCase()}.</p>
