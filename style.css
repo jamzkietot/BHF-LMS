@@ -4539,6 +4539,56 @@ body[data-page="admin"] #bhf-admin-edit-toggle {
   margin-bottom: 0.6rem;
 }
 
+/* Homepage exam schedule list — real upcoming exams pulled from the
+   "examSchedule" Firestore collection (same data admins manage in
+   calendar.html), rendered by the "home" block in script.js. */
+.exam-schedule-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.exam-schedule-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 0.85rem 1.1rem;
+}
+
+.exam-schedule-row .esr-course {
+  font-weight: 600;
+  color: #fff;
+}
+
+.exam-schedule-row .esr-category {
+  display: block;
+  font-weight: 400;
+  font-size: 0.82rem;
+  color: rgba(245, 248, 255, 0.7);
+  margin-top: 0.15rem;
+}
+
+.exam-schedule-row .esr-date {
+  font-size: 0.9rem;
+  color: #f5f8ff;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.schedule-card .exam-schedule-note {
+  margin-top: 1rem;
+  font-size: 0.88rem;
+  color: rgba(245, 248, 255, 0.75);
+}
+
 /* Benefits Section */
 .benefits-layout {
   display: grid;

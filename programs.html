@@ -430,7 +430,8 @@
             const enrollments = getEnrollments();
             const email = auth.email.toLowerCase();
             const current = Array.isArray(enrollments[email]) ? enrollments[email] : [];
-            if (!current.includes(course)) {
+            const isNewEnrollment = !current.includes(course);
+            if (isNewEnrollment) {
                 current.push(course);
                 enrollments[email] = current;
                 saveEnrollments(enrollments);
@@ -443,7 +444,15 @@
             // saved and is what the redirect target and this page both
             // read, so the Firestore write can safely continue in the
             // background — it doesn't need to block the button at all.
-            if (typeof window.recordEnrollment === 'function') {
+            //
+            // Only fire this for genuinely new enrollments — re-clicking
+            // "Enroll Now" on a course the student is already in (e.g. after
+            // navigating back to this page) used to write a fresh duplicate
+            // Firestore document every time, which is what inflated the
+            // admin "Total Enrollments" stat. recordEnrollment() also
+            // de-dupes on its end now, so this is a fast local skip on top
+            // of that safety net, not a replacement for it.
+            if (isNewEnrollment && typeof window.recordEnrollment === 'function') {
                 window.recordEnrollment({ email: auth.email, name: auth.name, course, category }).catch(() => {});
             }
             window.location.href = `course-detail.html?course=${encodeURIComponent(course)}&category=${encodeURIComponent(category)}`;

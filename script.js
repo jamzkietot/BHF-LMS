@@ -2114,8 +2114,22 @@ const markAllNotificationsRead = async () => {
 // and fires an "enrollment" notification. Safe to call fire-and-forget —
 // it never throws, so it can't block the existing localStorage-based
 // enrollment flow if Firestore is briefly unavailable.
+//
+// Idempotent by (email, course): callers (enrollCourse() in programs.html,
+// handleEnrollClick() below) invoke this on every "Enroll Now" click
+// regardless of whether the student is already enrolled — e.g. navigating
+// back to the Programs page and clicking Enroll again. Without this guard
+// that creates a brand new enrollment document every time, which is what
+// inflated the admin "Total Enrollments" stat far past the real number of
+// enrolled students. enrollmentsCache is kept live by watchEnrollments(),
+// so this check reflects the current Firestore state, not a stale copy.
 const recordEnrollment = async ({ email, name, course, category }) => {
   try {
+    const normalizedEmail = (email || "").toLowerCase();
+    const alreadyEnrolled = Array.isArray(enrollmentsCache) && enrollmentsCache.some(
+      (e) => (e.email || "").toLowerCase() === normalizedEmail && e.course === course
+    );
+    if (alreadyEnrolled) return;
     await addDoc(collection(db, "enrollments"), {
       email: (email || "").toLowerCase(),
       name: name || (email ? email.split("@")[0] : "Learner"),
@@ -5171,6 +5185,92 @@ if (page === "home") {
   // "enrollments:updated"), so the "most enrolled" ranking stays current
   // as new sign-ups come in, without needing a reload.
   document.addEventListener('enrollments:updated', renderHomePrograms);
+
+  // ---------- Exam Schedule card ----------
+  // This card used to be permanently hardcoded to "No scheduled exams
+  // yet...", regardless of what admins had actually scheduled in
+  // calendar.html. It never read the "examSchedule" Firestore collection
+  // at all. This wires it up to the same shared collection calendar.html
+  // writes to, so exams scheduled there actually show up here.
+  //
+  // Personalization: calendar.html can now target an exam at one specific
+  // student (studentEmail) instead of the whole class. When the visitor is
+  // signed in, this shows exams assigned to them personally plus any
+  // whole-class exams for courses they're enrolled in. Signed-out visitors
+  // see a generic preview of whole-class exams only, since there's no
+  // student to personalize against.
+  const renderHomeExamSchedule = async () => {
+    const card = document.getElementById("home-exam-schedule");
+    if (!card) return;
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const all = (getExamSchedule() || []).filter((e) => e.examDate && e.examDate >= todayStr);
+
+    let relevant;
+    if (auth && auth.email) {
+      // Need to know which courses this student is enrolled in, so
+      // whole-class exams for THEIR courses are included alongside any
+      // exams assigned to them by name. Not loaded by default on the
+      // homepage, so pull it in now.
+      await loadEnrollmentsCache().catch((err) => console.warn("Failed to load enrollments for exam schedule", err));
+      const myEmail = auth.email.toLowerCase();
+      const myCourses = new Set(
+        (getEnrollmentRecords() || [])
+          .filter((e) => (e.email || "").toLowerCase() === myEmail)
+          .map((e) => e.course)
+      );
+      relevant = all.filter((e) => {
+        const targetedAtMe = (e.studentEmail || "").toLowerCase() === myEmail;
+        const wholeClassForMyCourse = !e.studentEmail && myCourses.has(e.course);
+        return targetedAtMe || wholeClassForMyCourse;
+      });
+    } else {
+      relevant = all.filter((e) => !e.studentEmail);
+    }
+
+    const upcoming = relevant
+      .sort((a, b) => (a.examDate + (a.examTime || "")).localeCompare(b.examDate + (b.examTime || "")))
+      .slice(0, 5);
+
+    if (!upcoming.length) {
+      card.innerHTML = auth
+        ? `<p>No exams scheduled for your enrolled courses yet. Check back soon.</p>`
+        : `<p>No scheduled exams yet. Check back soon for upcoming certification dates.</p>`;
+      return;
+    }
+
+    const formatExamDate = (dateStr, timeStr) => {
+      const d = new Date(`${dateStr}T${timeStr || "00:00"}`);
+      if (isNaN(d.getTime())) return dateStr;
+      const dateLabel = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      return timeStr
+        ? `${dateLabel} · ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
+        : dateLabel;
+    };
+
+    const escapeHtml = (str) => (str || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+    const rows = upcoming.map((e) => `
+      <li class="exam-schedule-row">
+        <span>
+          <span class="esr-course">${escapeHtml(e.title || e.course)}</span>
+          <span class="esr-category">${e.studentEmail ? "Personally scheduled for you" : escapeHtml(e.category || "")}</span>
+        </span>
+        <span class="esr-date">${escapeHtml(formatExamDate(e.examDate, e.examTime))}</span>
+      </li>
+    `).join("");
+
+    card.innerHTML = `
+      <ul class="exam-schedule-list">${rows}</ul>
+      ${auth ? "" : `<p class="exam-schedule-note">Sign in to see exam dates for your own enrolled courses.</p>`}
+    `;
+  };
+
+  loadExamScheduleCache().then(renderHomeExamSchedule).catch((err) => {
+    console.error("Failed to load exam schedule for homepage", err);
+    const card = document.getElementById("home-exam-schedule");
+    if (card) card.innerHTML = `<p>No scheduled exams yet. Check back soon for upcoming certification dates.</p>`;
+  });
 }
 
 if (page === "signup") {
@@ -5234,14 +5334,22 @@ if (page === "programs") {
       const enrollments = getEnrollments ? getEnrollments() : {};
       const email = auth.email.toLowerCase();
       const current = Array.isArray(enrollments[email]) ? enrollments[email] : [];
-      if (!current.includes(name)) {
+      const isNewEnrollment = !current.includes(name);
+      if (isNewEnrollment) {
         current.push(name);
         enrollments[email] = current;
         safeSetStorage(ENROLLMENT_STORE_KEY, JSON.stringify(enrollments));
       }
       // Await this so the redirect below can't cut the write off before
       // the enrollment doc is saved (needed for the Admin Dashboard).
-      await recordEnrollment({ email: auth.email, name: auth.name, course: name, category }).catch(() => {});
+      // Skip re-recording a course the student is already enrolled in —
+      // otherwise every repeat click on "Enroll Now" wrote another
+      // duplicate Firestore document, inflating the admin "Total
+      // Enrollments" stat (recordEnrollment() also de-dupes internally
+      // as a second safety net).
+      if (isNewEnrollment) {
+        await recordEnrollment({ email: auth.email, name: auth.name, course: name, category }).catch(() => {});
+      }
       window.location.href = `course-detail.html?course=${encodeURIComponent(name)}&category=${encodeURIComponent(category)}`;
     }
   };

@@ -8,6 +8,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css" />
     <style>
+      /* Small label under a course name in the events table, shown when an
+         exam is targeted at one specific student instead of the whole
+         class (see "cal-exam-student" in the exam modal). */
+      .cal-target-student {
+        font-size: 0.78rem;
+        color: var(--muted, #6b7280);
+      }
+
       /* =========================================================
          Admin Dashboard v2 — sidebar layout (shared with admin.html,
          manage-users.html, manage-instructors.html, manage-courses.html,
@@ -900,6 +908,12 @@
             </select>
           </div>
           <div class="form-group">
+            <label for="cal-exam-student">Student (optional)</label>
+            <select class="adx-select" id="cal-exam-student">
+              <option value="">— Whole class (all enrolled students) —</option>
+            </select>
+          </div>
+          <div class="form-group">
             <label for="cal-exam-title">Exam Title (optional)</label>
             <input type="text" id="cal-exam-title" placeholder="e.g. Networking Quiz 1 (defaults to course name)" />
           </div>
@@ -1167,6 +1181,7 @@
       let examSchedule = [];
       let calendarEvents = [];
       let unified = [];
+      let enrollments = [];
 
       const state = {
         year: todayDate.getFullYear(),
@@ -1179,7 +1194,7 @@
 
       /* ---------- Data loading ---------- */
       const reloadAllData = async () => {
-        const [courseList, instructorList, examList, eventList] = await Promise.all([
+        const [courseList, instructorList, examList, eventList, enrollmentList] = await Promise.all([
           (async () => {
             if (window.coursesReadyPromise) { try { await window.coursesReadyPromise; } catch (e) {} }
             if (typeof window.getCourseCatalog === "function") return window.getCourseCatalog();
@@ -1187,12 +1202,23 @@
           })(),
           fetchCollection("instructors"),
           fetchCollection("examSchedule"),
-          fetchCollection("calendarEvents")
+          fetchCollection("calendarEvents"),
+          fetchCollection("enrollments")
         ]);
         courses = courseList || [];
         instructors = instructorList || [];
         examSchedule = examList || [];
         calendarEvents = eventList || [];
+        // Dedupe by (email, course) — repeated enrollment clicks on the
+        // student side can leave duplicate enrollment docs; the student
+        // picker below only needs one entry per learner per course.
+        const seen = new Set();
+        enrollments = (enrollmentList || []).filter((e) => {
+          const key = `${(e.email || "").toLowerCase()}|${e.course || ""}`;
+          if (!e.email || !e.course || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
         buildUnified();
       };
 
@@ -1209,6 +1235,8 @@
             course: e.course || "",
             instructor: e.instructor || "",
             notes: e.notes || "",
+            studentEmail: e.studentEmail || "",
+            studentName: e.studentName || "",
             createdBy: e.createdBy || "Admin"
           }));
         const fromEvents = calendarEvents
@@ -1269,7 +1297,39 @@
         evInstSel.innerHTML = instructorOptionsHtml(false);
         examCourseSel.innerHTML = `<option value="">Choose a course</option>` + courseTitles.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
         examInstSel.innerHTML = instructorOptionsHtml(false);
+        populateExamStudentSelect();
       };
+
+      // Populates the "Student (optional)" dropdown in the exam modal with
+      // whoever is enrolled in the currently-chosen course, so an admin can
+      // target one specific student's exam date instead of only ever
+      // scheduling for the whole class. Re-run whenever the course
+      // selection changes, since the eligible student list depends on it.
+      const populateExamStudentSelect = () => {
+        const examStudentSel = document.getElementById("cal-exam-student");
+        if (!examStudentSel) return;
+        const courseTitle = document.getElementById("cal-exam-course").value;
+        const prevValue = examStudentSel.value;
+        const roster = courseTitle
+          ? enrollments.filter((e) => e.course === courseTitle)
+          : [];
+        const options = roster
+          .map((e) => ({ email: (e.email || "").toLowerCase(), name: e.name || e.email }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+        examStudentSel.innerHTML = `<option value="">— Whole class (all enrolled students) —</option>` +
+          options.map((o) => `<option value="${escapeHtml(o.email)}">${escapeHtml(o.name)}</option>`).join("");
+        if (!courseTitle) {
+          examStudentSel.disabled = true;
+          examStudentSel.title = "Choose a course first";
+        } else {
+          examStudentSel.disabled = false;
+          examStudentSel.title = "";
+        }
+        if ([...examStudentSel.options].some((o) => o.value === prevValue)) {
+          examStudentSel.value = prevValue;
+        }
+      };
+      document.getElementById("cal-exam-course").addEventListener("change", populateExamStudentSelect);
 
       /* ---------- Stat cards (always reflect the full, unfiltered dataset) ---------- */
       const renderStats = () => {
@@ -1490,7 +1550,7 @@
           <tr>
             <td><strong>${escapeHtml(ev.title)}</strong></td>
             <td><span class="cal-agenda-badge cal-pill-${ev.type}">${typeLabel(ev.type)}</span></td>
-            <td>${ev.course ? escapeHtml(ev.course) : "—"}</td>
+            <td>${ev.course ? escapeHtml(ev.course) : "—"}${ev.studentName ? `<br><span class="cal-target-student">👤 ${escapeHtml(ev.studentName)}</span>` : ""}</td>
             <td>${formatDateLabel(ev.date)}${ev.time ? " · " + formatTimeLabel(ev.time) : ""}</td>
             <td>${escapeHtml(ev.createdBy || "Admin")}</td>
             <td>
@@ -1630,6 +1690,7 @@
         document.getElementById("cal-exam-modal-title").textContent = "Add Exam";
         document.getElementById("cal-exam-id").value = "";
         document.getElementById("cal-exam-course").value = "";
+        populateExamStudentSelect();
         document.getElementById("cal-exam-title").value = "";
         document.getElementById("cal-exam-date").value = dateIso || todayStr;
         document.getElementById("cal-exam-time").value = "";
@@ -1644,6 +1705,8 @@
         document.getElementById("cal-exam-modal-title").textContent = "Edit Exam";
         document.getElementById("cal-exam-id").value = ev.id;
         document.getElementById("cal-exam-course").value = ev.course || "";
+        populateExamStudentSelect();
+        document.getElementById("cal-exam-student").value = (ev.studentEmail || "").toLowerCase();
         document.getElementById("cal-exam-title").value = (ev.title && ev.title !== ev.course) ? ev.title : "";
         document.getElementById("cal-exam-date").value = ev.date;
         document.getElementById("cal-exam-time").value = ev.time || "";
@@ -1731,6 +1794,8 @@
           return;
         }
         const courseObj = courses.find((c) => c.title === courseTitle);
+        const studentEmail = (document.getElementById("cal-exam-student").value || "").toLowerCase();
+        const studentRoster = studentEmail ? enrollments.find((e) => e.course === courseTitle && (e.email || "").toLowerCase() === studentEmail) : null;
         const payload = {
           course: courseTitle,
           category: courseObj?.category || "General",
@@ -1738,7 +1803,9 @@
           examDate,
           examTime: document.getElementById("cal-exam-time").value || "",
           instructor: document.getElementById("cal-exam-instructor").value || "",
-          notes: document.getElementById("cal-exam-notes").value.trim() || ""
+          notes: document.getElementById("cal-exam-notes").value.trim() || "",
+          studentEmail: studentEmail || null,
+          studentName: studentEmail ? (studentRoster?.name || studentEmail) : null
         };
         try {
           if (id) {
@@ -1746,8 +1813,10 @@
             window.showToast?.("Exam updated.", "success");
           } else {
             await addDoc(collection(db, "examSchedule"), { ...payload, createdAt: new Date().toISOString() });
-            window.createNotification?.("exam", `Exam scheduled for "${courseTitle}" on ${examDate}`);
-            window.showToast?.(`Exam scheduled: ${courseTitle}`, "success");
+            window.createNotification?.("exam", studentEmail
+              ? `Exam scheduled for ${payload.studentName} in "${courseTitle}" on ${examDate}`
+              : `Exam scheduled for "${courseTitle}" on ${examDate}`);
+            window.showToast?.(`Exam scheduled: ${courseTitle}${studentEmail ? ` (${payload.studentName})` : ""}`, "success");
           }
           closeModals();
           await reloadAllData();

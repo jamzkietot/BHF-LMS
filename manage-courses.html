@@ -993,7 +993,26 @@
         fetchCollection("notifications")
       ]);
 
-      const enrollCountFor = (course) => enrollments.filter((e) => e.course === course.title).length;
+      // Enrollment docs are keyed loosely (email + course), and a
+      // long-standing bug let repeat clicks on "Enroll Now" write a fresh
+      // duplicate document each time instead of reusing the existing one.
+      // Counting raw documents therefore overcounts real enrolled students.
+      // Dedupe by (email, course) here so every count on this page reflects
+      // unique enrollments, regardless of how many duplicate rows exist in
+      // Firestore from before the write-side fix.
+      const uniqueEnrollmentKey = (e) => `${(e.email || "").toLowerCase()}|${e.course || ""}`;
+      const uniqueEnrollments = () => {
+        const seen = new Set();
+        const result = [];
+        for (const e of enrollments) {
+          const key = uniqueEnrollmentKey(e);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          result.push(e);
+        }
+        return result;
+      };
+      const enrollCountFor = (course) => uniqueEnrollments().filter((e) => e.course === course.title).length;
       const moduleCountFor = (course) => Array.isArray(course.modules) ? course.modules.length : 0;
       const statusOf = (course) => (course.status || "draft").toLowerCase();
       // A course with no "active" field at all is treated as active (this
@@ -1018,7 +1037,7 @@
         document.getElementById("cm-stat-pending").textContent = courses.filter((c) => statusOf(c) === "pending").length;
         document.getElementById("cm-stat-draft").textContent = courses.filter((c) => statusOf(c) === "draft").length;
         document.getElementById("cm-stat-instructors").textContent = instructors.filter((i) => i.active !== false).length;
-        document.getElementById("cm-stat-enrollments").textContent = enrollments.length;
+        document.getElementById("cm-stat-enrollments").textContent = uniqueEnrollments().length;
       };
       updateStatCards();
 
