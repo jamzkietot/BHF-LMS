@@ -29,6 +29,34 @@
       .ac-access-toggle-btn.is-active {
         border-color: var(--accent-dark); background: var(--accent-dark); color: #fff;
       }
+      /* Dark mode overrides for add-course page */
+      body[data-theme="dark"] header.topbar {
+        background: var(--surface);
+        border-bottom-color: var(--border);
+        color: var(--text);
+        box-shadow: var(--shadow);
+      }
+      body[data-theme="dark"] .admin-hero {
+        background: linear-gradient(120deg, var(--surface) 0%, var(--surface-2) 55%, var(--surface) 100%);
+        color: var(--text);
+      }
+      body[data-theme="dark"] .admin-panel,
+      body[data-theme="dark"] .form-row,
+      body[data-theme="dark"] .module-builder,
+      body[data-theme="dark"] .question-builder {
+        background: transparent;
+        color: var(--text);
+      }
+      body[data-theme="dark"] .ac-access-toggle-btn {
+        background: var(--surface);
+        color: var(--text);
+        border-color: var(--border);
+      }
+      body[data-theme="dark"] .ac-access-toggle-btn.is-active {
+        background: var(--accent-dark);
+        color: #fff;
+        border-color: var(--accent-dark);
+      }
     </style>
   </head>
   <body data-page="add-course">
@@ -97,15 +125,6 @@
           <div class="form-row">
             <label for="course-description">Course description</label>
             <textarea id="course-description" placeholder="Describe the course in one short paragraph."></textarea>
-          </div>
-
-          <div class="form-row">
-            <label for="course-level">Course level</label>
-            <select id="course-level">
-              <option value="Beginner">Beginner</option>
-              <option value="Intermediate">Intermediate</option>
-              <option value="Advanced">Advanced</option>
-            </select>
           </div>
 
           <div class="form-row">

@@ -44,7 +44,6 @@
               <span class="dashboard-profile-welcome">Welcome back,</span>
               <h1 id="dashboard-welcome">Learner</h1>
               <p class="dashboard-profile-meta">Learner • Networking Academy</p>
-              <p class="dashboard-profile-contact" id="dashboard-contact-number">Add your contact number</p>
             </div>
           </div>
         </div>
@@ -96,15 +95,9 @@
             </div>
           </div>
 
-          <div class="basic-info-actions">
-            <button class="btn btn-primary" type="submit">Save changes</button>
-          </div>
-          <p id="basic-info-note" class="form-note"></p>
-        </form>
-
-        <section class="dashboard-panel-card basic-info-panel" style="margin-top:2rem;">
-          <h3>Change Password</h3>
-          <form id="change-password-form" class="basic-info-form">
+          <section class="dashboard-panel-card basic-info-panel" style="margin-top:2rem;">
+            <h3>Change Password</h3>
+            <p class="form-note">Leave the password fields blank if you don't want to change your password.</p>
             <div class="basic-info-grid">
               <label class="profile-field" for="current-password">
                 <span class="profile-field-label">Current Password</span>
@@ -119,12 +112,13 @@
                 <input id="confirm-new-password" type="password" minlength="6" autocomplete="new-password" />
               </label>
             </div>
-            <div class="basic-info-actions">
-              <button class="btn btn-secondary" type="submit">Save New Password</button>
-            </div>
-            <p id="change-password-note" class="form-note"></p>
-          </form>
-        </section>
+          </section>
+
+          <div class="basic-info-actions">
+            <button class="btn btn-primary" type="submit">Save Changes</button>
+          </div>
+          <p id="basic-info-note" class="form-note"></p>
+        </form>
       </section>
 
       <!-- metric cards moved into Certificate panel -->

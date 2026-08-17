@@ -254,6 +254,29 @@
         cursor: pointer;
         text-decoration: none;
         color: var(--accent-dark);
+        font-family: inherit;
+      }
+      .adx-bell-wrap { position: relative; }
+      .adx-bell-panel {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        width: 360px;
+        max-width: min(360px, 90vw);
+        max-height: 440px;
+        overflow-y: auto;
+        background: var(--surface-1, #fff);
+        border: 1px solid rgba(15,34,72,0.08);
+        border-radius: 16px;
+        box-shadow: 0 20px 45px rgba(15,34,72,0.16);
+        padding: 1.1rem;
+        z-index: 60;
+      }
+      .adx-bell-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+      .adx-bell-panel-head h3 { margin-bottom: 0; }
+      body[data-theme="dark"] .adx-bell-panel {
+        background: var(--surface-2, #1a2436);
+        border-color: rgba(255,255,255,0.08);
       }
       .adx-bell-count {
         position: absolute;
@@ -834,10 +857,25 @@
                 <span id="adx-today-day">—</span>
               </span>
             </div>
-            <a href="#adx-notifications" class="adx-bell" aria-label="Notifications">
-              🔔
-              <span class="adx-bell-count" id="adx-bell-count">0</span>
-            </a>
+            <div class="adx-bell-wrap">
+              <button type="button" class="adx-bell" id="adx-bell-btn" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+                🔔
+                <span class="adx-bell-count" id="adx-bell-count">0</span>
+              </button>
+              <div class="adx-bell-panel hidden" id="adx-bell-panel">
+                <div class="adx-bell-panel-head">
+                  <h3>Notifications</h3>
+                  <span class="adx-badge" id="adx-notif-badge">0 Unread</span>
+                </div>
+                <p class="adx-card-sub">Latest events across the academy</p>
+                <div style="margin-bottom:0.6rem;">
+                  <button id="adx-notif-mark-all" class="btn btn-secondary" type="button">Mark all as read</button>
+                </div>
+                <div id="adx-notifications-list" class="adx-list">
+                  <p class="adx-empty">Loading notifications…</p>
+                </div>
+              </div>
+            </div>
             <div class="adx-profile">
               <div class="adx-profile-avatar">A</div>
               <div>
@@ -856,7 +894,7 @@
           </div>
 
           <!-- ============ Stat cards ============ -->
-          <div class="adx-stats-grid" style="grid-template-columns: repeat(6, minmax(0, 1fr));">
+          <div class="adx-stats-grid" style="grid-template-columns: repeat(5, minmax(0, 1fr));">
             <div class="adx-stat-card">
               <div class="adx-stat-top">
                 <div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">👥</div>
@@ -883,14 +921,6 @@
             </div>
             <div class="adx-stat-card">
               <div class="adx-stat-top">
-                <div class="adx-stat-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">📝</div>
-                <span class="adx-stat-trend is-flat" id="adx-trend-quizzes">—</span>
-              </div>
-              <div class="adx-stat-value" id="adx-stat-quizzes">0</div>
-              <div class="adx-stat-label">Total Quizzes</div>
-            </div>
-            <div class="adx-stat-card">
-              <div class="adx-stat-top">
                 <div class="adx-stat-icon" style="background:rgba(255,167,38,0.18); color:#B45F06;">🏆</div>
                 <span class="adx-stat-trend is-flat" id="adx-trend-certificates">—</span>
               </div>
@@ -908,7 +938,7 @@
           </div>
 
           <!-- ============ Charts + Notifications ============ -->
-          <div class="adx-grid-3" id="adx-analytics">
+          <div class="adx-grid-3" id="adx-analytics" style="grid-template-columns: 1fr 1fr;">
             <div class="adx-card">
               <h3>Enrollment Overview</h3>
               <p class="adx-card-sub">New enrollments over the last 6 months</p>
@@ -926,19 +956,6 @@
                   </div>
                 </div>
                 <div class="adx-donut-legend" id="adx-donut-legend"></div>
-              </div>
-            </div>
-            <div class="adx-card adx-notif-card" id="adx-notifications">
-              <div class="adx-card-head">
-                <h3 style="margin-bottom:0;">Notifications</h3>
-                <span class="adx-badge" id="adx-notif-badge">0 Unread</span>
-              </div>
-              <p class="adx-card-sub">Latest events across the academy</p>
-              <div style="margin-bottom:0.6rem;">
-                <button id="adx-notif-mark-all" class="btn btn-secondary" type="button">Mark all as read</button>
-              </div>
-              <div id="adx-notifications-list" class="adx-list">
-                <p class="adx-empty">Loading notifications…</p>
               </div>
             </div>
           </div>
@@ -1141,6 +1158,25 @@
       const adxBackdrop = document.getElementById('adx-backdrop');
       adxHamburger?.addEventListener('click', () => adxShell.classList.toggle('adx-sidebar-open'));
       adxBackdrop?.addEventListener('click', () => adxShell.classList.remove('adx-sidebar-open'));
+
+      // Notifications bell dropdown — the panel itself (list, "Mark all as
+      // read", unread badge) lives in admin.html's markup and is populated
+      // by this page's module script further down; this just handles
+      // showing/hiding it.
+      const adxBellBtn = document.getElementById('adx-bell-btn');
+      const adxBellPanel = document.getElementById('adx-bell-panel');
+      adxBellBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = !adxBellPanel.classList.contains('hidden');
+        adxBellPanel.classList.toggle('hidden', isOpen);
+        adxBellBtn.setAttribute('aria-expanded', String(!isOpen));
+      });
+      document.addEventListener('click', (e) => {
+        if (adxBellPanel && !adxBellPanel.classList.contains('hidden') && !adxBellPanel.contains(e.target) && e.target !== adxBellBtn) {
+          adxBellPanel.classList.add('hidden');
+          adxBellBtn?.setAttribute('aria-expanded', 'false');
+        }
+      });
     </script>
 
     <!-- This page's own module: guards the route, pulls live Firestore data,
@@ -1624,17 +1660,6 @@
       const activeEnrollmentCount = Math.max(enrollments.length - completedCount, 0);
       document.getElementById("adx-stat-enrollments").textContent = activeEnrollmentCount;
 
-      const totalQuizQuestions = courses.reduce((sum, c) => {
-        const modules = Array.isArray(c.modules) ? c.modules : [];
-        const moduleQuizCount = modules.reduce((s, m) => s + (Array.isArray(m.quiz) ? m.quiz.length : 0), 0);
-        // Most authored courses store their quiz/exam questions on
-        // course.questions (the exam question bank built in the course
-        // builder), not inside individual modules, so both need counting.
-        const examQuestionCount = Array.isArray(c.questions) ? c.questions.length : 0;
-        return sum + moduleQuizCount + examQuestionCount;
-      }, 0);
-      document.getElementById("adx-stat-quizzes").textContent = totalQuizQuestions;
-
       /* ---------- Stat card trends (this month vs. last month) ----------
          Generic helper: counts records whose `dateField` falls in the
          current vs. previous calendar month and expresses the change as
@@ -1676,7 +1701,6 @@
       renderTrend("adx-trend-courses", courses, "createdAt");
       renderTrend("adx-trend-certificates", certificates, "issuedAt");
       renderTrend("adx-trend-enrollments", enrollments, "enrolledAt");
-      document.getElementById("adx-trend-quizzes").textContent = `${totalQuizQuestions} in question bank`;
 
       /* ---------- Enrollment Chart (last 6 months) ---------- */
       const monthKeys = [];
@@ -1773,7 +1797,10 @@
         });
       }
 
-      /* ---------- All Course Completions (every user, not just recent) ---------- */
+      /* ---------- Course Completions (every user, "In Progress" hidden) ----------
+         Keeps the original Status column (Completed / Not Started) and
+         table shape, but filters out rows whose status is "In Progress" —
+         those clutter the list without telling the admin anything actionable. */
       const completionsWrap = document.getElementById("adx-all-completions");
       if (completionsWrap) {
         const completionRows = [...enrollments]
@@ -1786,7 +1813,7 @@
                 ? "Not Started"
                 : "In Progress";
             return { ...e, status, certDate: cert?.date || cert?.issuedAt || "" };
-        });
+        }).filter((r) => r.status !== "In Progress");
 
         completionsWrap.innerHTML = completionRows.length
           ? `
@@ -1797,7 +1824,7 @@
                   <tr>
                     <td>${escapeHtml(r.name || r.email || "—")}</td>
                     <td>${escapeHtml(r.course || "—")}</td>
-                    <td><span class="adx-status-pill ${r.status === "Completed" ? "is-ok" : r.status === "Not Started" ? "is-muted" : "is-progress"}">${escapeHtml(r.status)}</span></td>
+                    <td><span class="adx-status-pill ${r.status === "Completed" ? "is-ok" : "is-muted"}">${escapeHtml(r.status)}</span></td>
                     <td>${escapeHtml(r.enrolledAt ? new Date(r.enrolledAt).toLocaleDateString("en-US") : "—")}</td>
                     <td>${escapeHtml(r.status === "Completed" && r.certDate ? new Date(r.certDate).toLocaleDateString("en-US") : "—")}</td>
                   </tr>
@@ -1824,7 +1851,7 @@
         const unreadCount = notifCache.filter((n) => !n.read).length;
         notifBadge.textContent = `${unreadCount} Unread`;
         bellCount.textContent = unreadCount;
-        const shown = notifCache.slice(0, 8);
+        const shown = notifCache;
         notifList.innerHTML = shown.length
           ? shown.map((n) => `
               <div class="adx-list-item ${n.read ? "" : "is-unread"}">

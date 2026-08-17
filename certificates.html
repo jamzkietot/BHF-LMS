@@ -9,6 +9,13 @@
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <!-- Used to read the certificate ID straight off an uploaded certificate
+         file: pdf.js pulls the text layer out of text-based PDFs, and
+         Tesseract.js OCRs images (and scanned/flattened PDFs that have no
+         text layer). Both are loaded lazily-friendly via defer so they don't
+         block first paint of the page. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
     <style>
       /* =========================================================
          Admin Dashboard v2 — sidebar layout (shared with admin.html)
@@ -802,14 +809,13 @@
                           <th>Certificate ID</th>
                           <th>Student</th>
                           <th>Course</th>
-                          <th>Instructor</th>
                           <th>Date Issued</th>
                           <th>Status</th>
                           <th>Actions</th>
                         </tr>
                       </thead>
                       <tbody id="ctf-table-body">
-                        <tr><td colspan="7" class="adx-empty">Loading certificates…</td></tr>
+                        <tr><td colspan="6" class="adx-empty">Loading certificates…</td></tr>
                       </tbody>
                     </table>
                   </div>
@@ -915,7 +921,8 @@
           <div class="form-group">
             <label for="ctf-g-code">Certificate ID</label>
             <input id="ctf-g-code" type="text" placeholder="Enter or edit the certificate code" />
-            <p class="form-note">Leave blank to keep the existing certificate code for this learner.</p>
+            <p class="form-note">Leave blank to keep the existing certificate code for this learner. If the uploaded file has an ID printed on it, we'll try to read it automatically and fill it in here — double-check it before uploading.</p>
+            <p class="form-note" id="ctf-code-scan-note" style="display:none;"></p>
           </div>
           <div class="form-group">
             <label for="ctf-g-file">Certificate file</label>
@@ -1481,7 +1488,7 @@
         const pageItems = filteredCerts.slice(start, start + rowsPerPage);
 
         if (!pageItems.length) {
-          tbody.innerHTML = '<tr><td colspan="7" class="adx-empty">No certificates found.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" class="adx-empty">No certificates found.</td></tr>';
         } else {
           tbody.innerHTML = pageItems.map((c) => {
             const isValid = c.valid !== false;
@@ -1501,7 +1508,6 @@
                   <div class="ctf-student-email">${escapeHtml(c.email || '')}</div>
                 </td>
                 <td>${escapeHtml(c.course || '—')}</td>
-                <td>${escapeHtml(courseInstructorMap.get(c.course) || '—')}</td>
                 <td>${escapeHtml(c.date || '—')}</td>
                 <td><span class="adx-status-pill ${statusClass}">${statusLabel}</span></td>
                 <td>
@@ -1638,8 +1644,66 @@
         document.getElementById('ctf-view-date').textContent = c.date || '—';
         document.getElementById('ctf-view-expiry').textContent = c.expiryDate || '—';
         document.getElementById('ctf-view-toggle-valid').textContent = isValid ? 'Revoke Certificate' : 'Restore Certificate';
-        document.getElementById('ctf-view-download').textContent = c.certificateFileUrl ? '⬇ Download' : '⬇ Download PDF';
+        document.getElementById('ctf-view-download').textContent = '⬇ Download PDF';
         openModal(viewModal);
+      };
+
+      // Triggers a real file-save download for a certificate stored as a
+      // base64 data URI. We can't just window.open() a data: URL — modern
+      // browsers (Chrome especially) block new tabs from navigating
+      // straight to a data: URL for security reasons, so that silently did
+      // nothing. An <a download> element works reliably everywhere instead.
+      //
+      // The download is always a .pdf: if the admin uploaded a PDF it's
+      // saved as-is, and if they uploaded an image it gets wrapped into a
+      // one-page PDF via jsPDF (already loaded at the top of this page)
+      // rather than downloading as a raw .png/.jpg.
+      const triggerFileSave = (url, fileName) => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      const downloadCertificateFile = async (url, fileNameBase) => {
+        if (!url) return;
+        const name = fileNameBase || 'certificate';
+        const isPdf = /^data:application\/pdf/i.test(url);
+        if (isPdf) {
+          triggerFileSave(url, `${name}.pdf`);
+          return;
+        }
+        // Uploaded file is an image — wrap it into a single-page PDF.
+        if (window.jspdf && window.jspdf.jsPDF) {
+          try {
+            const img = await new Promise((resolve, reject) => {
+              const el = new Image();
+              el.onload = () => resolve(el);
+              el.onerror = () => reject(new Error('Could not load certificate image'));
+              el.src = url;
+            });
+            const { jsPDF } = window.jspdf;
+            const width = img.naturalWidth || img.width;
+            const height = img.naturalHeight || img.height;
+            const pdf = new jsPDF({
+              orientation: width >= height ? 'landscape' : 'portrait',
+              unit: 'px',
+              format: [width, height]
+            });
+            const imageFormat = /^data:image\/png/i.test(url) ? 'PNG' : 'JPEG';
+            pdf.addImage(url, imageFormat, 0, 0, width, height);
+            pdf.save(`${name}.pdf`);
+            return;
+          } catch (err) {
+            console.warn('Failed to wrap certificate image into a PDF, falling back to the raw file', err);
+          }
+        }
+        // jsPDF unavailable or failed — fall back to the raw image rather
+        // than failing silently.
+        const extension = (url.match(/^data:image\/(\w+)/i)?.[1] || 'png').replace('jpeg', 'jpg');
+        triggerFileSave(url, `${name}.${extension}`);
       };
 
       document.getElementById('ctf-table-body').addEventListener('click', async (e) => {
@@ -1666,7 +1730,7 @@
           const c = findCert(dlBtn.dataset.ctfDownload);
           if (!c) return;
           if (c.certificateFileUrl) {
-            window.open(c.certificateFileUrl, '_blank', 'noopener,noreferrer');
+            await downloadCertificateFile(c.certificateFileUrl, `certificate-${(c.name || 'certificate').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`);
             return;
           }
           const off = document.getElementById('ctf-offscreen');
@@ -1700,7 +1764,7 @@
         const c = findCert(activeCertId);
         if (!c) return;
         if (c.certificateFileUrl) {
-          window.open(c.certificateFileUrl, '_blank', 'noopener,noreferrer');
+          await downloadCertificateFile(c.certificateFileUrl, `certificate-${(c.name || 'certificate').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`);
           return;
         }
         if (window.downloadCertificate) await window.downloadCertificate('ctf-modal-card', `certificate-${(c.name || 'certificate').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`);
@@ -1761,6 +1825,146 @@
         codeInput.value = selected?.code || '';
       };
       candidateSelect.addEventListener('change', updateCodeInput);
+
+      /* ---------- Auto-detect the Certificate ID printed on the
+         uploaded file ----------
+         The learner-facing certificate template always prints
+         "Certificate ID: <code>" somewhere on the page (see
+         script.js's downloadCertificate/printCertificate output), and
+         many outside designs label it "Certificate No." or just "ID:".
+         When the admin picks a file here, we try to read that text
+         straight off the file and drop it into the Certificate ID
+         field for them — they can still edit it before submitting. */
+      const codeScanNoteEl = document.getElementById('ctf-code-scan-note');
+      const setScanNote = (text, tone = 'info') => {
+        if (!codeScanNoteEl) return;
+        if (!text) {
+          codeScanNoteEl.style.display = 'none';
+          codeScanNoteEl.textContent = '';
+          return;
+        }
+        codeScanNoteEl.style.display = 'block';
+        codeScanNoteEl.textContent = text;
+        codeScanNoteEl.style.color = tone === 'success' ? 'var(--accent-dark, #2f6f4f)' : (tone === 'error' ? '#b33a3a' : '');
+      };
+
+      // Matches this system's own generated codes ("BHF" + 13
+      // alphanumerics — see generateCertificateCode in script.js) first,
+      // since that's the most reliable signal. Falls back to a labeled
+      // pattern covering the many ways third-party certificates phrase
+      // this ("Certificate ID:", "Verification NO.", "Credential Code:",
+      // "Cert #", "Reference ID", etc.), then a bare "ID: XXXX" pattern
+      // as a last resort. Every candidate must contain at least one
+      // digit — real certificate codes always do, and that single check
+      // is what stops the label word itself (e.g. plain "Certificates")
+      // from being picked up as its own code when nothing follows it.
+      const looksLikeRealCode = (candidate) => /\d/.test(candidate);
+      const findCertificateIdInText = (text) => {
+        if (!text) return null;
+        const cleaned = text.replace(/\s+/g, ' ');
+        const ownFormat = cleaned.match(/\bBHF[A-Z0-9]{8,}\b/i);
+        if (ownFormat) return ownFormat[0].toUpperCase();
+        // e.g. "Certificate ID: ABC123", "TP-Link Verification NO. 5FA07CFE77BB4064",
+        // "Credential Code #XYZ", "Reference Number: 12345"
+        const labeled = cleaned.match(
+          /\b(?:certificate|credential|verification|validation|reference|serial|cert)\b[^A-Za-z0-9]{0,3}(?:id|no\.?|number|code|#)?[^A-Za-z0-9]{0,3}([A-Z0-9][A-Z0-9-]{5,})/i
+        );
+        if (labeled && looksLikeRealCode(labeled[1])) return labeled[1].toUpperCase();
+        const bareId = cleaned.match(/\bID\s*[:#-]\s*([A-Z0-9][A-Z0-9-]{3,})/i);
+        if (bareId && looksLikeRealCode(bareId[1])) return bareId[1].toUpperCase();
+        return null;
+      };
+
+
+
+      const ensureOcrPdfWorker = () => {
+        if (window.pdfjsLib && pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+      };
+
+      // Fast path: pull the real text layer out of a text-based PDF
+      // (no OCR needed, and far more accurate when it's available).
+      const extractPdfTextLayer = async (file) => {
+        if (!window.pdfjsLib || !pdfjsLib.getDocument) return '';
+        ensureOcrPdfWorker();
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+        let text = '';
+        const pageCount = Math.min(pdf.numPages, 3);
+        for (let i = 1; i <= pageCount; i += 1) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map((item) => item.str || '').join(' ') + ' ';
+        }
+        return text;
+      };
+
+      // Fallback for scanned/flattened PDFs (no text layer): render the
+      // first page to a canvas so it can be OCR'd like an image.
+      const renderPdfPageToDataUrl = async (file) => {
+        ensureOcrPdfWorker();
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        return canvas.toDataURL('image/png');
+      };
+
+      const ocrSource = async (source) => {
+        if (!window.Tesseract || !Tesseract.recognize) return '';
+        const { data } = await Tesseract.recognize(source, 'eng');
+        return data?.text || '';
+      };
+
+      // Orchestrates the whole "read the ID off this file" flow and
+      // returns the detected code, or null if nothing was found /
+      // detection wasn't possible (e.g. libraries failed to load).
+      const scanFileForCertificateId = async (file) => {
+        const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+        try {
+          if (isPdf) {
+            const layerText = await extractPdfTextLayer(file);
+            const fromLayer = findCertificateIdInText(layerText);
+            if (fromLayer) return fromLayer;
+            // No usable text layer (a scanned/flattened PDF) — fall back
+            // to rendering the page and OCR-ing it like an image.
+            const pageImage = await renderPdfPageToDataUrl(file);
+            const ocrText = await ocrSource(pageImage);
+            return findCertificateIdInText(ocrText);
+          }
+          const ocrText = await ocrSource(file);
+          return findCertificateIdInText(ocrText);
+        } catch (err) {
+          console.warn('Certificate ID auto-detection failed', err);
+          return null;
+        }
+      };
+
+      let scanRequestId = 0;
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files?.[0];
+        if (!file) {
+          setScanNote('');
+          return;
+        }
+        const requestId = ++scanRequestId;
+        setScanNote('Scanning certificate for an ID…');
+        const detected = await scanFileForCertificateId(file);
+        // If the admin picked a different file (or closed the modal)
+        // while this scan was still running, drop the stale result.
+        if (requestId !== scanRequestId) return;
+        if (detected) {
+          codeInput.value = detected;
+          setScanNote(`Detected certificate ID "${detected}" from the file — double-check it before uploading.`, 'success');
+        } else {
+          setScanNote('Couldn’t read an ID off this file automatically. Using the system-generated code below — edit it if the file has a different one printed on it.');
+        }
+      });
       const generateTitleEl = document.getElementById('ctf-generate-title');
       const generateSubtitleEl = document.getElementById('ctf-generate-subtitle');
       const generateSubmitEl = document.getElementById('ctf-generate-submit');
@@ -1779,6 +1983,7 @@
           : 'Each learner who passes a course appears here as a separate certificate request. Upload the certificate file for that individual learner only.';
         if (generateSubmitEl) generateSubmitEl.textContent = editMode ? 'Replace Certificate' : 'Upload Certificate';
         updateCodeInput();
+        setScanNote('');
         openModal(generateModal);
       };
       document.getElementById('ctf-open-generate').addEventListener('click', () => openGenerate());
@@ -1922,6 +2127,7 @@
           closeModal(generateModal);
           e.target.reset();
           document.getElementById('ctf-g-validity').value = 365;
+          setScanNote('');
           showToast(`Certificate uploaded for ${targetRecord.name || 'the learner'}.`);
           await logCertificateActivity(`Certificate uploaded for ${getDisplayName(targetRecord) || 'a learner'} — "${targetRecord.course || 'course'}"`);
         } catch (err) {

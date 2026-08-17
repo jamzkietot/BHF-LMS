@@ -691,15 +691,6 @@
                   <option value="draft">Draft</option>
                 </select>
               </div>
-              <div class="cm-field">
-                <label for="cm-level">Difficulty</label>
-                <select id="cm-level">
-                  <option value="">All Levels</option>
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
-                </select>
-              </div>
             </div>
           </div>
 
@@ -1197,14 +1188,12 @@
         const cat = (cmCategory.value || "").toLowerCase();
         const instr = (cmInstructor.value || "").toLowerCase();
         const st = (document.getElementById("cm-status").value || "").toLowerCase();
-        const level = (document.getElementById("cm-level").value || "").toLowerCase();
 
         filteredCourses = courses.filter((c) => {
           if (q && !((c.title || "").toLowerCase().includes(q) || (c.description || "").toLowerCase().includes(q))) return false;
           if (cat && (c.category || "").toLowerCase() !== cat) return false;
           if (instr && uploaderNameOf(c).toLowerCase() !== instr) return false;
           if (st && statusOf(c) !== st) return false;
-          if (level && (c.level || "").toLowerCase() !== level) return false;
           return true;
         }).sort(byNewestFirst);
         currentPage = 1;
@@ -1212,7 +1201,7 @@
       };
 
       ["cm-search"].forEach((id) => document.getElementById(id).addEventListener("input", applyFilters));
-      ["cm-category", "cm-instructor", "cm-status", "cm-level"].forEach((id) => document.getElementById(id).addEventListener("change", applyFilters));
+      ["cm-category", "cm-instructor", "cm-status"].forEach((id) => document.getElementById(id).addEventListener("change", applyFilters));
       rowsPerPageSelect.addEventListener("change", () => { currentPage = 1; renderTable(); });
 
       /* ---------- "My Uploads" shortcut ----------

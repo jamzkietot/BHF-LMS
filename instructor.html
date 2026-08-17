@@ -89,6 +89,15 @@
       .adx-profile-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.1; }
       .adx-profile-role { font-size: 0.72rem; color: var(--muted); }
 
+      /* Dark-mode topbar adjustments */
+      body[data-theme="dark"] .adx-topbar {
+        background: var(--surface);
+        border-bottom-color: var(--border);
+        color: var(--text);
+        box-shadow: var(--shadow);
+      }
+      body[data-theme="dark"] .adx-topbar h1 { color: var(--text); }
+
       .adx-content { padding: 1.5rem 1.75rem 4rem; max-width: 1400px; }
 
       /* ---------- Hero ---------- */
@@ -133,6 +142,17 @@
         box-shadow: 0 10px 26px rgba(15,34,72,0.05); padding: 1.3rem 1.3rem 1.4rem;
         display: flex; flex-direction: column; gap: 0.5rem;
       }
+
+      /* Dark-mode overrides for instructor portal cards */
+      body[data-theme="dark"] .ix-feature-card,
+      body[data-theme="dark"] .adx-card,
+      body[data-theme="dark"] .adx-stat-card,
+      body[data-theme="dark"] .ix-feature-grid .ix-feature-card {
+        background: var(--surface);
+        color: var(--text);
+        border-color: var(--border);
+        box-shadow: var(--shadow);
+      }
       .ix-feature-icon {
         width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 1.15rem;
       }
@@ -141,24 +161,6 @@
       .ix-section-title { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.9rem; }
       .ix-section-title h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); font-size: 1.15rem; margin: 0; }
       .ix-section-title span { color: var(--muted); font-size: 0.82rem; }
-
-      .ix-action-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-      .ix-action-card {
-        position: relative; background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07);
-        box-shadow: 0 10px 24px rgba(15,34,72,0.06); padding: 1.25rem 1.2rem 1.2rem;
-        display: flex; flex-direction: column; gap: 0.55rem; overflow: hidden;
-        transition: transform 0.18s ease, box-shadow 0.18s ease;
-      }
-      .ix-action-card::before {
-        content: ""; position: absolute; top: 0; left: 0; right: 0; height: 4px;
-        background: linear-gradient(90deg, var(--accent), var(--cert-accent));
-      }
-      .ix-action-card:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(15,34,72,0.12); }
-      .ix-action-icon { font-size: 1.4rem; line-height: 1; }
-      .ix-action-card h4 { margin: 0; font-family: 'Playfair Display', serif; color: var(--accent-dark); font-size: 1.05rem; }
-      .ix-action-card p { margin: 0; color: var(--muted); font-size: 0.83rem; line-height: 1.55; flex: 1; }
-      .ix-action-card .btn { align-self: flex-start; margin-top: 0.2rem; }
-      @media (max-width: 900px) { .ix-action-grid { grid-template-columns: 1fr; } }
 
       /* ---------- Stat + card system ---------- */
       .adx-stats-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
@@ -185,26 +187,25 @@
       }
       .ix-empty { color: var(--muted); font-size: 0.88rem; padding: 0.6rem 0; }
 
-      .ix-cta-band {
-        position: relative; overflow: hidden; border-radius: 24px; padding: 2rem 2.2rem;
-        background: linear-gradient(120deg, var(--accent) 0%, #ffe98a 100%);
-        display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap;
-        margin-bottom: 1.5rem;
-      }
-      .ix-cta-band::before {
-        content: ""; position: absolute; inset: 0;
-        background: radial-gradient(circle at 8% 30%, rgba(255,255,255,0.5), transparent 55%);
-        pointer-events: none;
-      }
-      .ix-cta-copy { position: relative; max-width: 620px; }
-      .ix-cta-copy h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); font-size: clamp(1.25rem, 2vw, 1.55rem); margin: 0.7rem 0 0.5rem; line-height: 1.2; }
-      .ix-cta-copy p { margin: 0; color: rgba(15,34,72,0.75); font-size: 0.92rem; line-height: 1.6; }
-      .ix-cta-btn { position: relative; background: var(--accent-dark); color: #fff; box-shadow: 0 14px 30px rgba(15,34,72,0.25); white-space: nowrap; }
-
       .ix-visually-hidden {
         position: absolute; width: 1px; height: 1px; overflow: hidden;
         clip: rect(0 0 0 0); white-space: nowrap; border: 0; padding: 0; margin: -1px;
       }
+
+      /* ---------- Student Progress / List of Students tables ---------- */
+      .adx-table-wrap { overflow-x: auto; }
+      .adx-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      .adx-table th { text-align: left; color: var(--muted); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.6rem; border-bottom: 2px solid rgba(15,34,72,0.08); white-space: nowrap; }
+      .adx-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid rgba(15,34,72,0.06); color: var(--text); vertical-align: middle; }
+      .adx-table tr:last-child td { border-bottom: none; }
+      .adx-status-pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(43,108,176,0.1); color: var(--cert-accent-dark); font-size: 0.72rem; font-weight: 700; text-transform: capitalize; white-space: nowrap; }
+      .adx-status-pill.is-ok { background: rgba(43,168,74,0.14); color: #2BA84A; }
+      .adx-status-pill.is-progress { background: rgba(255,159,10,0.15); color: #b3720a; }
+      .adx-status-pill.is-muted { background: rgba(15,34,72,0.08); color: var(--muted); }
+      .ix-progress-row { display: flex; align-items: center; gap: 0.6rem; min-width: 160px; }
+      .ix-progress-track { flex: 1; height: 8px; border-radius: 999px; background: rgba(15,34,72,0.08); overflow: hidden; }
+      .ix-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--cert-accent)); }
+      .ix-progress-pct { font-size: 0.78rem; font-weight: 700; color: var(--accent-dark); width: 2.6rem; text-align: right; }
 
       /* ---------- Mobile sidebar toggle ---------- */
       .adx-backdrop { display: none; position: fixed; inset: 0; background: rgba(6,14,32,0.45); z-index: 35; }
@@ -282,32 +283,6 @@
             </div>
           </section>
 
-          <!-- ============ Quick upload actions ============ -->
-          <div class="ix-section-title">
-            <h2>Quick Actions</h2>
-            <span>Jump straight into the part of the builder you need</span>
-          </div>
-          <div class="ix-action-grid">
-            <div class="ix-action-card">
-              <span class="ix-action-icon">📄</span>
-              <h4>Upload Course PDF</h4>
-              <p>Upload a PDF with the full course outline, modules, and exam questions to import everything automatically.</p>
-              <a class="btn btn-primary" href="add-course.html?embed=1">+ Upload Course PDF</a>
-            </div>
-            <div class="ix-action-card">
-              <span class="ix-action-icon">🧩</span>
-              <h4>Upload Module</h4>
-              <p>Add a new learning module to an existing course and keep learners progressing smoothly.</p>
-              <a class="btn btn-secondary" href="add-course.html?embed=1&focus=modules">+ Upload Module</a>
-            </div>
-            <div class="ix-action-card">
-              <span class="ix-action-icon">📝</span>
-              <h4>Upload Exam</h4>
-              <p>Build and publish exam questions for your course so learners can be assessed quickly.</p>
-              <a class="btn btn-secondary" href="add-course.html?embed=1&focus=questions">+ Upload Exam</a>
-            </div>
-          </div>
-
           <!-- ============ 3-step workflow strip ============ -->
           <div class="ix-section-title">
             <h2>How It Works</h2>
@@ -367,15 +342,57 @@
             </div>
           </div>
 
-          <!-- ============ Closing CTA band ============ -->
-          <section class="ix-cta-band">
-            <div class="ix-cta-copy">
-              <span class="ix-hero-eyebrow" style="color:var(--accent-dark); background:rgba(255,255,255,0.35);">✦ Grow Your Reach</span>
-              <h2>Every course you publish reaches more learners.</h2>
-              <p>Keep your certification catalog fresh — new courses, updated modules, and sharper exams all help your students succeed.</p>
+          <!-- ============ Student Progress ============ -->
+          <div class="adx-card" id="ix-student-progress">
+            <div class="adx-card-head">
+              <div>
+                <h3>Student Progress</h3>
+                <p class="adx-card-sub">How far each enrolled student has gotten in your courses.</p>
+              </div>
+              <span class="ix-badge" id="ix-progress-count-badge">0 Students</span>
             </div>
-            <a class="btn btn-primary ix-cta-btn" href="add-course.html">🚀 Upload New Course</a>
-          </section>
+            <div class="adx-table-wrap">
+              <table class="adx-table" id="ix-progress-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Course</th>
+                    <th>Progress</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="ix-progress-tbody">
+                  <tr><td colspan="4" class="ix-empty">Loading student progress…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ============ List of Students ============ -->
+          <div class="adx-card" id="ix-student-list">
+            <div class="adx-card-head">
+              <div>
+                <h3>List of Students</h3>
+                <p class="adx-card-sub">Everyone currently enrolled in one of your courses.</p>
+              </div>
+              <span class="ix-badge" id="ix-students-count-badge">0 Students</span>
+            </div>
+            <div class="adx-table-wrap">
+              <table class="adx-table" id="ix-students-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Email</th>
+                    <th>Course</th>
+                    <th>Enrolled</th>
+                  </tr>
+                </thead>
+                <tbody id="ix-students-tbody">
+                  <tr><td colspan="4" class="ix-empty">Loading students…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
 
         </div>
       </div>
@@ -401,6 +418,9 @@
          panel script.js already defines, and tallies modules/questions so
          it's obvious this is a course + module + exam workspace. -->
     <script type="module">
+      import { db } from "./firebase-init.js";
+      import { collection, getDocs } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
       const isLocalPreview =
         location.protocol === "file:" ||
         location.hostname === "localhost" ||
@@ -447,6 +467,144 @@
       };
       renderMyCourses();
 
+      /* ---------- Student Progress + List of Students ----------
+         Pulls from the same Firestore-backed caches the rest of the app
+         uses (getCourseCatalog / getEnrollmentRecords), so it stays in
+         sync with enrollments in realtime without a separate fetch. */
+      const escapeHtml = (str) =>
+        String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+      const fmtDate = (iso) => {
+        if (!iso) return "—";
+        const d = new Date(iso);
+        return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      };
+
+      const myCourseTitles = () => {
+        const all = (window.getCourseCatalog ? window.getCourseCatalog() : []).filter((c) => Boolean(c.id));
+        const mine = window.isAdmin && window.isAdmin() ? all : all.filter((c) => c.instructorId === auth?.uid);
+        return new Set(mine.map((c) => c.title));
+      };
+
+      const uniqueEnrollmentsFor = (titles) => {
+        const raw = window.getEnrollmentRecords ? window.getEnrollmentRecords() : [];
+        const seen = new Set();
+        const result = [];
+        for (const e of raw) {
+          if (!titles.has(e.course)) continue;
+          const key = `${(e.email || "").toLowerCase()}|${e.course || ""}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          result.push(e);
+        }
+        return result;
+      };
+
+      const isCompleted = (e, certifiedKeys) => {
+        if ((e.status || "").toLowerCase().includes("completed")) return true;
+        const key = `${(e.email || "").toLowerCase()}|${e.course || ""}`;
+        return certifiedKeys.has(key);
+      };
+
+      // The instructor page doesn't request enrollments as part of the
+      // shared dataReadyPromise (only dashboard/admin/manage-* pages do),
+      // so kick off the same realtime enrollments cache here — it's safe
+      // to call repeatedly; the underlying listener only attaches once.
+      if (window.loadEnrollmentsCache) await window.loadEnrollmentsCache();
+
+      // Build the set of emails that should NEVER show up as "students" —
+      // admins, instructors, and the signed-in instructor themself — so a
+      // self-test enrollment or an admin's walk-in registration of their
+      // own account never appears in Student Progress / List of Students.
+      const fetchCollectionOnce = async (name) => {
+        try {
+          const snapshot = await getDocs(collection(db, name));
+          return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        } catch (error) {
+          console.error(`Failed to load "${name}" from Firestore`, error);
+          return [];
+        }
+      };
+      const [usersRaw, instructorsRaw] = await Promise.all([
+        fetchCollectionOnce("users"),
+        fetchCollectionOnce("instructors")
+      ]);
+      const nonStudentEmails = new Set([
+        ...usersRaw.filter((u) => ["admin", "superadmin", "instructor"].includes((u.role || "").toLowerCase()))
+          .map((u) => (u.email || "").toLowerCase()),
+        ...instructorsRaw.map((i) => (i.email || "").toLowerCase()),
+      ].filter(Boolean));
+      if (auth?.email) nonStudentEmails.add(auth.email.toLowerCase());
+      // Belt-and-suspenders: the two admin accounts are hardcoded in
+      // script.js rather than only living in Firestore roles, so exclude
+      // them directly too in case their "users" doc role is stale/missing.
+      if (window.ADMIN_EMAIL) nonStudentEmails.add(window.ADMIN_EMAIL.toLowerCase());
+      if (window.SUPERADMIN_EMAIL) nonStudentEmails.add(window.SUPERADMIN_EMAIL.toLowerCase());
+
+      const renderStudentData = () => {
+        const titles = myCourseTitles();
+        const roster = uniqueEnrollmentsFor(titles)
+          .filter((e) => !nonStudentEmails.has((e.email || "").toLowerCase()))
+          .filter((e) => !/^admin(istrator)?$/i.test((e.name || "").trim()))
+          .sort((a, b) => new Date(b.enrolledAt || 0) - new Date(a.enrolledAt || 0));
+
+        // A certificate on file is the most reliable signal that a student
+        // actually finished a course (enrollment "status" tends to stay
+        // "in-progress" indefinitely once written), so cross-reference
+        // certificates by email+course to know who's truly completed.
+        const certificates = window.getCertificates ? window.getCertificates() : [];
+        const certifiedKeys = new Set(
+          certificates.map((c) => `${(c.email || "").toLowerCase()}|${c.course || ""}`)
+        );
+
+        /* ---- Student Progress (per-student, per-course) ---- */
+        const progressBody = document.getElementById("ix-progress-tbody");
+        const progressBadge = document.getElementById("ix-progress-count-badge");
+        if (progressBadge) progressBadge.textContent = `${roster.length} Student${roster.length === 1 ? "" : "s"}`;
+        if (progressBody) {
+          progressBody.innerHTML = roster.length
+            ? roster.map((e) => {
+                const completed = isCompleted(e, certifiedKeys);
+                const pct = completed ? 100 : 50;
+                const statusLabel = completed ? "Completed" : (e.status || "In Progress");
+                const statusClass = completed ? "is-ok" : "is-progress";
+                return `
+                  <tr>
+                    <td>${escapeHtml(e.name || (e.email ? e.email.split("@")[0] : "Learner"))}</td>
+                    <td>${escapeHtml(e.course || "—")}</td>
+                    <td>
+                      <div class="ix-progress-row">
+                        <div class="ix-progress-track"><div class="ix-progress-fill" style="width:${pct}%;"></div></div>
+                        <span class="ix-progress-pct">${pct}%</span>
+                      </div>
+                    </td>
+                    <td><span class="adx-status-pill ${statusClass}">${escapeHtml(statusLabel)}</span></td>
+                  </tr>
+                `;
+              }).join("")
+            : `<tr><td colspan="4" class="ix-empty">No students enrolled yet.</td></tr>`;
+        }
+
+        /* ---- List of Students ---- */
+        const studentsBody = document.getElementById("ix-students-tbody");
+        const studentsBadge = document.getElementById("ix-students-count-badge");
+        if (studentsBadge) studentsBadge.textContent = `${roster.length} Student${roster.length === 1 ? "" : "s"}`;
+        if (studentsBody) {
+          studentsBody.innerHTML = roster.length
+            ? roster.map((e) => `
+                  <tr>
+                    <td>${escapeHtml(e.name || (e.email ? e.email.split("@")[0] : "Learner"))}</td>
+                    <td>${escapeHtml(e.email || "—")}</td>
+                    <td>${escapeHtml(e.course || "—")}</td>
+                    <td>${fmtDate(e.enrolledAt)}</td>
+                  </tr>
+                `).join("")
+            : `<tr><td colspan="4" class="ix-empty">No students enrolled in your courses yet.</td></tr>`;
+        }
+      };
+      renderStudentData();
+      document.addEventListener("enrollments:updated", renderStudentData);
+
       /* ---------- Tally modules/questions across this instructor's courses ---------- */
       const syncStats = () => {
         const courseBadge = document.getElementById("instructor-courses-count-badge");
@@ -490,6 +648,7 @@
       const syncTimer = setInterval(() => {
         renderMyCourses();
         syncStats();
+        renderStudentData();
         syncTicks += 1;
         if (syncTicks >= 5) clearInterval(syncTimer);
       }, 1000);
@@ -501,11 +660,13 @@
         if (document.visibilityState === "visible") {
           renderMyCourses();
           syncStats();
+          renderStudentData();
         }
       });
       window.addEventListener("pageshow", () => {
         renderMyCourses();
         syncStats();
+        renderStudentData();
       });
     </script>
   </body>

@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
     <style>
+      .im-field label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em; }
       /* =========================================================
          Admin Dashboard v2 — sidebar layout (shared with admin.html)
          Scoped with the "adx-" prefix so nothing here collides with
@@ -763,7 +764,10 @@
               <h2>User Management</h2>
               <p>Manage and monitor all user accounts in the system.</p>
             </div>
-            <button class="btn btn-primary" id="um-add-btn" type="button">+ Add New User</button>
+            <div style="display:flex; gap:0.75rem;">
+              <button class="btn btn-primary" id="im-add-instructor-btn" type="button">+ Add New Instructor</button>
+              <button class="btn btn-primary" id="um-add-btn" type="button">+ Add New User</button>
+            </div>
           </div>
 
           <!-- ============ Stat cards ============ -->
@@ -900,17 +904,7 @@
           </div>
 
           <!-- ============ Activities / Role Distribution / System Status ============ -->
-          <div class="adx-grid-3" style="margin-top: 1.4rem;">
-            <div class="adx-card">
-              <div class="adx-card-head">
-                <h3>Recent User Activities</h3>
-                <a href="admin.html#adx-notifications">View All</a>
-              </div>
-              <p class="adx-card-sub">Latest actions across all accounts</p>
-              <div id="um-activities-list" class="adx-list">
-                <p class="adx-empty">Loading recent activities…</p>
-              </div>
-            </div>
+          <div class="adx-grid-3" style="margin-top: 1.4rem; grid-template-columns: 1fr 1fr;">
             <div class="adx-card">
               <h3>User Role Distribution</h3>
               <p class="adx-card-sub">Breakdown of all accounts by role</p>
@@ -939,6 +933,31 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Add Instructor Modal -->
+    <div id="im-add-modal" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:50; align-items:center; justify-content:center; display:none;">
+      <div style="background:white; border-radius:12px; padding:2rem; max-width:400px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="margin:0 0 1.5rem; font-family:'Playfair Display',serif; color:var(--accent-dark); font-size:1.4rem;">Add New Instructor</h3>
+        <form id="im-add-form" style="display:flex; flex-direction:column; gap:1rem;">
+          <div class="im-field">
+            <label for="im-name-input">Full Name *</label>
+            <input type="text" id="im-name-input" placeholder="John Doe" required style="width:100%; padding:0.6rem; border:1px solid rgba(15,34,72,0.2); border-radius:8px; font-size:0.9rem;">
+          </div>
+          <div class="im-field">
+            <label for="im-email-input">Email *</label>
+            <input type="email" id="im-email-input" placeholder="john@example.com" required style="width:100%; padding:0.6rem; border:1px solid rgba(15,34,72,0.2); border-radius:8px; font-size:0.9rem;">
+          </div>
+          <div class="im-field">
+            <label for="im-password-input">Password (min 6 characters) *</label>
+            <input type="password" id="im-password-input" placeholder="••••••" required minlength="6" style="width:100%; padding:0.6rem; border:1px solid rgba(15,34,72,0.2); border-radius:8px; font-size:0.9rem;">
+          </div>
+          <div style="display:flex; gap:0.8rem; margin-top:1rem;">
+            <button type="button" id="im-cancel-btn" class="btn" style="flex:1; background:var(--surface-3); color:var(--accent-dark);">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="flex:1;">Create Instructor</button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -1114,15 +1133,10 @@
             <input type="hidden" id="um-activate-email" />
             <div class="form-group">
               <label for="um-activate-course-select">Select Course</label>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <select id="um-activate-course-select" style="flex:1;">
-                  <option value="">-- Select a course --</option>
-                </select>
-                <label style="white-space:nowrap;font-size:0.9rem;display:flex;align-items:center;gap:6px;margin:0 0 0 8px;">
-                  <input id="um-activate-show-all" type="checkbox" checked /> Show all
-                </label>
-              </div>
-              <pre id="um-activate-debug" style="display:none;margin-top:8px;padding:8px;border-radius:6px;background:#f7fafc;color:#1a202c;max-height:160px;overflow:auto;font-size:0.85rem;">Debug output</pre>
+              <select id="um-activate-course-select" style="width:100%;">
+                <option value="">-- Select a course --</option>
+              </select>
+              <p class="form-note" style="margin-top:6px;">Only paid courses are listed here — this is for walk-in students paying face-to-face.</p>
             </div>
             <div class="form-group">
               <label for="um-activate-notes">Notes (optional)</label>
@@ -1155,7 +1169,7 @@
     <script type="module">
       import { db, auth } from "./firebase-init.js";
       import {
-        collection, getDocs, doc, setDoc, updateDoc, deleteDoc
+        collection, getDocs, doc, setDoc, updateDoc, deleteDoc, onSnapshot
       } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
       import {
         sendPasswordResetEmail
@@ -1469,24 +1483,10 @@
         `;
       }).join("");
 
-      /* ---------- Recent User Activities ---------- */
-      const sortedNotifications = [...notifications].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      /* ---------- Notification bell count ---------- */
       const bellCount = document.getElementById("adx-bell-count");
-      const unreadCount = sortedNotifications.filter((n) => !n.read).length;
+      const unreadCount = notifications.filter((n) => !n.read).length;
       if (bellCount) bellCount.textContent = unreadCount;
-
-      const activitiesList = document.getElementById("um-activities-list");
-      const recentActivities = sortedNotifications.slice(0, 6);
-      activitiesList.innerHTML = recentActivities.length
-        ? recentActivities.map((n) => `
-            <div class="adx-list-item">
-              <div>
-                <p class="adx-list-item-title">${notificationIcon(n.type)} ${escapeHtml(n.message)}</p>
-                <p class="adx-list-item-meta">${timeAgo(n.createdAt)}</p>
-              </div>
-            </div>
-          `).join("")
-        : `<p class="adx-empty">No recent activity yet.</p>`;
 
       /* ---------- System status ---------- */
       document.getElementById("um-status-records").textContent = totalUsers.toLocaleString("en-US");
@@ -1842,11 +1842,80 @@
       const closeModal = (modal) => modal.classList.add("hidden");
 
       document.querySelectorAll("[data-um-close]").forEach((btn) => {
-        btn.addEventListener("click", () => { closeModal(addModal); closeModal(viewModal); closeModal(editModal); closeModal(activateModal); });
+        btn.addEventListener("click", () => {
+          closeModal(addModal); closeModal(viewModal); closeModal(editModal); closeModal(activateModal);
+          activateModalEmail = null;
+        });
       });
       [addModal, viewModal, editModal, activateModal].forEach((modal) => {
         if (!modal) return;
-        modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(modal); });
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) { closeModal(modal); if (modal === activateModal) activateModalEmail = null; }
+        });
+      });
+
+      /* ---------- Add New Instructor ---------- */
+      document.getElementById('im-add-instructor-btn').addEventListener('click', () => {
+        const modal = document.getElementById('im-add-modal');
+        modal.style.display = 'flex';
+      });
+
+      document.getElementById('im-cancel-btn').addEventListener('click', () => {
+        const modal = document.getElementById('im-add-modal');
+        modal.style.display = 'none';
+        document.getElementById('im-add-form').reset();
+      });
+
+      // Close modal when clicking outside
+      document.getElementById('im-add-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'im-add-modal') {
+          const modal = document.getElementById('im-add-modal');
+          modal.style.display = 'none';
+          document.getElementById('im-add-form').reset();
+        }
+      });
+
+      document.getElementById('im-add-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('im-name-input').value.trim();
+        const email = document.getElementById('im-email-input').value.trim();
+        const password = document.getElementById('im-password-input').value;
+
+        if (!name || !email || !password) {
+          alert('Please fill in all fields');
+          return;
+        }
+
+        try {
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Creating...';
+
+          if (typeof window.createInstructorAccount === 'function') {
+            await window.createInstructorAccount({ name, email, password });
+            alert('Instructor created successfully!');
+
+            // Close modal and reset form
+            document.getElementById('im-add-modal').style.display = 'none';
+            document.getElementById('im-add-form').reset();
+
+            // Reload the instructors cache if available
+            if (typeof window.loadInstructorsCache === 'function') {
+              await window.loadInstructorsCache();
+            }
+
+            // Refresh the page to reflect the new instructor
+            window.location.reload();
+          } else {
+            alert('Error: createInstructorAccount function not available');
+          }
+        } catch (error) {
+          alert('Error creating instructor: ' + (error.message || 'Unknown error'));
+          console.error('Error creating instructor:', error);
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Instructor';
+        }
       });
 
       /* ---------- Add New User ---------- */
@@ -2075,95 +2144,85 @@
       const activateEmailInput = document.getElementById("um-activate-email");
       const activateNotesInput = document.getElementById("um-activate-notes");
 
+      /* ---------- Live "paid courses" cache ----------
+         Kept in sync with Firestore via onSnapshot (set up below, once this
+         function and the modal state it touches are already declared) so
+         that flipping a course between Free <-> Paid from the Instructor
+         Portal is reflected here immediately — no page refresh, no need to
+         close/reopen the modal. isCoursePaid mirrors window.courseRequiresPayment
+         from script.js (the same accessRule field the course editor writes),
+         with a couple of legacy fallbacks kept for older saved courses. */
+      let paidCourseTitles = new Map(); // title -> raw course data
+      let activateModalEmail = null;    // email the modal is currently open for, if any
+
+      const isCoursePaid = (c) => {
+        // NOTE: deliberately does NOT delegate to window.courseRequiresPayment().
+        // That helper guesses "paid" from the course's level (Intermediate/Advanced)
+        // whenever accessRule is missing, which is fine for gating learner access
+        // but is wrong here — it caused free/legacy courses with no explicit
+        // accessRule (e.g. courses saved before the Free/Paid toggle existed) to
+        // show up in this walk-in payment list even though nobody marked them
+        // Paid. This list must only include courses with an explicit paid signal.
+        if (!c) return false;
+        if (c.accessRule === 'free' || c.accessRule === 'paid') return c.accessRule === 'paid';
+        const priceFields = [c.price, c.fee, c.cost, c.paymentAmount, c.amount];
+        for (const p of priceFields) {
+          if (p === undefined || p === null) continue;
+          const num = Number(String(p).replace(/[^0-9.\-]/g, ''));
+          if (!Number.isNaN(num) && num > 0) return true;
+        }
+        if (c.requiresPayment === true || c.requires_payment === true) return true;
+        if (c.paid === true || c.isPaid === true || c.is_paid === true) return true;
+        if (typeof c.free === 'boolean' && c.free === false) return true;
+        // No explicit accessRule/price/flag found — do not guess by level.
+        // Treat as free/not-listed here until the instructor explicitly
+        // marks it Paid via the course editor's toggle.
+        return false;
+      };
+
+      // Initialize paidCourseTitles from the initially-loaded courses
+      // (before the onSnapshot listener below keeps it in sync with real-time updates)
+      courses.forEach((c) => {
+        const rawTitle = c?.title || c?.course || c?.name || c?.courseTitle || c?.id;
+        const title = rawTitle ? String(rawTitle).trim() : null;
+        if (title && isCoursePaid(c)) {
+          paidCourseTitles.set(title, c);
+        }
+      });
+
+      // Rebuilds the <select> options from the live paidCourseTitles cache,
+      // skipping any course already paid/activated for the given student.
+      // Called both when the modal opens and whenever the live course
+      // listener fires while the modal is already open.
+      const renderActivateCourseOptions = (email) => {
+        const alreadyPaidTitles = new Set(
+          (enrollmentsByEmail.get(emailKey(email)) || [])
+            .filter((e) => e.paid === true || Boolean(e.activatedBy) || e.method === 'cash')
+            .map((e) => (e.course || "").trim())
+            .filter(Boolean)
+        );
+        const previousValue = activateSelect.value;
+        activateSelect.innerHTML = '<option value="">-- Select a course --</option>';
+        [...paidCourseTitles.keys()].sort((a, b) => a.localeCompare(b)).forEach((title) => {
+          if (alreadyPaidTitles.has(title)) return;
+          const option = document.createElement('option');
+          option.value = title;
+          option.textContent = title;
+          activateSelect.appendChild(option);
+        });
+        // Keep the previously-selected course selected across a live refresh,
+        // as long as it's still a valid (paid, not-yet-activated) option.
+        if (previousValue && [...activateSelect.options].some((o) => o.value === previousValue)) {
+          activateSelect.value = previousValue;
+        }
+      };
+
       const openActivateCourseModal = async (email) => {
         const u = findUser(email);
         if (!u) { alert("User not found"); return; }
         activateEmailInput.value = u.email;
-        // populate courses fresh from Firestore to include all categories
-        activateSelect.innerHTML = '<option value="">-- Select a course --</option>';
-        try {
-          const snap = await getDocs(collection(db, "courses"));
-          const seen = new Set();
-          // Prefer the site-wide helper if available; otherwise fall back to heuristics
-          const hasGlobalChecker = typeof window.courseRequiresPayment === 'function';
-          const localCourseRequiresPayment = (c) => {
-            if (!c) return false;
-            // Check numeric-looking price fields
-            const priceFields = [c.price, c.fee, c.cost, c.paymentAmount, c.amount];
-            for (const p of priceFields) {
-              if (p === undefined || p === null) continue;
-              const num = Number(String(p).replace(/[^0-9.\-]/g, ''));
-              if (!Number.isNaN(num) && num > 0) return true;
-            }
-            // Explicit flags
-            if (c.requiresPayment === true || c.requires_payment === true) return true;
-            if (c.paid === true || c.isPaid === true || c.is_paid === true) return true;
-            if (typeof c.free === 'boolean' && c.free === false) return true;
-            // Titles mentioning 'free' likely don't require payment
-            if ((c.title || '').toLowerCase().includes('free')) return false;
-            return false;
-          };
-
-          console.debug('manage-users: course docs fetched:', snap.size);
-          const showAllCheckbox = document.getElementById('um-activate-show-all');
-          const showAll = showAllCheckbox?.checked === true;
-          snap.docs.forEach((docSnap) => {
-            const c = docSnap.data();
-            const rawTitle = c?.title || c?.course || c?.name || c?.courseTitle || docSnap.id;
-            const title = rawTitle ? String(rawTitle).trim() : null;
-            if (!title || seen.has(title)) {
-              return;
-            }
-            const requiresPayment = hasGlobalChecker ? window.courseRequiresPayment(c) : localCourseRequiresPayment(c);
-            if (!requiresPayment && !showAll) return; // skip free/non-paid courses unless user asked to show all
-            seen.add(title);
-            const option = document.createElement('option');
-            option.value = title;
-            option.textContent = title;
-            activateSelect.appendChild(option);
-          });
-          // fallback: if nothing (other than placeholder) was added and there are cached titles, try cached
-          if (activateSelect.options.length <= 1 && Array.isArray(courseTitles) && courseTitles.length) {
-            (courseTitles || []).forEach((title) => {
-              const saved = (typeof window.findSavedCourse === 'function') ? window.findSavedCourse(title) : null;
-              const maybePaid = saved ? (
-                (typeof window.courseRequiresPayment === 'function')
-                  ? window.courseRequiresPayment(saved)
-                  : (
-                    (saved.price && Number(String(saved.price).replace(/[^0-9.\-]/g, '')) > 0) ||
-                    saved.requiresPayment || saved.requires_payment || saved.isPaid
-                  )
-              ) : false;
-              if (!saved && !maybePaid && !showAll) return;
-              if (saved && saved.title && (saved.title || '').toLowerCase().includes('free') && !showAll) return;
-              const opt = document.createElement('option');
-              opt.value = title;
-              opt.textContent = title;
-              activateSelect.appendChild(opt);
-            });
-          }
-        } catch (err) {
-          console.error('Failed to load courses for activation modal', err);
-          // fallback to previously fetched list if available (filter for paid-like titles)
-          (courseTitles || []).forEach((title) => {
-            // try to find the saved course and apply the same heuristics
-            const saved = (typeof window.findSavedCourse === 'function') ? window.findSavedCourse(title) : null;
-            const maybePaid = saved ? (
-              (typeof window.courseRequiresPayment === 'function')
-                ? window.courseRequiresPayment(saved)
-                : (
-                  (saved.price && Number(String(saved.price).replace(/[^0-9.\-]/g, '')) > 0) ||
-                  saved.requiresPayment || saved.requires_payment || saved.isPaid
-                )
-            ) : false;
-            if (!saved && !maybePaid) return;
-            if (saved && saved.title && (saved.title || '').toLowerCase().includes('free')) return;
-            const opt = document.createElement('option');
-            opt.value = title;
-            opt.textContent = title;
-            activateSelect.appendChild(opt);
-          });
-        }
+        activateModalEmail = email;
+        renderActivateCourseOptions(email);
         activateNotesInput.value = "";
         openModal(activateModal);
       };
@@ -2189,6 +2248,7 @@
             course,
             enrolledAt: new Date().toISOString(),
             method: 'cash',
+            paid: true,
             activatedBy: auth?.currentUser?.email || null,
             notes
           };
@@ -2213,6 +2273,31 @@
           submitBtn.disabled = false;
           submitBtn.textContent = "Activate Course";
         }
+      });
+
+      /* ---------- Live sync: Firestore "courses" -> paid-courses cache ----------
+         Whenever a course is saved from the Instructor/Admin course editor
+         (Free <-> Paid toggle), this listener fires and rebuilds
+         paidCourseTitles immediately — no page refresh needed. If the
+         Activate Course modal happens to be open at that moment, its
+         dropdown is re-rendered in place so the change shows up live. */
+      onSnapshot(collection(db, "courses"), (snap) => {
+        const nextPaidCourseTitles = new Map();
+        snap.docs.forEach((docSnap) => {
+          const c = docSnap.data();
+          const rawTitle = c?.title || c?.course || c?.name || c?.courseTitle || docSnap.id;
+          const title = rawTitle ? String(rawTitle).trim() : null;
+          if (!title) return;
+          if (isCoursePaid(c)) {
+            nextPaidCourseTitles.set(title, c);
+          }
+        });
+        paidCourseTitles = nextPaidCourseTitles;
+        if (activateModalEmail && !activateModal.classList.contains("hidden")) {
+          renderActivateCourseOptions(activateModalEmail);
+        }
+      }, (err) => {
+        console.error("Failed to listen for course changes (paid-course list may be stale)", err);
       });
 
       // Global error handlers to surface failures during page init

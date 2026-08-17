@@ -10,7 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBxE70xqGTnc-x_RkiKsO45nJaB0vH6mBU",
   authDomain: "bhf-training-and-certificate.firebaseapp.com",
   projectId: "bhf-training-and-certificate",
-  storageBucket: "bhf-training-and-certificate.firebasestorage.app",
+  storageBucket: "bhf-training-and-certificate.appspot.com",
   messagingSenderId: "89264993031",
   appId: "1:89264993031:web:ac8b00e52be68d61dccba2",
   measurementId: "G-01JJF242FH"

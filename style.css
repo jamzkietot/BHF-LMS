@@ -5502,6 +5502,43 @@ body[data-theme="dark"] .auth-form input::placeholder {
   min-height: 160px;
 }
 
+/* Dark-mode: admin panel surfaces and form fields */
+body[data-theme="dark"] .admin-action-info,
+body[data-theme="dark"] .admin-panel form,
+body[data-theme="dark"] .admin-panel-card,
+body[data-theme="dark"] .admin-panel-shell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: none;
+}
+
+body[data-theme="dark"] .admin-panel form {
+  padding: 2.2rem;
+  border-radius: 28px;
+}
+
+body[data-theme="dark"] .admin-panel input,
+body[data-theme="dark"] .admin-panel select,
+body[data-theme="dark"] .admin-panel textarea {
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+body[data-theme="dark"] .admin-panel input:focus,
+body[data-theme="dark"] .admin-panel select:focus,
+body[data-theme="dark"] .admin-panel textarea:focus {
+  outline: none;
+  border-color: rgba(34, 102, 221, 0.45);
+  box-shadow: 0 0 0 4px rgba(34, 102, 221, 0.06);
+}
+
+body[data-theme="dark"] .admin-panel input::placeholder,
+body[data-theme="dark"] .admin-panel textarea::placeholder {
+  color: rgba(255, 255, 255, 0.48);
+}
+
 .category-select-row {
   display: flex;
   gap: 0.75rem;
@@ -5815,6 +5852,111 @@ body[data-theme="dark"] .auth-form input::placeholder {
   outline: none;
   border-color: rgba(34, 102, 221, 0.7);
   box-shadow: 0 0 0 4px rgba(34, 102, 221, 0.08);
+}
+
+/* Dark-mode: file input surfaces */
+body[data-theme="dark"] .file-input-wrapper input[type="file"] {
+  border: 1px dashed var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+body[data-theme="dark"] .file-input-wrapper input[type="file"]:hover {
+  border-color: var(--border);
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+}
+
+body[data-theme="dark"] .file-input-wrapper input[type="file"]:focus {
+  border-color: rgba(34, 102, 221, 0.45);
+  box-shadow: 0 0 0 4px rgba(34, 102, 221, 0.06);
+}
+
+/* Also style plain file inputs used across pages (e.g., add-course) */
+body[data-theme="dark"] input[type="file"] {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  background: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  box-shadow: none;
+  cursor: pointer;
+  appearance: none;
+}
+
+body[data-theme="dark"] input[type="file"]::-webkit-file-upload-button {
+  background: transparent;
+  color: var(--text);
+  border: none;
+  padding: 0.35rem 0.6rem;
+}
+
+body[data-theme="dark"] input[type="file"]:focus {
+  outline: none;
+  border-color: rgba(34, 102, 221, 0.45);
+  box-shadow: 0 0 0 4px rgba(34, 102, 221, 0.06);
+}
+
+/* Stronger overrides to remove native white button background */
+body[data-theme="dark"] input[type="file"] {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}
+
+body[data-theme="dark"] input[type="file"]::file-selector-button {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  padding: 0.5rem 0.9rem;
+  border-radius: 14px;
+}
+
+body[data-theme="dark"] input[type="file"]::-webkit-file-upload-button {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  padding: 0.5rem 0.9rem;
+  border-radius: 14px;
+}
+
+body[data-theme="dark"] input[type="file"]::-ms-browse {
+  background: var(--surface-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  padding: 0.5rem 0.9rem;
+  border-radius: 14px;
+}
+
+/* Strong global override: ensure admin form/card backgrounds match dark surface */
+body[data-theme="dark"] .page-shell.admin-shell .admin-panel,
+body[data-theme="dark"] .admin-panel,
+body[data-theme="dark"] .admin-panel form,
+body[data-theme="dark"] .admin-action-info,
+body[data-theme="dark"] .admin-panel-shell,
+body[data-theme="dark"] .admin-panel-card {
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+body[data-theme="dark"] .admin-panel form {
+  background: var(--surface) !important;
+  padding: 2.2rem !important;
+  border-radius: 28px !important;
+}
+
+body[data-theme="dark"] .admin-panel .form-row,
+body[data-theme="dark"] .admin-panel .category-select-row,
+body[data-theme="dark"] .module-builder,
+body[data-theme="dark"] .question-builder {
+  background: transparent !important;
+}
+
+/* Ensure any inline white backgrounds inside the admin panel are neutralized */
+body[data-theme="dark"] .admin-panel [style*="background:"] {
+  background: transparent !important;
 }
 
 .materials-uploader,

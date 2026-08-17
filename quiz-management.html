@@ -644,11 +644,6 @@
               <div class="adx-stat-label">Needs Review</div>
             </div>
             <div class="adx-stat-card">
-              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">❓</div></div>
-              <div class="adx-stat-value" id="qm-stat-questions">0</div>
-              <div class="adx-stat-label">Total Questions</div>
-            </div>
-            <div class="adx-stat-card">
               <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">📘</div></div>
               <div class="adx-stat-value" id="qm-stat-courses">0</div>
               <div class="adx-stat-label">Courses Covered</div>
@@ -739,17 +734,12 @@
                 </div>
               </div>
 
-              <!-- Recent Activities / Top Quizzes -->
-              <div class="adx-grid-2">
+              <!-- Recent Activities -->
+              <div class="adx-grid-2" style="grid-template-columns: 1fr;">
                 <div class="adx-card">
                   <div class="adx-card-head"><h3 style="margin-bottom:0;">Recent Quiz Activities</h3><a href="admin.html#adx-notifications">View All</a></div>
                   <p class="adx-card-sub">Latest changes across all quizzes</p>
                   <div id="qm-activities-list" class="adx-list"><p class="adx-empty">Loading recent activities…</p></div>
-                </div>
-                <div class="adx-card">
-                  <div class="adx-card-head"><h3 style="margin-bottom:0;">Top Quizzes by Questions</h3><a href="reports-analytics.html">View Report</a></div>
-                  <p class="adx-card-sub">Ranked by number of questions</p>
-                  <div id="qm-top-quizzes"><p class="adx-empty">Loading top quizzes…</p></div>
                 </div>
               </div>
             </div>
@@ -1035,7 +1025,6 @@
       document.getElementById("qm-stat-published").textContent = quizzes.filter((q) => q.status === "published").length;
       document.getElementById("qm-stat-draft").textContent = quizzes.filter((q) => q.status === "draft").length;
       document.getElementById("qm-stat-pending").textContent = quizzes.filter((q) => q.status === "pending").length;
-      document.getElementById("qm-stat-questions").textContent = quizzes.reduce((sum, q) => sum + q.questionCount, 0);
       document.getElementById("qm-stat-courses").textContent = coursesCovered;
 
       /* ---------- Populate filter dropdowns ---------- */
@@ -1214,7 +1203,6 @@
           document.getElementById("qm-stat-published").textContent = quizzes.filter((q) => q.status === "published").length;
           document.getElementById("qm-stat-draft").textContent = quizzes.filter((q) => q.status === "draft").length;
           document.getElementById("qm-stat-pending").textContent = quizzes.filter((q) => q.status === "pending").length;
-          document.getElementById("qm-stat-questions").textContent = quizzes.reduce((sum, q) => sum + q.questionCount, 0);
           document.getElementById("qm-stat-courses").textContent = new Set(quizzes.map((q) => q.courseId)).size;
 
           renderTable();
@@ -1312,31 +1300,6 @@
         `).join("");
       };
 
-      /* ---------- Top Quizzes by Questions widget ---------- */
-      const topQuizzesEl = document.getElementById("qm-top-quizzes");
-      const renderTopQuizzes = () => {
-        const ranked = [...quizzes].sort((a, b) => b.questionCount - a.questionCount).slice(0, 5);
-        const maxCount = ranked.length ? ranked[0].questionCount : 1;
-        if (!ranked.length) {
-          topQuizzesEl.innerHTML = '<p class="adx-empty">No quizzes yet.</p>';
-          return;
-        }
-        topQuizzesEl.innerHTML = ranked.map((q, i) => {
-          const pct = Math.round((q.questionCount / (maxCount || 1)) * 100);
-          return `
-            <div class="qm-rank-row">
-              <div class="qm-rank-num">${i + 1}</div>
-              <div class="qm-rank-body">
-                <p class="qm-rank-title">${escapeHtml(q.title)}</p>
-                <p class="qm-rank-sub">${q.questionCount} question${q.questionCount === 1 ? "" : "s"}</p>
-                <div class="qm-rank-track"><div class="qm-rank-fill" style="width:${pct}%;"></div></div>
-              </div>
-              <div class="qm-rank-pct">${q.questionCount}</div>
-            </div>
-          `;
-        }).join("");
-      };
-
       /* ---------- Notification bell (reuses course/enrollment notifications) ---------- */
       const notifications = await fetchCollection("notifications");
       const bellCountEl = document.getElementById("adx-bell-count");
@@ -1376,7 +1339,6 @@
       renderTable();
       renderCategories();
       renderActivities();
-      renderTopQuizzes();
           /* ---------- Walk-in Registration Modal ---------- */
       const walkinModal = document.getElementById("walk-in-modal");
       const openWalkinBtn = document.getElementById("open-walkin-modal");

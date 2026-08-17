@@ -4,13 +4,13 @@ service cloud.firestore {
 
     function isAdmin() {
       return request.auth != null
-             && (request.auth.token.email == 'admin@bhf.com'
-                 || request.auth.token.email == 'superadmin@bhf.com');
+             && (request.auth.token.email.toLowerCase() == 'admin@bhf.com'
+                 || request.auth.token.email.toLowerCase() == 'superadmin@bhf.com');
     }
 
     function isSuperAdmin() {
       return request.auth != null
-             && request.auth.token.email == 'superadmin@bhf.com';
+             && request.auth.token.email.toLowerCase() == 'superadmin@bhf.com';
     }
 
     // Instructor accounts are stored in /instructors/{uid} with an
@@ -77,12 +77,12 @@ service cloud.firestore {
       // A signed-in user may read/create/update their OWN profile doc only
       // (doc ID == their lowercased email). Admin can read/write any of them.
       allow get: if request.auth != null
-                 && (request.auth.token.email == userEmail || isAdmin());
+                 && (request.auth.token.email.toLowerCase() == userEmail || isAdmin());
       // Listing the whole collection (admin dashboard "Total Users" stat,
       // Manage Users page) stays admin-only.
       allow list: if isAdmin();
       allow create, update: if request.auth != null
-                 && (request.auth.token.email == userEmail || isAdmin());
+                 && (request.auth.token.email.toLowerCase() == userEmail || isAdmin());
       allow delete: if isAdmin();
     }
 
@@ -118,8 +118,9 @@ service cloud.firestore {
 
     match /enrollments/{enrollmentId} {
       allow read: if isAdmin();
-      allow create: if request.auth != null
-                    && request.auth.token.email == request.resource.data.email;
+      allow create: if isAdmin()
+                    || (request.auth != null
+                        && request.auth.token.email.toLowerCase() == request.resource.data.email.toLowerCase());
       allow update, delete: if isAdmin();
     }
 

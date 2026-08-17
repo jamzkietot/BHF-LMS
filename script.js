@@ -272,7 +272,13 @@ const defaultCertificateTemplate = {
 const getStoredProfilePhoto = (uid) => {
   if (!uid) return null;
   try {
-    return safeGetStorage(`${PROFILE_PHOTO_STORE_KEY}_${uid}`) || null;
+    // Prefer the safe storage (production). If that returns nothing (e.g.
+    // because we're running on localhost and safeGetStorage is disabled),
+    // fall back to the raw storage cache so local dev still shows the
+    // previously-selected preview immediately after reload.
+    const safe = safeGetStorage(`${PROFILE_PHOTO_STORE_KEY}_${uid}`);
+    if (safe) return safe;
+    return rawGetStorage(`${PROFILE_PHOTO_STORE_KEY}_${uid}`) || null;
   } catch {
     return null;
   }
@@ -281,7 +287,14 @@ const getStoredProfilePhoto = (uid) => {
 const saveStoredProfilePhoto = (uid, photoUrl) => {
   if (!uid || !photoUrl) return;
   try {
-    safeSetStorage(`${PROFILE_PHOTO_STORE_KEY}_${uid}`, photoUrl);
+    // In production use the guarded safe storage; on localhost fall back
+    // to raw storage so the preview persists for local testing even when
+    // Storage CORS blocks the remote fetch.
+    if (isLocalhost()) {
+      rawSetStorage(`${PROFILE_PHOTO_STORE_KEY}_${uid}`, photoUrl);
+    } else {
+      safeSetStorage(`${PROFILE_PHOTO_STORE_KEY}_${uid}`, photoUrl);
+    }
   } catch {
     // Ignore storage issues so the UI can still function.
   }
@@ -466,8 +479,11 @@ const saveUserProfileFields = async (email, fields) => {
   if (!emailKey) return;
   try {
     await setDoc(doc(db, "users", emailKey), fields, { merge: true });
+    return true;
   } catch (error) {
     console.error("Failed to save user profile fields to Firestore", error);
+    // Re-throw so callers (form submit etc.) can surface the error to users
+    throw error;
   }
 };
 
@@ -499,6 +515,25 @@ onAuthStateChanged(auth, async (user) => {
       contact: profileDoc?.contact || getUserContact(user.uid) || "",
       photoURL: user.photoURL || profileDoc?.photoURL || getStoredProfilePhoto(user.uid) || null
     };
+    console.debug("Auth state: currentUser initialized", currentUser);
+    // If the profile photo wasn't available immediately, try a short retry
+    // to catch eventual consistency or delayed writes from other clients.
+    if (!currentUser.photoURL) {
+      setTimeout(async () => {
+        try {
+          const refDoc = await getUserProfileDoc(user.email);
+          if (refDoc && refDoc.photoURL) {
+            currentUser.photoURL = refDoc.photoURL;
+            saveStoredProfilePhoto(user.uid, refDoc.photoURL);
+            saveLastUserSnapshot(currentUser);
+            console.debug("Recovered photoURL from users doc", refDoc.photoURL);
+            updateHeaderAuthLink();
+          }
+        } catch (err) {
+          console.warn("Retry fetching user profile doc failed", err);
+        }
+      }, 1200);
+    }
     // Fire-and-forget: don't block login/render on this write.
     syncUserProfile(user, role, displayName);
   } else {
@@ -3444,11 +3479,13 @@ window.showToast = showToast;
 window.authReadyPromise = authReadyPromise;
 window.coursesReadyPromise = coursesReadyPromise;
 window.ADMIN_EMAIL = ADMIN_EMAIL;
+window.SUPERADMIN_EMAIL = SUPERADMIN_EMAIL;
 // Certificate helpers, exposed for course-detail.html's plain (non-module)
 // inline script, which can't `import` from script.js directly.
 window.createCertificateFor = createCertificateFor;
 window.createWalkinStudent = createWalkinStudent;
 window.findUserCertificate = findUserCertificate;
+window.getCertificates = getCertificates;
 window.getUserCertificates = getUserCertificates;
 window.fetchUserCertificate = fetchUserCertificate;
 window.certificatesReadyPromise = certificatesReadyPromise;
@@ -3675,6 +3712,24 @@ window.backToVerify = () => {
     if (cachedUser) {
       currentUser = cachedUser;
       updateHeaderAuthLink();
+      // Also immediately paint the dashboard avatar and welcome (if present)
+      // so a previously-uploaded photo doesn't flash to the default on load.
+      try {
+        const dashboardAvatar = document.getElementById('dashboard-avatar');
+        const dashboardWelcome = document.getElementById('dashboard-welcome');
+        if (dashboardAvatar && currentUser.photoURL) {
+          dashboardAvatar.textContent = '';
+          dashboardAvatar.style.backgroundImage = `url('${currentUser.photoURL}')`;
+          dashboardAvatar.style.backgroundSize = 'cover';
+          dashboardAvatar.style.backgroundPosition = 'center';
+          dashboardAvatar.style.color = 'transparent';
+        }
+        if (dashboardWelcome && currentUser.name) {
+          dashboardWelcome.textContent = currentUser.name.split(' ')[0] || currentUser.name;
+        }
+      } catch (e) {
+        // Non-critical UI update; ignore failures.
+      }
     }
   }
   // All of these are independent reads with no dependency on one another,
@@ -3766,6 +3821,14 @@ window.backToVerify = () => {
     await runPageLogic();
   } catch (error) {
     console.warn('runPageLogic failed', error);
+  }
+
+  // Initialize global avatar bindings so admin/instructor/superadmin
+  // avatar elements are clickable across all pages.
+  try {
+    if (typeof initGlobalAvatarBindings === 'function') initGlobalAvatarBindings();
+  } catch (err) {
+    console.warn('initGlobalAvatarBindings failed', err);
   }
 
 // Page-specific initializers
@@ -4948,18 +5011,24 @@ if (page === "home") {
 
       const rawInput = document.getElementById("certificate-code").value;
       const code = normalizeCertificateCode(rawInput);
-      
-      // Extract the certificate code part — handle cases where users copy "Certificate ID BHFXXX..." or similar
-      // First try to match at the end of the string (cleaner paste)
+
+      // If this system's own "BHF..." code got pasted along with extra
+      // text (e.g. "Certificate ID: BHFXXXX..."), pull just the code part
+      // out. Otherwise — this covers third-party certificate codes in any
+      // format, like a hex verification number — use whatever was typed,
+      // normalized (uppercased, punctuation/spaces stripped). We no longer
+      // enforce a fixed length or the "BHF" prefix here: any code that was
+      // actually issued and stored (from any certificate, any format)
+      // should verify, and the real check is the database lookup below —
+      // not a guess about what a "valid-looking" code has to look like.
       let codeMatch = code.match(/BHF[A-Z0-9]{13}$/);
-      // If not found at end, search anywhere in the string (handles extra text before/after)
       if (!codeMatch) {
         codeMatch = code.match(/BHF[A-Z0-9]{13}/);
       }
       const finalCode = codeMatch ? codeMatch[0] : code;
 
-      if (finalCode.length !== 16 || !finalCode.match(/^BHF[A-Z0-9]{13}$/)) {
-        renderVerifyMessage("Please enter a valid certificate code. It should be a 16-character code starting with BHF (example: BHFABCD1234XYZWV).", false);
+      if (!finalCode) {
+        renderVerifyMessage("Please enter a certificate code.", false);
         return;
       }
 
@@ -5674,6 +5743,18 @@ if (page === "forgot-password") {
 
 if (page === "dashboard") {
   bindChangePasswordForm();
+  // BUGFIX: getAuth() used to be read here synchronously, before Firebase
+  // Auth + the Firestore "users/{email}" profile fetch (authReadyPromise)
+  // had actually resolved. On a fresh page load/refresh this meant the
+  // dashboard was populated from the optimistic same-browser cache
+  // (bhf_last_user_snapshot) instead of the authoritative, Firestore-merged
+  // profile — and that cache doesn't even store the contact number field at
+  // all (see saveLastUserSnapshot). Nothing ever re-ran setDashboardProfile()
+  // once the real data arrived, so edits looked like they were "reverting"
+  // after every refresh even though they were saved to Firestore correctly
+  // the whole time. Awaiting here guarantees authProfile is the confirmed,
+  // up-to-date record before we paint or bind the form.
+  await authReadyPromise;
   const authProfile = getAuth();
   const welcome = document.getElementById("dashboard-welcome");
   const logoutButton = document.getElementById("logout-button");
@@ -5851,9 +5932,15 @@ if (page === "dashboard") {
     const basicInfoNote = document.getElementById("basic-info-note");
     const dashboardAvatar = document.getElementById("dashboard-avatar");
     const profileImageInput = document.getElementById("profile-image-input");
+    // Holds a picked-but-not-yet-uploaded photo file and its local data URL
+    // preview. The preview is saved to a same-browser cache on localhost so
+    // the avatar persists across reloads even if Storage CORS blocks remote
+    // downloads during local testing.
+    let pendingProfileImageFile = null;
+    let pendingProfileImageDataUrl = null;
 
     const setDashboardProfile = () => {
-      const activeUser = getAuth();
+      const activeUser = currentUser || (auth && auth.currentUser) || null;
       const fullName = activeUser?.name?.trim() || (activeUser?.email ? activeUser.email.split("@")[0] : "Learner");
       const nameParts = fullName.split(/\s+/).filter(Boolean);
       const firstName = nameParts[0] || "";
@@ -5891,7 +5978,7 @@ if (page === "dashboard") {
       profileForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        const activeUser = getAuth();
+        const activeUser = currentUser || (auth && auth.currentUser) || null;
         const firstNameValue = profileFirstName?.value.trim() || "";
         const lastNameValue = profileLastName?.value.trim() || "";
         const nextName = [firstNameValue, lastNameValue].filter(Boolean).join(" ") || activeUser?.email?.split("@")[0] || "Learner";
@@ -5902,11 +5989,53 @@ if (page === "dashboard") {
           return;
         }
 
+        // Password fields live in this same form now. They're optional —
+        // only validate/apply them if the learner actually filled them in.
+        const currentPasswordField = document.getElementById("current-password");
+        const newPasswordField = document.getElementById("new-password");
+        const confirmPasswordField = document.getElementById("confirm-new-password");
+        const currentPasswordValue = currentPasswordField?.value || "";
+        const newPasswordValue = newPasswordField?.value || "";
+        const confirmPasswordValue = confirmPasswordField?.value || "";
+        const wantsPasswordChange = Boolean(currentPasswordValue || newPasswordValue || confirmPasswordValue);
+
+        if (wantsPasswordChange) {
+          if (!currentPasswordValue) {
+            setFormNote(basicInfoNote, "Enter your current password to set a new one.", "error");
+            return;
+          }
+          if (newPasswordValue !== confirmPasswordValue) {
+            setFormNote(basicInfoNote, "New passwords do not match.", "error");
+            return;
+          }
+          const passwordCheck = validatePasswordStrength(newPasswordValue);
+          if (!passwordCheck.valid) {
+            setFormNote(basicInfoNote, passwordCheck.message, "error");
+            return;
+          }
+          if (newPasswordValue === currentPasswordValue) {
+            setFormNote(basicInfoNote, "New password must be different from the current password.", "error");
+            return;
+          }
+        }
+
         const submitButton = profileForm.querySelector('button[type="submit"]');
         if (submitButton) submitButton.disabled = true;
 
         try {
           const firebaseUser = auth?.currentUser || null;
+
+          // Apply the password change first so a wrong current password is
+          // caught before anything else is written.
+          if (wantsPasswordChange) {
+            if (!firebaseUser || !firebaseUser.email) {
+              throw new Error("Unable to verify your current session. Please sign in again.");
+            }
+            const credential = EmailAuthProvider.credential(firebaseUser.email, currentPasswordValue);
+            await reauthenticateWithCredential(firebaseUser, credential);
+            await updatePassword(firebaseUser, newPasswordValue);
+          }
+
           if (firebaseUser && firebaseUser.displayName !== nextName) {
             await updateProfile(firebaseUser, { displayName: nextName });
           }
@@ -5918,19 +6047,69 @@ if (page === "dashboard") {
             await saveUserProfileFields(activeUser.email, { contact: nextContact });
           }
 
+          // Upload a pending profile photo (staged when the file was picked)
+          // as part of the same Save Changes action.
+          let nextPhotoURL = null;
+          if (pendingProfileImageFile && firebaseUser) {
+            const imageName = `${firebaseUser.uid || 'guest'}-${Date.now()}-${pendingProfileImageFile.name}`;
+            const storageRef = ref(storage, `profile-images/${imageName}`);
+            console.debug("Uploading profile image to Storage...", storageRef.fullPath);
+            await uploadBytes(storageRef, pendingProfileImageFile);
+            nextPhotoURL = await getDownloadURL(storageRef);
+            console.debug("Profile image uploaded, downloadURL:", nextPhotoURL);
+            await updateProfile(firebaseUser, { photoURL: nextPhotoURL });
+            saveStoredProfilePhoto(firebaseUser.uid, nextPhotoURL);
+            if (firebaseUser.email) {
+              console.debug("Saving photoURL to Firestore users doc for", firebaseUser.email);
+              await saveUserProfileFields(firebaseUser.email, { photoURL: nextPhotoURL });
+            }
+            pendingProfileImageFile = null;
+            // If running on localhost, also save the local data URL preview so
+            // reloads show the photo even if the browser cannot fetch the
+            // remote Storage URL due to CORS.
+            if (isLocalhost() && pendingProfileImageDataUrl) {
+              try {
+                saveStoredProfilePhoto(firebaseUser.uid, pendingProfileImageDataUrl);
+                currentUser.photoURL = pendingProfileImageDataUrl;
+                saveLastUserSnapshot(currentUser);
+              } catch (e) {
+                console.warn('Failed saving local preview to storage', e);
+              }
+            }
+            pendingProfileImageDataUrl = null;
+          }
+
           currentUser = {
             ...(currentUser || {}),
             name: nextName,
             email: activeUser?.email || currentUser?.email || "",
-            contact: nextContact
+            contact: nextContact,
+            ...(nextPhotoURL ? { photoURL: nextPhotoURL } : {})
           };
+
+          // Keep the same-browser optimistic snapshot in sync too, so the
+          // very next page navigation/refresh paints the new name/photo
+          // instantly instead of briefly flashing the old cached values
+          // before Firestore/Auth are re-checked.
+          saveLastUserSnapshot(currentUser);
 
           setDashboardProfile();
           updateHeaderAuthLink();
+          if (wantsPasswordChange) {
+            profileForm.reset();
+            // reset() clears name/contact fields too, so repopulate them
+            // from the values we just saved.
+            setDashboardProfile();
+          } else {
+            if (currentPasswordField) currentPasswordField.value = "";
+            if (newPasswordField) newPasswordField.value = "";
+            if (confirmPasswordField) confirmPasswordField.value = "";
+          }
           setFormNote(basicInfoNote, "Profile updated successfully.", "success");
         } catch (error) {
           console.error("Failed to update profile", error);
-          setFormNote(basicInfoNote, "We couldn't save your profile right now.", "error");
+          const message = wantsPasswordChange ? describeAuthError(error) : "We couldn't save your profile right now.";
+          setFormNote(basicInfoNote, message, "error");
         } finally {
           if (submitButton) submitButton.disabled = false;
         }
@@ -6142,57 +6321,124 @@ if (page === "dashboard") {
           return;
         }
 
-        const submitButton = profileForm?.querySelector('button[type="submit"]');
-        if (submitButton) submitButton.disabled = true;
-
+        // Just preview locally and stage the file — it's uploaded and saved
+        // together with the rest of the form when "Save Changes" is clicked.
         const reader = new FileReader();
-        reader.onload = async () => {
+        reader.onload = () => {
           const localPhotoUrl = reader.result;
-          if (typeof localPhotoUrl !== 'string') {
-            if (submitButton) submitButton.disabled = false;
-            return;
+          if (typeof localPhotoUrl !== 'string') return;
+
+          pendingProfileImageFile = file;
+          pendingProfileImageDataUrl = localPhotoUrl;
+          if (dashboardAvatar) {
+            dashboardAvatar.textContent = "";
+            dashboardAvatar.style.backgroundImage = `url('${localPhotoUrl}')`;
+            dashboardAvatar.style.backgroundSize = "cover";
+            dashboardAvatar.style.backgroundPosition = "center";
+            dashboardAvatar.style.color = "transparent";
           }
-
-          saveStoredProfilePhoto(firebaseUser.uid, localPhotoUrl);
-          currentUser = {
-            ...(currentUser || {}),
-            uid: firebaseUser.uid,
-            name: currentUser?.name || firebaseUser.displayName || "",
-            email: currentUser?.email || firebaseUser.email || "",
-            photoURL: localPhotoUrl
-          };
-          setDashboardProfile();
-          updateHeaderAuthLink();
-
-          const imageName = `${firebaseUser.uid || 'guest'}-${Date.now()}-${file.name}`;
-          const storageRef = ref(storage, `profile-images/${imageName}`);
-
-          try {
-            await uploadBytes(storageRef, file);
-            const photoURL = await getDownloadURL(storageRef);
-            await updateProfile(firebaseUser, { photoURL });
-            saveStoredProfilePhoto(firebaseUser.uid, photoURL); // local cache fallback
-            if (firebaseUser.email) {
-              await saveUserProfileFields(firebaseUser.email, { photoURL });
+          // Persist the preview immediately for localhost so a reload shows
+          // the selected image even if remote fetch is blocked by CORS.
+          if (isLocalhost() && auth?.currentUser) {
+            try {
+              saveStoredProfilePhoto(auth.currentUser.uid, localPhotoUrl);
+              // Also update optimistic snapshot so header shows correctly
+              currentUser = { ...(currentUser || {}), photoURL: localPhotoUrl };
+              saveLastUserSnapshot(currentUser);
+            } catch (e) {
+              // ignore
             }
-            currentUser = {
-              ...(currentUser || {}),
-              photoURL
-            };
-            setDashboardProfile();
-            updateHeaderAuthLink();
-            setFormNote(basicInfoNote, "Profile photo updated successfully.", "success");
-          } catch (error) {
-            console.error("Failed to upload profile photo", error);
-            setFormNote(basicInfoNote, "Photo saved on this device and will appear immediately.", "success");
-          } finally {
-            if (submitButton) submitButton.disabled = false;
-            if (profileImageInput) profileImageInput.value = "";
           }
+          setFormNote(basicInfoNote, "Photo selected. Click Save Changes to apply it.", "success");
         };
         reader.readAsDataURL(file);
       });
     }
+
+    // --------- Global avatar bindings (admin/instructor/superadmin pages) ---------
+    // Some admin pages use different avatar elements (e.g. .adx-profile-avatar,
+    // #ix-profile-avatar, #um-profile-avatar). Create a single hidden file
+    // input and bind it to any avatar element found so clicking them opens
+    // the picker and uploads immediately.
+    const globalInputId = 'global-profile-image-input';
+    let globalInput = document.getElementById(globalInputId);
+    if (!globalInput) {
+      globalInput = document.createElement('input');
+      globalInput.type = 'file';
+      globalInput.accept = 'image/*';
+      globalInput.id = globalInputId;
+      globalInput.hidden = true;
+      document.body.appendChild(globalInput);
+    }
+
+    const avatarSelectors = ['.adx-profile-avatar', '#ix-profile-avatar', '#um-profile-avatar', '.dashboard-profile-avatar'];
+    const avatarEls = avatarSelectors.flatMap((s) => Array.from(document.querySelectorAll(s)));
+    const uniqueAvatarEls = Array.from(new Set(avatarEls));
+
+    uniqueAvatarEls.forEach((el) => {
+      el.style.cursor = 'pointer';
+      el.title = 'Change profile photo';
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        globalInput.click();
+        // remember which avatar element triggered the picker so we can
+        // preview into it on selection.
+        globalInput.dataset.targetAvatarId = el.id || '';
+        globalInput.__targetEl = el;
+      });
+    });
+
+    globalInput.addEventListener('change', async (event) => {
+      const [file] = event.target.files || [];
+      if (!file) return;
+      const targetEl = event.target.__targetEl || null;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const localPhotoUrl = reader.result;
+        if (typeof localPhotoUrl !== 'string') return;
+        // preview
+        if (targetEl) {
+          targetEl.textContent = '';
+          targetEl.style.backgroundImage = `url('${localPhotoUrl}')`;
+          targetEl.style.backgroundSize = 'cover';
+          targetEl.style.backgroundPosition = 'center';
+          targetEl.style.color = 'transparent';
+        }
+
+        // Persist local preview for localhost.
+        if (isLocalhost() && auth?.currentUser) {
+          try { saveStoredProfilePhoto(auth.currentUser.uid, localPhotoUrl); } catch {}
+        }
+
+        // Immediately upload and save for admin/instructor/superadmin flows.
+        try {
+          await authReadyPromise;
+          const firebaseUser = auth?.currentUser || null;
+          if (!firebaseUser || !firebaseUser.email) {
+            console.warn('No signed-in user for avatar upload');
+            return;
+          }
+          const imageName = `${firebaseUser.uid || 'guest'}-${Date.now()}-${file.name}`;
+          const storageRef = ref(storage, `profile-images/${imageName}`);
+          console.debug('Uploading profile image (global) to Storage...', storageRef.fullPath);
+          await uploadBytes(storageRef, file);
+          const downloadUrl = await getDownloadURL(storageRef);
+          console.debug('Global upload complete, downloadURL:', downloadUrl);
+          await updateProfile(firebaseUser, { photoURL: downloadUrl });
+          saveStoredProfilePhoto(firebaseUser.uid, downloadUrl);
+          await saveUserProfileFields(firebaseUser.email, { photoURL: downloadUrl });
+          currentUser = { ...(currentUser || {}), photoURL: downloadUrl };
+          saveLastUserSnapshot(currentUser);
+          if (typeof window.showToast === 'function') window.showToast('Profile photo updated', 'success');
+        } catch (err) {
+          console.error('Failed to upload/save global avatar', err);
+          if (typeof window.showToast === 'function') window.showToast('Failed to save profile photo', 'error');
+        }
+      };
+      reader.readAsDataURL(file);
+      // clear selection so same file can be re-selected
+      event.target.value = '';
+    });
 
     /* ---------- Achievements / Badges grid ---------- */
     const achievementsGrid = document.getElementById("achievements-grid");
@@ -9265,4 +9511,111 @@ if (document.body.dataset.page === "admin-dashboard") {
   } else {
     initAdminDashboardActions();
   }
+}
+
+// Initialize a global avatar click-to-upload binding for various pages.
+function initGlobalAvatarBindings() {
+  const globalInputId = 'global-profile-image-input';
+  let globalInput = document.getElementById(globalInputId);
+  if (!globalInput) {
+    globalInput = document.createElement('input');
+    globalInput.type = 'file';
+    globalInput.accept = 'image/*';
+    globalInput.id = globalInputId;
+    globalInput.hidden = true;
+    document.body.appendChild(globalInput);
+  }
+
+  const avatarSelectors = ['.adx-profile-avatar', '#ix-profile-avatar', '#um-profile-avatar', '.dashboard-profile-avatar'];
+  const avatarEls = avatarSelectors.flatMap((s) => Array.from(document.querySelectorAll(s)));
+  const uniqueAvatarEls = Array.from(new Set(avatarEls));
+
+  const paintAvatars = (photoUrl, name) => {
+    if (!photoUrl && !name) return;
+    const initials = (name || '').split(/\s+/).filter(Boolean).slice(0,2).map((p) => p[0]).join('').toUpperCase() || 'A';
+    uniqueAvatarEls.forEach((el) => {
+      if (!el) return;
+      if (photoUrl) {
+        el.textContent = '';
+        el.style.backgroundImage = `url('${photoUrl}')`;
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.style.color = 'transparent';
+      } else {
+        el.textContent = initials;
+        el.style.backgroundImage = '';
+        el.style.color = '';
+      }
+    });
+  };
+
+  // Immediately paint any cached/known avatar so reloads appear correct.
+  try {
+    const active = currentUser || null;
+    const cached = active?.photoURL || (active?.uid ? getStoredProfilePhoto(active.uid) : null);
+    paintAvatars(cached, active?.name || active?.email);
+  } catch (e) { /* ignore */ }
+
+  uniqueAvatarEls.forEach((el) => {
+    el.style.cursor = 'pointer';
+    el.title = 'Change profile photo';
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      globalInput.click();
+      globalInput.__targetEl = el;
+    });
+  });
+
+  globalInput.addEventListener('change', async (event) => {
+    const [file] = event.target.files || [];
+    if (!file) return;
+    const targetEl = event.target.__targetEl || null;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const localPhotoUrl = reader.result;
+      if (typeof localPhotoUrl !== 'string') return;
+      if (targetEl) {
+        targetEl.textContent = '';
+        targetEl.style.backgroundImage = `url('${localPhotoUrl}')`;
+        targetEl.style.backgroundSize = 'cover';
+        targetEl.style.backgroundPosition = 'center';
+        targetEl.style.color = 'transparent';
+      }
+      if (isLocalhost() && auth?.currentUser) {
+        try { saveStoredProfilePhoto(auth.currentUser.uid, localPhotoUrl); } catch {}
+      }
+
+      try {
+        await authReadyPromise;
+        const firebaseUser = auth?.currentUser || null;
+        if (!firebaseUser || !firebaseUser.email) return;
+        const imageName = `${firebaseUser.uid || 'guest'}-${Date.now()}-${file.name}`;
+        const storageRef = ref(storage, `profile-images/${imageName}`);
+        await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(storageRef);
+        await updateProfile(firebaseUser, { photoURL: downloadUrl });
+        saveStoredProfilePhoto(firebaseUser.uid, downloadUrl);
+        await saveUserProfileFields(firebaseUser.email, { photoURL: downloadUrl });
+        currentUser = { ...(currentUser || {}), photoURL: downloadUrl };
+        saveLastUserSnapshot(currentUser);
+        // Repaint all avatars with the newly saved URL
+        try { paintAvatars(downloadUrl, currentUser?.name || currentUser?.email); } catch (e) {}
+        if (typeof window.showToast === 'function') window.showToast('Profile photo updated', 'success');
+      } catch (err) {
+        console.error('Failed to upload/save global avatar', err);
+        if (typeof window.showToast === 'function') window.showToast('Failed to save profile photo', 'error');
+      }
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  });
+
+  // Repaint avatars after auth/profile becomes available
+  authReadyPromise.then(() => {
+    try {
+      const active = currentUser || null;
+      const cached = active?.photoURL || (active?.uid ? getStoredProfilePhoto(active.uid) : null);
+      paintAvatars(cached, active?.name || active?.email);
+    } catch (e) { /* ignore */ }
+  }).catch(() => {});
 }
