@@ -4,13 +4,13 @@ service cloud.firestore {
 
     function isAdmin() {
       return request.auth != null
-             && (request.auth.token.email.toLowerCase() == 'admin@bhf.com'
-                 || request.auth.token.email.toLowerCase() == 'superadmin@bhf.com');
+             && (request.auth.token.email == 'admin@bhf.com'
+                 || request.auth.token.email == 'superadmin@bhf.com');
     }
 
     function isSuperAdmin() {
       return request.auth != null
-             && request.auth.token.email.toLowerCase() == 'superadmin@bhf.com';
+             && request.auth.token.email == 'superadmin@bhf.com';
     }
 
     // Instructor accounts are stored in /instructors/{uid} with an
@@ -118,9 +118,8 @@ service cloud.firestore {
 
     match /enrollments/{enrollmentId} {
       allow read: if isAdmin();
-      allow create: if isAdmin()
-                    || (request.auth != null
-                        && request.auth.token.email.toLowerCase() == request.resource.data.email.toLowerCase());
+      allow create: if request.auth != null
+                    && request.auth.token.email == request.resource.data.email;
       allow update, delete: if isAdmin();
     }
 

@@ -3040,10 +3040,17 @@ body[data-page="home"] #bhf-admin-edit-page-button {
   gap: 0.6rem;
   padding: 0.85rem 1rem;
   border-radius: 999px;
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.92);
+  /* NOTE: .dashboard-tabs sits on the page's regular (light) background,
+     not on the dark .dashboard-hero panel above it. The old rules here
+     (white-on-transparent-white) were written as if this bar were still on
+     a dark surface, which made the inactive "Certificate" / "Learning
+     History" labels almost invisible against the light background. Use a
+     readable, theme-aware color instead, and only go white-on-transparent
+     in dark mode below. */
+  background: rgba(18, 40, 76, 0.06);
+  color: rgba(18, 40, 76, 0.75);
   font-weight: 700;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .dashboard-tab.is-active,
@@ -3055,6 +3062,13 @@ body[data-page="home"] #bhf-admin-edit-page-button {
 
 .dashboard-tab.is-active {
   box-shadow: 0 18px 32px rgba(12, 27, 58, 0.18);
+}
+
+/* Dark theme: the page background is near-black, so flip the inactive tab
+   back to a light, translucent treatment. */
+body[data-theme="dark"] .dashboard-tab {
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.75);
 }
 
 /* The active/hover state keeps a white pill in both themes, so its text must

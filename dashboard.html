@@ -9,6 +9,20 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body data-page="dashboard">
+    <script>
+      // The browser's native "jump to #hash element" fires as soon as it
+      // parses that element — well before script.js finishes waiting for
+      // auth/profile data and switching tabs. That race is what makes
+      // "My Profile" (dashboard.html#profile-panel) land mid-page with the
+      // hero/tab bar scrolled off and the fields still blank on first load.
+      // Strip the hash immediately, before the target element even exists
+      // in the DOM, so the browser has nothing to jump to. script.js reads
+      // window.__bhfPendingHash to still activate the right tab once ready.
+      if (window.location.hash) {
+        window.__bhfPendingHash = window.location.hash;
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+    </script>
     <header class="topbar">
       <a class="brand" href="index.html">
         <!-- Consistent BHF circle logo -->

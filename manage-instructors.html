@@ -717,6 +717,31 @@
       </div>
     </div>
 
+    <!-- Add Instructor Modal -->
+    <div id="im-add-modal" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:50; align-items:center; justify-content:center; display:none;">
+      <div style="background:white; border-radius:12px; padding:2rem; max-width:400px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="margin:0 0 1.5rem; font-family:'Playfair Display',serif; color:var(--accent-dark); font-size:1.4rem;">Add New Instructor</h3>
+        <form id="im-add-form" style="display:flex; flex-direction:column; gap:1rem;">
+          <div class="im-field">
+            <label for="im-name-input">Full Name *</label>
+            <input type="text" id="im-name-input" placeholder="John Doe" required style="width:100%; padding:0.6rem; border:1px solid rgba(15,34,72,0.2); border-radius:8px; font-size:0.9rem;">
+          </div>
+          <div class="im-field">
+            <label for="im-email-input">Email *</label>
+            <input type="email" id="im-email-input" placeholder="john@example.com" required style="width:100%; padding:0.6rem; border:1px solid rgba(15,34,72,0.2); border-radius:8px; font-size:0.9rem;">
+          </div>
+          <div class="im-field">
+            <label for="im-password-input">Password (min 6 characters) *</label>
+            <input type="password" id="im-password-input" placeholder="••••••" required minlength="6" style="width:100%; padding:0.6rem; border:1px solid rgba(15,34,72,0.2); border-radius:8px; font-size:0.9rem;">
+          </div>
+          <div style="display:flex; gap:0.8rem; margin-top:1rem;">
+            <button type="button" id="im-cancel-btn" class="btn" style="flex:1; background:var(--surface-3); color:var(--accent-dark);">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="flex:1;">Create Instructor</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- View Instructor Modal: shows the instructor's profile plus every
          course they've published, with an Edit link into add-course.html
          so an admin can open and modify any of that instructor's courses. -->
@@ -1189,6 +1214,69 @@
           alert('Error deleting instructor: ' + error.message);
         }
       };
+
+      // The "+ Add New Instructor" button now lives on the User Management
+      // page (it creates instructors directly there via
+      // window.createInstructorAccount). This page's own Add Instructor
+      // modal markup is left in place but is no longer opened from here.
+
+      document.getElementById('im-cancel-btn').addEventListener('click', () => {
+        const modal = document.getElementById('im-add-modal');
+        modal.style.display = 'none';
+        document.getElementById('im-add-form').reset();
+      });
+
+      // Close modal when clicking outside
+      document.getElementById('im-add-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'im-add-modal') {
+          const modal = document.getElementById('im-add-modal');
+          modal.style.display = 'none';
+          document.getElementById('im-add-form').reset();
+        }
+      });
+
+      document.getElementById('im-add-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('im-name-input').value.trim();
+        const email = document.getElementById('im-email-input').value.trim();
+        const password = document.getElementById('im-password-input').value;
+
+        if (!name || !email || !password) {
+          alert('Please fill in all fields');
+          return;
+        }
+
+        try {
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Creating...';
+
+          if (typeof window.createInstructorAccount === 'function') {
+            await window.createInstructorAccount({ name, email, password });
+            alert('Instructor created successfully!');
+            
+            // Close modal and reset form
+            document.getElementById('im-add-modal').style.display = 'none';
+            document.getElementById('im-add-form').reset();
+            
+            // Reload the instructors and refresh the table
+            if (typeof window.loadInstructorsCache === 'function') {
+              await window.loadInstructorsCache();
+            }
+            
+            // Refresh the page to show the new instructor
+            window.location.reload();
+          } else {
+            alert('Error: createInstructorAccount function not available');
+          }
+        } catch (error) {
+          alert('Error creating instructor: ' + (error.message || 'Unknown error'));
+          console.error('Error creating instructor:', error);
+          const submitBtn = e.target.querySelector('button[type="submit"]');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Instructor';
+        }
+      });
 
       document.getElementById('im-export-csv').addEventListener('click', () => {
         const csv = [

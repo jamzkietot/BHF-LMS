@@ -5743,32 +5743,56 @@ if (page === "forgot-password") {
 
 if (page === "dashboard") {
   bindChangePasswordForm();
-  // BUGFIX: getAuth() used to be read here synchronously, before Firebase
-  // Auth + the Firestore "users/{email}" profile fetch (authReadyPromise)
-  // had actually resolved. On a fresh page load/refresh this meant the
-  // dashboard was populated from the optimistic same-browser cache
-  // (bhf_last_user_snapshot) instead of the authoritative, Firestore-merged
-  // profile — and that cache doesn't even store the contact number field at
-  // all (see saveLastUserSnapshot). Nothing ever re-ran setDashboardProfile()
-  // once the real data arrived, so edits looked like they were "reverting"
-  // after every refresh even though they were saved to Firestore correctly
-  // the whole time. Awaiting here guarantees authProfile is the confirmed,
-  // up-to-date record before we paint or bind the form.
-  await authReadyPromise;
-  const authProfile = getAuth();
-  const welcome = document.getElementById("dashboard-welcome");
-  const logoutButton = document.getElementById("logout-button");
-  const adminPanelAction = document.getElementById("admin-panel-action");
 
-  if (!authProfile) {
-    window.location.href = "login.html";
-    return;
-  }
-  if (authProfile.role === "admin" || authProfile.role === "instructor") {
-    window.location.href = getPortalHref(authProfile.role);
-    return;
-  }
+  // Optimistic paint: fill the profile fields from the same-browser cache
+  // immediately, before waiting on Firebase Auth + the Firestore profile
+  // fetch below. That round trip is what was leaving returning users
+  // staring at blank inputs for a few seconds on every load even though
+  // we already know their name/email/contact from last time. The
+  // authoritative setDashboardProfile() call further down always
+  // overwrites this once the real data arrives, so this is purely a
+  // "don't show blank boxes" shortcut, not a source of truth.
+  (function paintOptimisticProfile() {
+    const cached = getLastUserSnapshot();
+    if (!cached) return;
+    const fullName = (cached.name && cached.name.trim()) || (cached.email ? cached.email.split("@")[0] : "");
+    const nameParts = fullName.split(/\s+/).filter(Boolean);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    const initials = nameParts.slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "U";
+    const contact = cached.uid ? getUserContact(cached.uid) : "";
+    const photoUrl = cached.photoURL || (cached.uid ? getStoredProfilePhoto(cached.uid) : "") || "";
 
+    const welcomeEl = document.getElementById("dashboard-welcome");
+    if (welcomeEl) welcomeEl.textContent = firstName || "Learner";
+    const avatarEl = document.getElementById("dashboard-avatar");
+    if (avatarEl) {
+      avatarEl.textContent = photoUrl ? "" : initials;
+      avatarEl.style.backgroundImage = photoUrl ? `url('${photoUrl}')` : "";
+      avatarEl.style.backgroundSize = photoUrl ? "cover" : "";
+      avatarEl.style.backgroundPosition = photoUrl ? "center" : "";
+      avatarEl.style.color = photoUrl ? "transparent" : "";
+    }
+    const firstNameEl = document.getElementById("first-name");
+    if (firstNameEl) firstNameEl.value = firstName;
+    const lastNameEl = document.getElementById("last-name");
+    if (lastNameEl) lastNameEl.value = lastName;
+    const emailEl = document.getElementById("email-address");
+    if (emailEl) emailEl.value = cached.email || "";
+    const phoneEl = document.getElementById("contact-number");
+    if (phoneEl) phoneEl.value = contact;
+    const dashboardContactEl = document.getElementById("dashboard-contact-number");
+    if (dashboardContactEl) dashboardContactEl.textContent = contact || "Add your contact number";
+  })();
+  // Bind the dashboard tab switching (Profile / Certificate / Learning History)
+  // immediately, before the `await authReadyPromise` below. Firebase Auth +
+  // the Firestore profile fetch can take a noticeable moment, and this used to
+  // be the *only* place tabs got their click listeners -- so right after
+  // landing on the dashboard, clicking "Certificate" or "Learning History"
+  // did nothing at all until that round trip finished. The panel contents
+  // still fill in asynchronously as data arrives (see certificatesReadyPromise/
+  // onCertsUpdated and refreshUserEnrollments() further down), but the tabs
+  // themselves should be clickable the instant the page renders.
   const tabs = Array.from(document.querySelectorAll('.dashboard-tab'));
   const panels = Array.from(document.querySelectorAll('.dashboard-panel-card[data-panel="tabbed"]'));
   const showPanel = (selector) => {
@@ -5791,6 +5815,12 @@ if (page === "dashboard") {
       const target = tab.dataset.target || null;
       if (target) {
         showPanel(target);
+        // Switching tabs should land you at the top of that tab's content
+        // (hero + tab bar visible), not wherever you happened to have
+        // scrolled to on the previous tab.
+        // Jump to the top immediately (no scroll animation) so the profile
+        // header + tabs are visible right away instead of a moment later.
+        window.scrollTo({ top: 0, behavior: 'auto' });
         if (target === '#achievements-panel') {
           const grid = document.getElementById('achievements-grid');
           if (grid) {
@@ -5802,7 +5832,12 @@ if (page === "dashboard") {
   });
 
   (function initActivePanel() {
-    const hash = window.location.hash;
+    // Prefer the hash captured by the inline script at the top of <body>
+    // (see dashboard.html) — the real URL hash was deliberately stripped
+    // there to stop the browser's native "jump to #element" from firing
+    // before this code (and the data it depends on) is ready.
+    const hash = window.__bhfPendingHash || window.location.hash;
+    window.__bhfPendingHash = null;
 
     if (hash) {
       // Direct match: the hash points straight at a tab's panel (e.g. from
@@ -5830,6 +5865,59 @@ if (page === "dashboard") {
     const target = active?.dataset?.target || '#profile-panel';
     showPanel(target);
   })();
+
+  // The nav dropdown's "My Profile" / "Certificates" / "Learning History"
+  // links point at dashboard.html#<panel-id>. If you're already on
+  // dashboard.html, clicking one of those only changes the URL hash — the
+  // browser doesn't reload the page, so the code above (which only runs
+  // once, on initial load) never gets a chance to switch tabs. Re-run the
+  // same hash-matching logic on every hashchange so those links also work
+  // when clicked from within the dashboard itself.
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash;
+    if (!hash) return;
+
+    const matchingTab = tabs.find((t) => t.dataset.target === hash);
+    if (matchingTab) {
+      matchingTab.click();
+      return;
+    }
+
+    const el = document.querySelector(hash);
+    if (el) {
+      const panel = el.closest('.dashboard-panel-card[data-panel="tabbed"]');
+      const tabForPanel = panel ? tabs.find((t) => t.dataset.target === `#${panel.id}`) : null;
+      if (tabForPanel) tabForPanel.click();
+      requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    }
+  });
+
+  // BUGFIX: getAuth() used to be read here synchronously, before Firebase
+  // Auth + the Firestore "users/{email}" profile fetch (authReadyPromise)
+  // had actually resolved. On a fresh page load/refresh this meant the
+  // dashboard was populated from the optimistic same-browser cache
+  // (bhf_last_user_snapshot) instead of the authoritative, Firestore-merged
+  // profile — and that cache doesn't even store the contact number field at
+  // all (see saveLastUserSnapshot). Nothing ever re-ran setDashboardProfile()
+  // once the real data arrived, so edits looked like they were "reverting"
+  // after every refresh even though they were saved to Firestore correctly
+  // the whole time. Awaiting here guarantees authProfile is the confirmed,
+  // up-to-date record before we paint or bind the form.
+  await authReadyPromise;
+  const authProfile = getAuth();
+  const welcome = document.getElementById("dashboard-welcome");
+  const logoutButton = document.getElementById("logout-button");
+  const adminPanelAction = document.getElementById("admin-panel-action");
+
+  if (!authProfile) {
+    window.location.href = "login.html";
+    return;
+  }
+  if (authProfile.role === "admin" || authProfile.role === "instructor") {
+    window.location.href = getPortalHref(authProfile.role);
+    return;
+  }
+
 
   // Render immediately with whatever's already cached (seeded synchronously
   // from localStorage at script load — see ENROLLMENTS_SNAPSHOT_KEY /
@@ -5863,6 +5951,25 @@ if (page === "dashboard") {
     if (!date) return "Unknown";
     try {
       return new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    } catch {
+      return String(date);
+    }
+  };
+
+  // Learning History shows the full timestamp (e.g. "August 3, 2026, 2:07 AM")
+  // rather than the short "Aug 3, 2026" used for certificate expiry, since a
+  // start/completion time can matter for course records.
+  const formatLearningHistoryDate = (date) => {
+    if (!date) return "Unknown";
+    try {
+      return new Date(date).toLocaleString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      });
     } catch {
       return String(date);
     }
@@ -6183,64 +6290,6 @@ if (page === "dashboard") {
       changeEmailLink.dataset.bound = 'true';
     }
 
-    // --- Dashboard tab switching ---
-    const tabs = Array.from(document.querySelectorAll('.dashboard-tab'));
-    const panels = Array.from(document.querySelectorAll('.dashboard-panel-card[data-panel="tabbed"]'));
-    const showPanel = (selector) => {
-      panels.forEach((p) => {
-        p.classList.add('hidden');
-        p.setAttribute('hidden', '');
-      });
-      const target = document.querySelector(selector);
-      if (target && target.dataset.panel === 'tabbed') {
-        target.classList.remove('hidden');
-        target.removeAttribute('hidden');
-      }
-    };
-
-    tabs.forEach((tab) => {
-      tab.addEventListener('click', (e) => {
-        e.preventDefault();
-        tabs.forEach(t => t.classList.remove('is-active'));
-        tab.classList.add('is-active');
-        const target = tab.dataset.target || null;
-        if (target) {
-          showPanel(target);
-          if (target === '#achievements-panel') {
-            const grid = document.getElementById('achievements-grid');
-            if (grid) {
-              // re-render existing certificates (script already populates on load)
-            }
-          }
-        }
-      });
-    });
-
-    // Show only the initially-active panel on page load
-    (function initActivePanel() {
-      const hash = window.location.hash;
-
-      if (hash) {
-        const matchingTab = tabs.find((t) => t.dataset.target === hash);
-        if (matchingTab) {
-          matchingTab.click();
-          return;
-        }
-
-        const el = document.querySelector(hash);
-        if (el) {
-          const panel = el.closest('.dashboard-panel-card[data-panel="tabbed"]');
-          const tabForPanel = panel ? tabs.find((t) => t.dataset.target === `#${panel.id}`) : null;
-          if (tabForPanel) tabForPanel.click();
-          requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }));
-          return;
-        }
-      }
-
-      const active = document.querySelector('.dashboard-tab.is-active');
-      const target = active?.dataset?.target || '#profile-panel';
-      showPanel(target);
-    })();
 
     // Populate Learning History panel. Wrapped in a function (instead of a
     // one-shot block) so refreshUserEnrollments() further below can re-run
@@ -6270,8 +6319,10 @@ if (page === "dashboard") {
           const duration = escapeHtml(entry.courseDuration || '');
           const level = escapeHtml(entry.courseLevel || '');
           const status = escapeHtml(entry.status || 'In progress');
-          const startDate = escapeHtml(entry.startDate || entry.enrolledAt || entry.date || entry.issuedAt || 'TBD');
-          const completionDate = escapeHtml(entry.completionDate || entry.date || entry.issuedAt || 'TBD');
+          const rawStartDate = entry.startDate || entry.enrolledAt || entry.date || entry.issuedAt || '';
+          const rawCompletionDate = entry.completionDate || entry.date || entry.issuedAt || '';
+          const startDate = escapeHtml(rawStartDate ? formatLearningHistoryDate(rawStartDate) : 'TBD');
+          const completionDate = escapeHtml(rawCompletionDate ? formatLearningHistoryDate(rawCompletionDate) : 'TBD');
           const statusClass = (status || '').toLowerCase().includes('completed') ? 'is-ok' : (status || '').toLowerCase().includes('in progress') ? 'is-progress' : 'is-muted';
           return `
             <li class="learning-history-item">

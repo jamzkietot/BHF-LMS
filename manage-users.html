@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="style.css" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
     <style>
-      .im-field label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em; }
       /* =========================================================
          Admin Dashboard v2 — sidebar layout (shared with admin.html)
          Scoped with the "adx-" prefix so nothing here collides with
@@ -764,8 +763,8 @@
               <h2>User Management</h2>
               <p>Manage and monitor all user accounts in the system.</p>
             </div>
-            <div style="display:flex; gap:0.75rem;">
-              <button class="btn btn-primary" id="im-add-instructor-btn" type="button">+ Add New Instructor</button>
+            <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+              <button class="btn btn-primary" id="um-add-instructor-btn" type="button">+ Add New Instructor</button>
               <button class="btn btn-primary" id="um-add-btn" type="button">+ Add New User</button>
             </div>
           </div>
@@ -936,31 +935,6 @@
       </div>
     </div>
 
-    <!-- Add Instructor Modal -->
-    <div id="im-add-modal" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:50; align-items:center; justify-content:center; display:none;">
-      <div style="background:white; border-radius:12px; padding:2rem; max-width:400px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
-        <h3 style="margin:0 0 1.5rem; font-family:'Playfair Display',serif; color:var(--accent-dark); font-size:1.4rem;">Add New Instructor</h3>
-        <form id="im-add-form" style="display:flex; flex-direction:column; gap:1rem;">
-          <div class="im-field">
-            <label for="im-name-input">Full Name *</label>
-            <input type="text" id="im-name-input" placeholder="John Doe" required style="width:100%; padding:0.6rem; border:1px solid rgba(15,34,72,0.2); border-radius:8px; font-size:0.9rem;">
-          </div>
-          <div class="im-field">
-            <label for="im-email-input">Email *</label>
-            <input type="email" id="im-email-input" placeholder="john@example.com" required style="width:100%; padding:0.6rem; border:1px solid rgba(15,34,72,0.2); border-radius:8px; font-size:0.9rem;">
-          </div>
-          <div class="im-field">
-            <label for="im-password-input">Password (min 6 characters) *</label>
-            <input type="password" id="im-password-input" placeholder="••••••" required minlength="6" style="width:100%; padding:0.6rem; border:1px solid rgba(15,34,72,0.2); border-radius:8px; font-size:0.9rem;">
-          </div>
-          <div style="display:flex; gap:0.8rem; margin-top:1rem;">
-            <button type="button" id="im-cancel-btn" class="btn" style="flex:1; background:var(--surface-3); color:var(--accent-dark);">Cancel</button>
-            <button type="submit" class="btn btn-primary" style="flex:1;">Create Instructor</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
     <!-- ============ Add New User modal ============ -->
     <div id="um-add-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="um-add-modal-title">
       <div class="dashboard-modal-card">
@@ -991,6 +965,36 @@
           <div class="um-modal-actions">
             <button type="button" class="btn btn-secondary" data-um-close>Cancel</button>
             <button id="um-add-submit" type="submit" class="btn btn-primary">Save User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ============ Add New Instructor modal ============ -->
+    <div id="um-add-instructor-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="um-add-instructor-modal-title">
+      <div class="dashboard-modal-card">
+        <button class="dashboard-modal-close" type="button" data-um-close aria-label="Close dialog">×</button>
+        <h3 id="um-add-instructor-modal-title">Add New Instructor</h3>
+        <form id="um-add-instructor-form" class="um-modal-form">
+          <div class="form-group">
+            <label for="um-add-instructor-name">Full Name</label>
+            <input id="um-add-instructor-name" type="text" placeholder="e.g. Juan Dela Cruz" required />
+          </div>
+          <div class="form-group">
+            <label for="um-add-instructor-email">Email</label>
+            <input id="um-add-instructor-email" type="email" placeholder="name@email.com" required />
+          </div>
+          <div class="form-group">
+            <label for="um-add-instructor-password">Password (min 6 characters)</label>
+            <input id="um-add-instructor-password" type="password" placeholder="••••••" required minlength="6" />
+          </div>
+          <p class="um-form-hint">
+            This creates a real instructor login — they can sign in with this email and password right away.
+          </p>
+          <p id="um-add-instructor-form-note" class="form-note"></p>
+          <div class="um-modal-actions">
+            <button type="button" class="btn btn-secondary" data-um-close>Cancel</button>
+            <button id="um-add-instructor-submit" type="submit" class="btn btn-primary">Create Instructor</button>
           </div>
         </form>
       </div>
@@ -1834,6 +1838,7 @@
          Modals
       ========================================================= */
       const addModal = document.getElementById("um-add-modal");
+      const addInstructorModal = document.getElementById("um-add-instructor-modal");
       const viewModal = document.getElementById("um-view-modal");
       const editModal = document.getElementById("um-edit-modal");
       const activateModal = document.getElementById("um-activate-course-modal");
@@ -1842,80 +1847,11 @@
       const closeModal = (modal) => modal.classList.add("hidden");
 
       document.querySelectorAll("[data-um-close]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          closeModal(addModal); closeModal(viewModal); closeModal(editModal); closeModal(activateModal);
-          activateModalEmail = null;
-        });
+        btn.addEventListener("click", () => { closeModal(addModal); closeModal(addInstructorModal); closeModal(viewModal); closeModal(editModal); closeModal(activateModal); });
       });
-      [addModal, viewModal, editModal, activateModal].forEach((modal) => {
+      [addModal, addInstructorModal, viewModal, editModal, activateModal].forEach((modal) => {
         if (!modal) return;
-        modal.addEventListener("click", (e) => {
-          if (e.target === modal) { closeModal(modal); if (modal === activateModal) activateModalEmail = null; }
-        });
-      });
-
-      /* ---------- Add New Instructor ---------- */
-      document.getElementById('im-add-instructor-btn').addEventListener('click', () => {
-        const modal = document.getElementById('im-add-modal');
-        modal.style.display = 'flex';
-      });
-
-      document.getElementById('im-cancel-btn').addEventListener('click', () => {
-        const modal = document.getElementById('im-add-modal');
-        modal.style.display = 'none';
-        document.getElementById('im-add-form').reset();
-      });
-
-      // Close modal when clicking outside
-      document.getElementById('im-add-modal').addEventListener('click', (e) => {
-        if (e.target.id === 'im-add-modal') {
-          const modal = document.getElementById('im-add-modal');
-          modal.style.display = 'none';
-          document.getElementById('im-add-form').reset();
-        }
-      });
-
-      document.getElementById('im-add-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const name = document.getElementById('im-name-input').value.trim();
-        const email = document.getElementById('im-email-input').value.trim();
-        const password = document.getElementById('im-password-input').value;
-
-        if (!name || !email || !password) {
-          alert('Please fill in all fields');
-          return;
-        }
-
-        try {
-          const submitBtn = e.target.querySelector('button[type="submit"]');
-          submitBtn.disabled = true;
-          submitBtn.textContent = 'Creating...';
-
-          if (typeof window.createInstructorAccount === 'function') {
-            await window.createInstructorAccount({ name, email, password });
-            alert('Instructor created successfully!');
-
-            // Close modal and reset form
-            document.getElementById('im-add-modal').style.display = 'none';
-            document.getElementById('im-add-form').reset();
-
-            // Reload the instructors cache if available
-            if (typeof window.loadInstructorsCache === 'function') {
-              await window.loadInstructorsCache();
-            }
-
-            // Refresh the page to reflect the new instructor
-            window.location.reload();
-          } else {
-            alert('Error: createInstructorAccount function not available');
-          }
-        } catch (error) {
-          alert('Error creating instructor: ' + (error.message || 'Unknown error'));
-          console.error('Error creating instructor:', error);
-          const submitBtn = e.target.querySelector('button[type="submit"]');
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Create Instructor';
-        }
+        modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(modal); });
       });
 
       /* ---------- Add New User ---------- */
@@ -1960,6 +1896,40 @@
         } finally {
           submitBtn.disabled = false;
           submitBtn.textContent = "Save User";
+        }
+      });
+
+      /* ---------- Add New Instructor ---------- */
+      document.getElementById("um-add-instructor-btn").addEventListener("click", () => {
+        document.getElementById("um-add-instructor-form").reset();
+        document.getElementById("um-add-instructor-form-note").textContent = "";
+        openModal(addInstructorModal);
+      });
+
+      document.getElementById("um-add-instructor-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const note = document.getElementById("um-add-instructor-form-note");
+        const name = document.getElementById("um-add-instructor-name").value.trim();
+        const email = document.getElementById("um-add-instructor-email").value.trim().toLowerCase();
+        const password = document.getElementById("um-add-instructor-password").value;
+        if (!name || !email || !password) { note.textContent = "Name, email, and password are required."; return; }
+
+        const submitBtn = document.getElementById("um-add-instructor-submit");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Creating…";
+        try {
+          if (typeof window.createInstructorAccount !== "function") {
+            throw new Error("Instructor creation is unavailable right now.");
+          }
+          await window.createInstructorAccount({ name, email, password });
+          closeModal(addInstructorModal);
+          window.showToast?.(`Instructor ${name} created successfully!`, "success");
+        } catch (error) {
+          console.error("Failed to add instructor", error);
+          note.textContent = error?.message || "Something went wrong creating this instructor. Please try again.";
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Create Instructor";
         }
       });
 
@@ -2145,10 +2115,9 @@
       const activateNotesInput = document.getElementById("um-activate-notes");
 
       /* ---------- Live "paid courses" cache ----------
-         Kept in sync with Firestore via onSnapshot (set up below, once this
-         function and the modal state it touches are already declared) so
-         that flipping a course between Free <-> Paid from the Instructor
-         Portal is reflected here immediately — no page refresh, no need to
+         Kept in sync with Firestore via onSnapshot (set up below) so that
+         flipping a course between Free <-> Paid from the Instructor Portal
+         is reflected here immediately — no page refresh, no need to
          close/reopen the modal. isCoursePaid mirrors window.courseRequiresPayment
          from script.js (the same accessRule field the course editor writes),
          with a couple of legacy fallbacks kept for older saved courses. */
