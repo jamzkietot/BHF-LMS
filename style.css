@@ -4590,6 +4590,15 @@ body[data-page="admin"] #bhf-admin-edit-toggle {
   margin-top: 0.15rem;
 }
 
+.exam-schedule-row .esr-notes {
+  display: block;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 0.8rem;
+  color: rgba(245, 248, 255, 0.6);
+  margin-top: 0.25rem;
+}
+
 .exam-schedule-row .esr-date {
   font-size: 0.9rem;
   color: #f5f8ff;

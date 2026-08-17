@@ -670,7 +670,6 @@
               <p>View and manage important events, schedules, deadlines, and exams.</p>
             </div>
             <div class="adx-page-head-actions">
-              <button class="btn btn-secondary" id="cal-add-event-btn" type="button">+ Add Event</button>
               <button class="btn btn-primary" id="cal-add-exam-btn" type="button">+ Add Exam</button>
             </div>
           </div>
@@ -839,7 +838,7 @@
     <div id="cal-event-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="cal-event-modal-title">
       <div class="dashboard-modal-card cal-modal-card">
         <button class="dashboard-modal-close" type="button" data-cal-close aria-label="Close dialog">×</button>
-        <h3 id="cal-event-modal-title">Add Event</h3>
+        <h3 id="cal-event-modal-title">Edit Event</h3>
         <form id="cal-event-form">
           <input type="hidden" id="cal-event-id" value="" />
           <div class="form-group">
@@ -908,7 +907,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label for="cal-exam-student">Student (optional)</label>
+            <label for="cal-exam-student">Student</label>
             <select class="adx-select" id="cal-exam-student">
               <option value="">— Whole class (all enrolled students) —</option>
             </select>
@@ -926,12 +925,6 @@
               <label for="cal-exam-time">Exam Time (optional)</label>
               <input type="time" id="cal-exam-time" />
             </div>
-          </div>
-          <div class="form-group">
-            <label for="cal-exam-instructor">Instructor (optional)</label>
-            <select class="adx-select" id="cal-exam-instructor">
-              <option value="">— None —</option>
-            </select>
           </div>
           <div class="form-group">
             <label for="cal-exam-notes">Notes</label>
@@ -1284,7 +1277,7 @@
         const evCourseSel = document.getElementById("cal-event-course");
         const evInstSel = document.getElementById("cal-event-instructor");
         const examCourseSel = document.getElementById("cal-exam-course");
-        const examInstSel = document.getElementById("cal-exam-instructor");
+
 
         const prevFilterCourse = filterCourseSel.value || "all";
         const prevFilterInst = filterInstSel.value || "all";
@@ -1296,7 +1289,6 @@
         evCourseSel.innerHTML = courseOptionsHtml(false);
         evInstSel.innerHTML = instructorOptionsHtml(false);
         examCourseSel.innerHTML = `<option value="">Choose a course</option>` + courseTitles.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
-        examInstSel.innerHTML = instructorOptionsHtml(false);
         populateExamStudentSelect();
       };
 
@@ -1315,6 +1307,11 @@
           : [];
         const options = roster
           .map((e) => ({ email: (e.email || "").toLowerCase(), name: e.name || e.email }))
+          .filter((o) => {
+            const localPart = o.email.split("@")[0];
+            const nameLower = (o.name || "").toLowerCase();
+            return localPart !== "admin" && localPart !== "val" && nameLower !== "admin" && nameLower !== "val";
+          })
           .sort((a, b) => a.name.localeCompare(b.name));
         examStudentSel.innerHTML = `<option value="">— Whole class (all enrolled students) —</option>` +
           options.map((o) => `<option value="${escapeHtml(o.email)}">${escapeHtml(o.name)}</option>`).join("");
@@ -1436,7 +1433,7 @@
             dayEl.appendChild(more);
           }
 
-          dayEl.addEventListener("click", () => openAddEventModal(cell.iso));
+          dayEl.addEventListener("click", () => openAddExamModal(cell.iso));
           grid.appendChild(dayEl);
         });
 
@@ -1656,21 +1653,6 @@
       document.querySelectorAll("[data-cal-close]").forEach((btn) => btn.addEventListener("click", closeModals));
       [eventModal, examModal].forEach((m) => m.addEventListener("click", (e) => { if (e.target === m) closeModals(); }));
 
-      const openAddEventModal = (dateIso) => {
-        document.getElementById("cal-event-modal-title").textContent = "Add Event";
-        document.getElementById("cal-event-id").value = "";
-        document.getElementById("cal-event-title").value = "";
-        document.getElementById("cal-event-type").value = "event";
-        document.getElementById("cal-event-date").value = dateIso || todayStr;
-        document.getElementById("cal-event-time").value = "";
-        document.getElementById("cal-event-course").value = "";
-        document.getElementById("cal-event-instructor").value = "";
-        document.getElementById("cal-event-notes").value = "";
-        document.getElementById("cal-event-note").textContent = "";
-        document.getElementById("cal-event-delete").style.display = "none";
-        eventModal.classList.remove("hidden");
-      };
-
       const openEditEventModal = (ev) => {
         document.getElementById("cal-event-modal-title").textContent = "Edit " + typeLabel(ev.type);
         document.getElementById("cal-event-id").value = ev.id;
@@ -1694,7 +1676,6 @@
         document.getElementById("cal-exam-title").value = "";
         document.getElementById("cal-exam-date").value = dateIso || todayStr;
         document.getElementById("cal-exam-time").value = "";
-        document.getElementById("cal-exam-instructor").value = "";
         document.getElementById("cal-exam-notes").value = "";
         document.getElementById("cal-exam-note").textContent = "";
         document.getElementById("cal-exam-delete").style.display = "none";
@@ -1710,7 +1691,6 @@
         document.getElementById("cal-exam-title").value = (ev.title && ev.title !== ev.course) ? ev.title : "";
         document.getElementById("cal-exam-date").value = ev.date;
         document.getElementById("cal-exam-time").value = ev.time || "";
-        document.getElementById("cal-exam-instructor").value = ev.instructor || "";
         document.getElementById("cal-exam-notes").value = ev.notes || "";
         document.getElementById("cal-exam-note").textContent = "";
         document.getElementById("cal-exam-delete").style.display = "inline-flex";
@@ -1722,7 +1702,6 @@
         else openEditEventModal(ev);
       };
 
-      document.getElementById("cal-add-event-btn").addEventListener("click", () => openAddEventModal(state.selectedDate || todayStr));
       document.getElementById("cal-add-exam-btn").addEventListener("click", () => openAddExamModal(state.selectedDate || todayStr));
 
       /* ---------- Save / Delete: generic Event (Event / Deadline / Holiday) ---------- */
@@ -1802,7 +1781,6 @@
           title: document.getElementById("cal-exam-title").value.trim() || courseTitle,
           examDate,
           examTime: document.getElementById("cal-exam-time").value || "",
-          instructor: document.getElementById("cal-exam-instructor").value || "",
           notes: document.getElementById("cal-exam-notes").value.trim() || "",
           studentEmail: studentEmail || null,
           studentName: studentEmail ? (studentRoster?.name || studentEmail) : null

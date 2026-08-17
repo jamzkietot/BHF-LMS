@@ -5324,6 +5324,7 @@ if (page === "home") {
         <span>
           <span class="esr-course">${escapeHtml(e.title || e.course)}</span>
           <span class="esr-category">${e.studentEmail ? "Personally scheduled for you" : escapeHtml(e.category || "")}</span>
+          ${e.notes ? `<span class="esr-notes">${escapeHtml(e.notes)}</span>` : ""}
         </span>
         <span class="esr-date">${escapeHtml(formatExamDate(e.examDate, e.examTime))}</span>
       </li>
@@ -6372,15 +6373,19 @@ if (page === "dashboard") {
           return;
         }
 
-        // Just preview locally and stage the file — it's uploaded and saved
-        // together with the rest of the form when "Save Changes" is clicked.
+        // Preview immediately, then upload and save right away — it used to
+        // only stage the file here and wait for the separate "Save Changes"
+        // submit to actually upload it. That meant the avatar visibly
+        // updated the moment you picked a photo, which looked like it had
+        // already saved, but a reload without clicking "Save Changes" (or a
+        // failed silent upload) would revert straight back to the initials.
+        // Uploading here, on selection, makes the preview and the saved
+        // state the same thing.
         const reader = new FileReader();
-        reader.onload = () => {
+        reader.onload = async () => {
           const localPhotoUrl = reader.result;
           if (typeof localPhotoUrl !== 'string') return;
 
-          pendingProfileImageFile = file;
-          pendingProfileImageDataUrl = localPhotoUrl;
           if (dashboardAvatar) {
             dashboardAvatar.textContent = "";
             dashboardAvatar.style.backgroundImage = `url('${localPhotoUrl}')`;
@@ -6388,21 +6393,50 @@ if (page === "dashboard") {
             dashboardAvatar.style.backgroundPosition = "center";
             dashboardAvatar.style.color = "transparent";
           }
+
           // Persist the preview immediately for localhost so a reload shows
           // the selected image even if remote fetch is blocked by CORS.
-          if (isLocalhost() && auth?.currentUser) {
+          if (isLocalhost()) {
             try {
-              saveStoredProfilePhoto(auth.currentUser.uid, localPhotoUrl);
-              // Also update optimistic snapshot so header shows correctly
+              saveStoredProfilePhoto(firebaseUser.uid, localPhotoUrl);
               currentUser = { ...(currentUser || {}), photoURL: localPhotoUrl };
               saveLastUserSnapshot(currentUser);
             } catch (e) {
               // ignore
             }
           }
-          setFormNote(basicInfoNote, "Photo selected. Click Save Changes to apply it.", "success");
+
+          setFormNote(basicInfoNote, "Uploading photo…", "success");
+
+          try {
+            const imageName = `${firebaseUser.uid || 'guest'}-${Date.now()}-${file.name}`;
+            const storageRef = ref(storage, `profile-images/${imageName}`);
+            console.debug("Uploading profile image to Storage...", storageRef.fullPath);
+            await uploadBytes(storageRef, file);
+            const downloadUrl = await getDownloadURL(storageRef);
+            console.debug("Profile image uploaded, downloadURL:", downloadUrl);
+            await updateProfile(firebaseUser, { photoURL: downloadUrl });
+            saveStoredProfilePhoto(firebaseUser.uid, downloadUrl);
+            if (firebaseUser.email) {
+              console.debug("Saving photoURL to Firestore users doc for", firebaseUser.email);
+              await saveUserProfileFields(firebaseUser.email, { photoURL: downloadUrl });
+            }
+            currentUser = { ...(currentUser || {}), photoURL: downloadUrl };
+            saveLastUserSnapshot(currentUser);
+            setFormNote(basicInfoNote, "Profile photo updated.", "success");
+          } catch (error) {
+            console.error("Failed to upload/save profile photo", error);
+            setFormNote(basicInfoNote, "We couldn't save your new photo. Please try again.", "error");
+            // Revert the preview so the avatar doesn't claim a photo that
+            // never actually made it to Storage/Firestore.
+            setDashboardProfile();
+          }
         };
         reader.readAsDataURL(file);
+        // Clear the staged-upload variables — this handler now uploads
+        // directly instead of relying on the "Save Changes" submit to do it.
+        pendingProfileImageFile = null;
+        pendingProfileImageDataUrl = null;
       });
     }
 
@@ -6422,7 +6456,7 @@ if (page === "dashboard") {
       document.body.appendChild(globalInput);
     }
 
-    const avatarSelectors = ['.adx-profile-avatar', '#ix-profile-avatar', '#um-profile-avatar', '.dashboard-profile-avatar'];
+    const avatarSelectors = ['.adx-profile-avatar', '#ix-profile-avatar', '#um-profile-avatar'];
     const avatarEls = avatarSelectors.flatMap((s) => Array.from(document.querySelectorAll(s)));
     const uniqueAvatarEls = Array.from(new Set(avatarEls));
 
