@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // Runs immediately, before the rest of this page is parsed/painted, so
+      // an already-logged-in visitor is redirected before the login form is
+      // ever shown — not even for a single frame. (The full, authoritative
+      // check still happens later in script.js once Firebase loads; this is
+      // just what makes that redirect instant instead of visibly delayed.)
+      (function () {
+        try {
+          var raw = localStorage.getItem('bhf_last_user_snapshot');
+          if (!raw) return;
+          var user = JSON.parse(raw);
+          if (!user || !user.role) return;
+          // Admins are only kept on the login page when they intentionally
+          // arrived via the admin panel's Edit Mode link (see script.js).
+          var cameFromAdminEditMode = new URLSearchParams(window.location.search).get('from') === 'admin';
+          if (user.role === 'admin' && cameFromAdminEditMode) return;
+          var href = user.role === 'superadmin' ? 'superadmin.html' : user.role === 'admin' ? 'admin.html' : user.role === 'instructor' ? 'instructor.html' : 'index.html';
+          window.location.replace(href);
+        } catch (e) {
+          // If anything about the cached snapshot is unusable, just fall
+          // through to the normal login page/flow.
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | BHF Certification Academy</title>
+    <meta name="description" content="Sign in to your BHF Certification Academy account and continue your certification journey." />
+    <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  </head>
+  <body data-page="login">
+    <header class="topbar">
+      <a class="brand" href="index.html">
+        <img class="brand-logo" src="bhflogo.jpg" alt="BHF logo" />
+        <span class="brand-text-full">BHF Certification Academy</span>
+        <span class="brand-text-short">BHF</span>
+      </a>
+      <button id="nav-hamburger" class="nav-hamburger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-main-links">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav-links">
+        <div class="nav-main-links" id="nav-main-links">
+          <a href="index.html">Home</a>
+          <a href="programs.html">Programs</a>
+          <a href="index.html#verify">Verify</a>
+        </div>
+        <div class="nav-account-links">
+          <a href="login.html" id="nav-auth-link" class="login-link">Login</a>
+          <a href="login.html" id="logout-button" class="btn btn-secondary" style="display:none;">Logout</a>
+          <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+        </div>
+      </nav>
+    </header>
+    <div class="auth-shell">
+      <div class="auth-card">
+        <!-- Login Form Side -->
+        <div class="auth-panel">
+          <a class="brand" href="index.html">
+            <img class="brand-logo" src="bhflogo.jpg" alt="BHF logo" />
+            <span>BHF Certification Academy</span>
+          </a>
+
+          <div>
+            <span class="page-title-eyebrow">👋 Welcome back</span>
+            <h2>Sign in and keep moving toward your certificate.</h2>
+            <p>Your courses, progress, and exam history are exactly where you left them.</p>
+
+            <form id="login-form" class="auth-form" autocomplete="off">
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                  id="email" 
+                  type="email" 
+                  placeholder="you@example.com" 
+                  required 
+                  autocomplete="off"
+                  readonly
+                  onfocus="this.removeAttribute('readonly');"
+                />
+              </div>
+              <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                  id="password" 
+                  type="password" 
+                  placeholder="••••••••" 
+                  required 
+                  autocomplete="new-password"
+                  readonly
+                  onfocus="this.removeAttribute('readonly');"
+                />
+              </div>
+              <button class="btn btn-primary" type="submit">Sign In to Dashboard</button>
+            </form>
+
+            <div id="login-banner" class="auth-alert" aria-live="polite"></div>
+            <p id="login-note" class="form-note" aria-live="polite"></p>
+            <p class="form-note"><a href="forgot-password.html">Forgot Password?</a></p>
+
+            <div class="auth-divider">
+              <span>New to BHF?</span>
+            </div>
+
+            <div class="auth-actions">
+              <a class="btn btn-secondary" href="signup.html">Create Your Free Account</a>
+            </div>
+
+            <div class="auth-links">
+              <a href="index.html">← Back to Home</a>
+              <a href="programs.html">Browse Programs</a>
+            </div>
+          </div>
+
+          <p class="form-note small">By signing in, you agree to our terms of service and privacy policy.</p>
+        </div>
+
+        <!-- Hero / Info Side -->
+        <div class="auth-panel hero-panel">
+          <div>
+            <p class="eyebrow">✓ Secure & Verified</p>
+            <h2>A credential that actually <span class="headline-gradient">opens doors.</span></h2>
+            <p class="hero-subtitle">Thousands of professionals are building real, verifiable certifications in hospitality, accounting, IT, and business — on their own schedule.</p>
+            
+            <div class="hero-features">
+              <div class="feature-item">
+                <span class="feature-icon">🎓</span>
+                <div>
+                  <h4>20+ Certifications</h4>
+                  <p>Hospitality, IT, accounting, business & more</p>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">⚡</span>
+                <div>
+                  <h4>Self-Paced Learning</h4>
+                  <p>Start, pause, and resume anytime — no fixed class times</p>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">📈</span>
+                <div>
+                  <h4>Track Your Progress</h4>
+                  <p>Real-time dashboards keep every module and exam in view</p>
+                </div>
+              </div>
+              <div class="feature-item">
+                <span class="feature-icon">✅</span>
+                <div>
+                  <h4>Verified Credentials</h4>
+                  <p>Shareable certificates employers can verify online</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-footer">
+            <p>Trusted by professionals worldwide</p>
+            <div class="trust-stats">
+              <div><strong>20+</strong> Programs</div>
+              <div><strong>5</strong> Industries</div>
+              <div><strong>90%</strong> Passing Score</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="js-error-banner" class="auth-alert" aria-live="polite" style="display:none;margin:0 1rem 1rem 1rem;padding:.75rem;border-radius:6px;"></div>
+    <script>
+      (function(){
+        const banner = document.getElementById('js-error-banner');
+        function show(msg){
+          if(!banner) return;
+          banner.textContent = msg;
+          banner.style.display = 'block';
+          banner.style.background = '#fff4e5';
+          banner.style.border = '1px solid #ffd89b';
+        }
+
+        // Common failure: opening pages via file:// prevents module imports and CORS.
+        if (location.protocol === 'file:') {
+          show('JavaScript modules cannot be loaded from file://. Run a local server and open this page using http://localhost:8000. See README or run `python -m http.server` from the project folder.');
+        }
+
+        window.addEventListener('error', (ev) => {
+          // Show a concise hint while preserving full error in console.
+          show('A JavaScript error occurred while loading page scripts. Open the browser console (F12) for details.');
+          console.error('Captured page error:', ev.error || ev.message || ev);
+        });
+
+        window.addEventListener('unhandledrejection', (ev) => {
+          show('A script error occurred (unhandled promise). Check the browser console for details.');
+          console.error('Unhandled rejection:', ev.reason);
+        });
+      })();
+    </script>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>

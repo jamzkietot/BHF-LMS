@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Program &amp; Course Management | BHF Certification Academy</title>
+    <meta name="description" content="Manage all training courses, modules, quizzes and course approvals on the BHF Certification Academy platform." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      /* =========================================================
+         Admin Dashboard v2 — sidebar layout (shared with admin.html,
+         manage-users.html, manage-instructors.html). Scoped with the
+         "adx-" prefix; colors reuse the existing CSS variables.
+      ========================================================= */
+      * { box-sizing: border-box; }
+      html, body { max-width: 100%; overflow-x: hidden; }
+      body { background: var(--bg); font-family: 'Inter', sans-serif; }
+
+      .adx-shell { display: flex; min-height: 100vh; }
+
+      /* ---------- Sidebar ---------- */
+      .adx-sidebar {
+        width: 264px; flex-shrink: 0; background: var(--accent-dark); color: #fff;
+        display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
+        z-index: 40; transition: transform 0.25s ease;
+      }
+      .adx-sidebar.is-superadmin { background: linear-gradient(180deg, #0f1b2e 0%, #13233a 100%); }
+      .adx-sidebar.is-superadmin .adx-nav a.is-active { background: rgba(255,255,255,0.25); color: #fff; }
+      .adx-sidebar.is-superadmin .adx-nav a:hover { background: rgba(255,255,255,0.12); color: #fff; }
+      .adx-brand { display: flex; align-items: center; gap: 0.65rem; padding: 1.4rem 1.3rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .adx-brand img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; }
+      .adx-brand-text strong { display: block; font-size: 0.95rem; line-height: 1.2; }
+      .adx-brand-text span { font-size: 0.68rem; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; }
+      .adx-nav { flex: 1; overflow-y: auto; padding: 0.85rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+      .adx-nav a {
+        display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 12px;
+        color: rgba(255,255,255,0.78); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .adx-nav a .adx-nav-icon { font-size: 1.05rem; width: 22px; text-align: center; }
+      .adx-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+      .adx-nav a.is-active { background: var(--accent); color: var(--accent-dark); }
+      .adx-nav-sub { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.2rem 0 0.35rem 1.1rem; }
+      .adx-nav-sub a { padding: 0.5rem 0.75rem; font-size: 0.78rem; color: rgba(255,255,255,0.72); }
+      .adx-sidebar-footer { padding: 0.85rem 1.3rem 1.3rem; border-top: 1px solid rgba(255,255,255,0.08); }
+      .adx-sidebar-footer a { display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.75); text-decoration: none; font-weight: 600; font-size: 0.88rem; padding: 0.5rem 0; }
+      .adx-sidebar-footer a:hover { color: #fff; }
+
+      /* ---------- Main column ---------- */
+      .adx-main { margin-left: 264px; flex: 1; min-width: 0; max-width: 100%; }
+      .adx-topbar {
+        position: sticky; top: 0; z-index: 30; background: #fff; border-bottom: 1px solid rgba(15,34,72,0.08);
+        display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.75rem;
+      }
+      .adx-topbar-left { display: flex; align-items: center; gap: 0.85rem; }
+      .adx-hamburger { display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--accent-dark); }
+      .adx-topbar h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--accent-dark); margin: 0; }
+      .adx-topbar-right { display: flex; align-items: center; gap: 1.1rem; }
+      .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(15,34,72,0.12);
+        background: var(--surface-3);
+        color: var(--accent-dark);
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+      .adx-topbar-right .theme-toggle:hover {
+        background: var(--surface-2);
+        border-color: rgba(15,34,72,0.2);
+      }
+      .adx-bell {
+        position: relative; width: 40px; height: 40px; border-radius: 12px; background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.08); display: grid; place-items: center; font-size: 1.1rem; cursor: pointer;
+        text-decoration: none; color: var(--accent-dark);
+      }
+      .adx-bell-count {
+        position: absolute; top: -4px; right: -4px; background: #E4483F; color: #fff; font-size: 0.62rem; font-weight: 700;
+        min-width: 17px; height: 17px; border-radius: 999px; display: grid; place-items: center; padding: 0 3px;
+      }
+      .adx-profile { display: flex; align-items: center; gap: 0.65rem; }
+      .adx-profile-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--accent-dark); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; }
+      .adx-profile-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.1; }
+      .adx-profile-role { font-size: 0.72rem; color: var(--muted); }
+
+      .adx-content { padding: 1.5rem 1.75rem 4rem; max-width: 1600px; }
+
+      .adx-breadcrumb { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.6rem; font-weight: 600; }
+      .adx-breadcrumb a { color: var(--cert-accent-dark); text-decoration: none; }
+      .adx-breadcrumb a:hover { text-decoration: underline; }
+
+      .adx-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+      .adx-page-head h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.3rem; font-size: 1.7rem; }
+      .adx-page-head p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+      /* ---------- Stat cards ---------- */
+      .adx-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+      @media (max-width: 460px) { .adx-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      .adx-stat-card {
+        background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.06);
+        padding: 1.15rem 1.2rem; display: flex; flex-direction: column; gap: 0.45rem; min-width: 0;
+      }
+      .adx-stat-label { white-space: normal; }
+      .adx-stat-top { display: flex; align-items: center; justify-content: space-between; }
+      .adx-stat-icon { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 1.1rem; }
+      .adx-stat-value { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--accent-dark); line-height: 1; }
+      .adx-stat-label { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+
+      /* ---------- Generic cards / grids ---------- */
+      .adx-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+      @media (max-width: 960px) { .adx-grid-2 { grid-template-columns: 1fr; } }
+      .adx-layout { display: grid; grid-template-columns: minmax(0, 2.3fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+      @media (max-width: 1150px) { .adx-layout { grid-template-columns: minmax(0, 1fr); } }
+      .adx-card {
+        background: #fff; border-radius: 22px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.05);
+        padding: 1.4rem 1.4rem 1.5rem; min-width: 0;
+      }
+      .adx-card h3 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.2rem; font-size: 1.1rem; }
+      .adx-card-sub { color: var(--muted); font-size: 0.82rem; margin: 0 0 1rem; }
+      .adx-card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+      .adx-card-head a { font-size: 0.8rem; font-weight: 700; color: var(--cert-accent-dark); text-decoration: none; }
+      .adx-card-head a:hover { text-decoration: underline; }
+      .adx-empty { color: var(--muted); font-size: 0.88rem; padding: 0.6rem 0; }
+
+      .adx-list { display: flex; flex-direction: column; gap: 0.55rem; }
+      .adx-list-item { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; padding: 0.7rem 0.85rem; border-radius: 14px; background: var(--surface-3); border: 1px solid rgba(15,34,72,0.05); }
+      .adx-list-item-title { font-weight: 700; color: var(--text); margin: 0 0 0.1rem; font-size: 0.86rem; }
+      .adx-list-item-meta { font-size: 0.75rem; color: var(--muted); margin: 0; }
+
+      /* ---------- Tables ---------- */
+      .adx-table-wrap { overflow-x: auto; }
+      .adx-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+      .adx-table th { text-align: left; color: var(--muted); font-weight: 700; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.6rem; border-bottom: 2px solid rgba(15,34,72,0.08); white-space: nowrap; }
+      .adx-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid rgba(15,34,72,0.06); color: var(--text); vertical-align: middle; }
+      .adx-table tr:last-child td { border-bottom: none; }
+      .adx-status-pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(43,108,176,0.1); color: var(--cert-accent-dark); font-size: 0.72rem; font-weight: 700; text-transform: capitalize; }
+      .adx-status-pill.is-ok { background: rgba(43,168,74,0.14); color: #2BA84A; }
+      .adx-status-pill.is-bad { background: rgba(228,72,63,0.12); color: #b33a3a; }
+      .adx-status-pill.is-muted { background: rgba(15,34,72,0.08); color: var(--muted); }
+      .adx-status-pill.is-progress { background: rgba(255,159,10,0.15); color: #b3720a; }
+
+      /* ---------- Mobile sidebar toggle ---------- */
+      .adx-backdrop { display: none; position: fixed; inset: 0; background: rgba(6,14,32,0.45); z-index: 35; }
+      @media (max-width: 900px) {
+        .adx-hamburger { display: inline-flex; }
+        .adx-sidebar { transform: translateX(-100%); }
+        .adx-main { margin-left: 0; }
+        .adx-shell.adx-sidebar-open .adx-sidebar { transform: translateX(0); }
+        .adx-shell.adx-sidebar-open .adx-backdrop { display: block; }
+      }
+
+      /* =========================================================
+         Course Management — page-specific ("cm-" prefix)
+      ========================================================= */
+      .cm-toolbar-card { padding: 1.1rem 1.2rem; margin-bottom: 1.1rem; }
+      .cm-toolbar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.7rem; align-items: end; }
+      .cm-toolbar-grid .cm-search-wrap { min-width: 200px; }
+      .cm-field label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em; }
+      .cm-field input[type="text"], .cm-field select {
+        width: 100%; padding: 0.65rem 0.85rem; border: 1.5px solid var(--border); border-radius: 10px;
+        background: var(--surface-3); color: var(--text); font: inherit; font-size: 0.86rem;
+      }
+      .cm-field input[type="text"]:focus, .cm-field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,213,0,0.15); }
+      .cm-search-wrap { position: relative; }
+      .cm-search-wrap input[type="text"] { padding-right: 2.4rem; }
+      .cm-search-wrap span { position: absolute; right: 0.9rem; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+      .cm-table-card { padding: 1.2rem 1.2rem 0.6rem; }
+      .cm-course-cell { display: flex; align-items: center; gap: 0.65rem; }
+      .cm-course-thumb {
+        width: 46px; height: 40px; border-radius: 10px; flex-shrink: 0; object-fit: cover;
+        background: linear-gradient(135deg, var(--accent-dark), var(--cert-accent));
+      }
+      .cm-course-title { font-weight: 700; color: var(--text); font-size: 0.88rem; margin: 0; }
+      .cm-course-sub { font-size: 0.76rem; color: var(--muted); margin: 0.1rem 0 0; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .cm-row-inactive { opacity: 0.55; }
+      .cm-inactive-pill { margin-left: 0.35rem; }
+      .cm-modal-overlay {
+        position: fixed; inset: 0; background: rgba(15, 34, 72, 0.55);
+        display: flex; align-items: center; justify-content: center;
+        padding: 1.5rem; z-index: 1000;
+      }
+      .cm-modal-overlay[hidden] { display: none; }
+      .cm-modal {
+        background: #fff; color: var(--text); border-radius: 16px;
+        max-width: 440px; width: 100%; padding: 1.75rem;
+        box-shadow: 0 20px 50px rgba(15, 34, 72, 0.25);
+      }
+      .cm-modal h3 { margin: 0 0 0.6rem; font-size: 1.15rem; }
+      .cm-modal-body { margin: 0 0 1.4rem; color: var(--muted); font-size: 0.92rem; line-height: 1.5; }
+      .cm-modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.6rem; }
+      .cm-modal-danger { background: #e02424; border-color: #e02424; color: #fff; }
+      .cm-modal-danger:hover { background: #c81e1e; }
+      .cm-instructor-cell { display: flex; align-items: center; gap: 0.5rem; }
+      .cm-instructor-name { margin: 0; font-weight: 600; color: var(--text); font-size: 0.88rem; }
+      .cm-uploader-tag { display: inline-block; margin-top: 0.15rem; padding: 0.05rem 0.45rem; border-radius: 999px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+      .cm-uploader-tag-admin { background: rgba(15,34,72,0.08); color: var(--muted); }
+      .cm-uploader-tag-instructor { background: rgba(43,108,176,0.12); color: var(--cert-accent-dark); }
+      .cm-avatar { width: 28px; height: 28px; border-radius: 50%; background: rgba(43,108,176,0.14); color: var(--cert-accent-dark); display: grid; place-items: center; font-weight: 700; font-size: 0.7rem; flex-shrink: 0; }
+      .cm-cat-chip { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(124,77,255,0.12); color: #6a3fd4; font-size: 0.74rem; font-weight: 700; }
+      .cm-actions-cell { display: flex; align-items: center; gap: 0.35rem; }
+      .cm-icon-btn {
+        width: 30px; height: 30px; border-radius: 9px; border: 1px solid rgba(15,34,72,0.08); background: var(--surface-3);
+        display: grid; place-items: center; cursor: pointer; font-size: 0.85rem; color: var(--text); text-decoration: none; transition: background 0.15s ease;
+      }
+      .cm-icon-btn:hover { background: var(--surface-2); }
+      .cm-icon-btn.is-ok { color: #2BA84A; }
+      .cm-icon-btn.is-ok:hover { background: rgba(43,168,74,0.12); }
+      .cm-icon-btn.is-danger { color: #b33a3a; }
+      .cm-icon-btn.is-danger:hover { background: rgba(228,72,63,0.12); }
+
+      .cm-pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 0.2rem 1.2rem; font-size: 0.82rem; color: var(--muted); }
+      .cm-page-btns { display: flex; align-items: center; gap: 0.3rem; }
+      .cm-page-btn { min-width: 32px; height: 32px; padding: 0 0.4rem; border-radius: 8px; border: 1px solid rgba(15,34,72,0.1); background: #fff; color: var(--text); font-weight: 600; font-size: 0.82rem; cursor: pointer; }
+      .cm-page-btn:hover:not(:disabled) { background: var(--surface-3); }
+      .cm-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      .cm-page-btn.is-active { background: var(--accent-dark); color: #fff; border-color: var(--accent-dark); }
+      .cm-rows-per-page { display: flex; align-items: center; gap: 0.5rem; }
+      .cm-rows-per-page select { padding: 0.4rem 0.6rem; border-radius: 8px; border: 1px solid rgba(15,34,72,0.1); background: #fff; font: inherit; font-size: 0.82rem; }
+
+      #cm-my-uploads-btn.is-active { background: var(--accent-dark); color: #fff; border-color: var(--accent-dark); }
+
+      /* ---------- Pending approval widget ---------- */
+      .cm-approval-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.65rem 0; border-bottom: 1px solid rgba(15,34,72,0.06); }
+      .cm-approval-row:last-child { border-bottom: none; }
+      .cm-approval-info p { margin: 0; }
+      .cm-approval-title { font-weight: 700; color: var(--text); font-size: 0.85rem; }
+      .cm-approval-meta { font-size: 0.72rem; color: var(--muted); }
+      .cm-approval-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+
+      /* ---------- Categories widget ---------- */
+      .cm-cat-row { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; padding: 0.55rem 0; border-bottom: 1px solid rgba(15,34,72,0.06); font-size: 0.86rem; }
+      .cm-cat-row:last-child { border-bottom: none; }
+      .cm-cat-name { display: flex; align-items: center; gap: 0.55rem; font-weight: 600; color: var(--text); }
+      .cm-cat-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
+      .cm-cat-count { color: var(--muted); font-weight: 700; }
+
+      /* ---------- Top courses progress ---------- */
+      .cm-rank-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0; }
+      .cm-rank-num { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-3); color: var(--muted); font-weight: 700; font-size: 0.75rem; display: grid; place-items: center; flex-shrink: 0; }
+      .cm-rank-body { flex: 1; min-width: 0; }
+      .cm-rank-title { font-weight: 700; color: var(--text); font-size: 0.84rem; margin: 0 0 0.15rem; }
+      .cm-rank-sub { font-size: 0.74rem; color: var(--muted); margin: 0 0 0.35rem; }
+      .cm-rank-track { width: 100%; height: 7px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+      .cm-rank-fill { height: 100%; background: var(--cert-accent); border-radius: 999px; }
+      .cm-rank-pct { width: 42px; text-align: right; font-weight: 700; color: var(--muted); font-size: 0.78rem; flex-shrink: 0; }
+
+      /* ---------- Quick actions ---------- */
+      .adx-quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+      .adx-quick-action {
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.4rem;
+        padding: 1rem 0.5rem; border-radius: 14px; background: var(--surface-3); border: 1px solid rgba(15,34,72,0.06);
+        text-decoration: none; color: var(--text); font-weight: 700; font-size: 0.8rem; text-align: center;
+        transition: transform 0.12s ease, box-shadow 0.12s ease;
+      }
+      .adx-quick-action:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(15,34,72,0.08); }
+      .adx-qa-icon { font-size: 1.3rem; }
+      .adx-quick-action.is-danger { color: #b33a3a; }
+      .adx-quick-action.is-ok { color: #1c7a3d; }
+
+      /* ---------- Dark Mode ---------- */
+      body[data-theme="dark"] {
+        --adx-surface: #0f1b2e;
+        --adx-surface-2: #16253d;
+        --adx-surface-3: #101c2a;
+        --adx-text: #f3f7ff;
+        --adx-muted: #9fb0c8;
+        --adx-border: rgba(255,255,255,0.12);
+        --adx-shadow: 0 18px 40px rgba(0,0,0,0.4);
+      }
+
+      body[data-theme="dark"] .adx-topbar {
+        background: var(--adx-surface);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-topbar h1 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(22,37,61,0.8);
+        color: #f3f7ff;
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle:hover {
+        background: rgba(30,45,70,0.95);
+      }
+
+      body[data-theme="dark"] .adx-bell {
+        background: rgba(16,28,42,0.8);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-name {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-role {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-stat-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-stat-value {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-stat-label,
+      body[data-theme="dark"] .adx-card-sub {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-card h3 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-empty {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-list-item {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-title {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-meta {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-table-wrap {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-table th {
+        color: var(--adx-muted);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-table td {
+        color: var(--adx-text);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] button,
+      body[data-theme="dark"] input,
+      body[data-theme="dark"] select,
+      body[data-theme="dark"] textarea {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-breadcrumb {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-page-head h2 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-page-head p {
+        color: var(--adx-muted);
+      }
+
+      /* ---------- Print (Export PDF) ---------- */
+      @media print {
+        .adx-sidebar, .adx-topbar, .adx-breadcrumb, .adx-page-head, .adx-stats-grid,
+        .cm-toolbar-card, .cm-pagination, .cm-actions-cell, .adx-layout > div:last-child,
+        .cm-table-card th:last-child, .cm-table-card td:last-child { display: none !important; }
+        .adx-main { margin-left: 0 !important; }
+        .adx-layout { display: block !important; }
+        body { background: #fff !important; }
+        .cm-table-card { box-shadow: none !important; border: none !important; }
+      }
+          /* ---------- Walk-in Registration Modal ---------- */
+      .walk-in-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .walk-in-modal.is-open {
+        display: flex;
+      }
+      .walk-in-modal-content {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 2rem;
+      }
+      body[data-theme="dark"] .walk-in-modal-content {
+        background: var(--adx-surface);
+        color: var(--adx-text);
+      }
+      .walk-in-modal h2 {
+        font-family: 'Playfair Display', serif;
+        color: var(--accent-dark);
+        margin: 0 0 1rem;
+        font-size: 1.4rem;
+      }
+      body[data-theme="dark"] .walk-in-modal h2 {
+        color: #f3f7ff;
+      }
+      .walk-in-form-group {
+        margin-bottom: 1rem;
+      }
+      .walk-in-form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      body[data-theme="dark"] .walk-in-form-group label {
+        color: var(--adx-text);
+      }
+      .walk-in-form-group input,
+      .walk-in-form-group select,
+      .walk-in-form-group textarea {
+        width: 100%;
+        padding: 0.7rem;
+        border: 1px solid rgba(15,34,72,0.15);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      body[data-theme="dark"] .walk-in-form-group input,
+      body[data-theme="dark"] .walk-in-form-group select,
+      body[data-theme="dark"] .walk-in-form-group textarea {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.12);
+        color: var(--adx-text);
+      }
+      .walk-in-form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .walk-in-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 600px) {
+        .walk-in-form-row { grid-template-columns: 1fr; }
+      }
+      .walk-in-modal-buttons {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1.5rem;
+      }
+      .walk-in-modal-buttons button {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+      .walk-in-modal-buttons .btn-primary {
+        background: var(--accent-dark);
+        color: #fff;
+      }
+      .walk-in-modal-buttons .btn-primary:hover {
+        filter: brightness(1.1);
+      }
+      .walk-in-modal-buttons .btn-secondary {
+        background: rgba(15,34,72,0.08);
+        color: var(--accent-dark);
+      }
+      .walk-in-modal-buttons .btn-secondary:hover {
+        background: rgba(15,34,72,0.12);
+      }
+      body[data-theme="dark"] .walk-in-modal-buttons .btn-secondary {
+        background: rgba(255,255,255,0.1);
+        color: #f3f7ff;
+      }
+      .walk-in-note {
+        background: rgba(43,108,176,0.08);
+        border-left: 4px solid var(--cert-accent-dark);
+        padding: 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+      }
+      body[data-theme="dark"] .walk-in-note {
+        background: rgba(43,108,176,0.15);
+        color: var(--adx-text);
+      }
+      .walk-in-loading {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+      }
+      .walk-in-loading.is-active {
+        display: block;
+      }
+      .walk-in-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(15,34,72,0.2);
+        border-top-color: var(--accent-dark);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      body[data-theme="dark"] .walk-in-spinner {
+        border-color: rgba(255,255,255,0.2);
+        border-top-color: #f3f7ff;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+</style>
+  </head>
+  <body data-page="manage-courses">
+    <div class="adx-shell" id="adx-shell">
+      <div class="adx-backdrop" id="adx-backdrop"></div>
+
+      <!-- ============ Sidebar ============ -->
+      <aside class="adx-sidebar">
+        <a class="adx-brand" href="index.html" style="text-decoration:none;color:#fff;">
+          <img src="bhflogo.jpg" alt="BHF logo" />
+          <span class="adx-brand-text">
+            <strong>BHF</strong>
+            <span id="adx-brand-sub">TRAINING &amp; CERTIFICATE</span>
+          </span>
+        </a>
+        <nav class="adx-nav" aria-label="Admin sections">
+          <a href="admin.html" id="adx-nav-dashboard"><span class="adx-nav-icon">📊</span> Dashboard</a>
+          <a href="manage-users.html"><span class="adx-nav-icon">👥</span> User Management</a>
+          <a href="manage-instructors.html"><span class="adx-nav-icon">👩‍🏫</span> Instructor Management</a>
+          <a href="manage-courses.html" class="is-active"><span class="adx-nav-icon">📘</span> Program &amp; Course Management</a>
+          <a href="quiz-management.html"><span class="adx-nav-icon">📝</span> Quiz Management</a>
+          <a href="certificates.html"><span class="adx-nav-icon">🏆</span> Certificates</a>
+          <a href="reports-analytics.html"><span class="adx-nav-icon">📈</span> Reports &amp; Analytics</a>
+          <a href="calendar.html"><span class="adx-nav-icon">📅</span> Calendar</a>
+          <a href="index.html"><span class="adx-nav-icon">🏠</span> Browse Home</a>
+          <div class="adx-nav-sub">
+            <a href="login.html?from=admin"><span class="adx-nav-icon">🔐</span> Login Page</a>
+            <a href="signup.html?from=admin"><span class="adx-nav-icon">📝</span> Create Account</a>
+            <a href="#" id="open-walkin-modal"><span class="adx-nav-icon">🧑‍🎓</span> Walk-in Registration</a>
+          </div>
+        </nav>
+        <div class="adx-sidebar-footer">
+          <a href="login.html" id="nav-auth-link" class="login-link" style="display:none;"><span class="adx-nav-icon">🔑</span> Login</a>
+          <a href="login.html" id="logout-button"><span class="adx-nav-icon">🚪</span> Logout</a>
+        </div>
+      </aside>
+
+      <!-- ============ Main column ============ -->
+      <div class="adx-main">
+        <header class="adx-topbar">
+          <div class="adx-topbar-left">
+            <button class="adx-hamburger" id="adx-hamburger" type="button" aria-label="Toggle menu">☰</button>
+            <h1>Program &amp; Course Management</h1>
+          </div>
+          <div class="adx-topbar-right">
+            <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙 Dark mode</button>
+            <a href="admin.html#adx-notifications" class="adx-bell" aria-label="Notifications" id="adx-bell-link">
+              🔔
+              <span class="adx-bell-count" id="adx-bell-count">0</span>
+            </a>
+            <div class="adx-profile">
+              <div class="adx-profile-avatar" id="adx-profile-avatar">A</div>
+              <div>
+                <p class="adx-profile-name" id="adx-profile-name">Admin</p>
+                <p class="adx-profile-role" id="adx-profile-role">Administrator</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="adx-content">
+          <p class="adx-breadcrumb"><a href="admin.html" id="adx-breadcrumb-dashboard">Dashboard</a> &nbsp;›&nbsp; Program &amp; Course Management</p>
+
+          <div class="adx-page-head">
+            <div>
+              <h2>Program &amp; Course Management</h2>
+              <p>Manage program categories and all training courses, modules, quizzes and course approvals.</p>
+            </div>
+            <div style="display:flex; gap:0.6rem;">
+              <button class="btn btn-secondary" type="button" id="cm-my-uploads-btn" title="Show only the courses you've uploaded as an admin">👤 My Uploads</button>
+              <a class="btn btn-primary" href="add-course.html">+ Add New Course</a>
+            </div>
+          </div>
+
+          <!-- ============ Stat cards ============ -->
+          <div class="adx-stats-grid">
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">📘</div></div>
+              <div class="adx-stat-value" id="cm-stat-total">0</div>
+              <div class="adx-stat-label">Total Courses</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(43,168,74,0.14); color:#2BA84A;">✅</div></div>
+              <div class="adx-stat-value" id="cm-stat-published">0</div>
+              <div class="adx-stat-label">Published Courses</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(255,159,10,0.16); color:#b3720a;">⏳</div></div>
+              <div class="adx-stat-value" id="cm-stat-pending">0</div>
+              <div class="adx-stat-label">Pending Approval</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(124,77,255,0.14); color:#7C4DFF;">📄</div></div>
+              <div class="adx-stat-value" id="cm-stat-draft">0</div>
+              <div class="adx-stat-label">Draft Courses</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">👩‍🏫</div></div>
+              <div class="adx-stat-value" id="cm-stat-instructors">0</div>
+              <div class="adx-stat-label">Active Instructors</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top"><div class="adx-stat-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">🎓</div></div>
+              <div class="adx-stat-value" id="cm-stat-enrollments">0</div>
+              <div class="adx-stat-label">Total Enrollments</div>
+            </div>
+          </div>
+
+          <!-- ============ Filter toolbar ============ -->
+          <div class="adx-card cm-toolbar-card">
+            <div class="cm-toolbar-grid">
+              <div class="cm-field cm-search-wrap">
+                <label for="cm-search">Search</label>
+                <input id="cm-search" type="text" placeholder="Search courses by title or keyword…" />
+                <span>🔍</span>
+              </div>
+              <div class="cm-field">
+                <label for="cm-category">Category</label>
+                <select id="cm-category"><option value="">All Categories</option></select>
+              </div>
+              <div class="cm-field">
+                <label for="cm-instructor">Instructor</label>
+                <select id="cm-instructor"><option value="">All Instructors</option></select>
+              </div>
+              <div class="cm-field">
+                <label for="cm-status">Status</label>
+                <select id="cm-status">
+                  <option value="">All Status</option>
+                  <option value="published">Published</option>
+                  <option value="pending">Pending</option>
+                  <option value="draft">Draft</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- ============ Main layout: All Courses table ============ -->
+          <div class="adx-card cm-table-card">
+            <div class="adx-card-head">
+              <div><h3 style="margin-bottom:0;">All Courses</h3></div>
+              <div style="display:flex; gap:0.5rem;">
+                <button class="btn btn-secondary" id="cm-export-csv" type="button">⬇ Export CSV</button>
+                <button class="btn btn-secondary" id="cm-export-pdf" type="button">🖨 Export PDF</button>
+              </div>
+            </div>
+
+            <div class="adx-table-wrap">
+              <table class="adx-table" id="cm-course-table">
+                <thead>
+                  <tr>
+                    <th>Course</th>
+                    <th>Instructor</th>
+                    <th>Category</th>
+                    <th>Students</th>
+                    <th>Modules</th>
+                    <th>Status</th>
+                    <th>Last Updated</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="cm-course-tbody">
+                  <tr><td colspan="8" class="adx-empty">Loading courses…</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="cm-pagination">
+              <span id="cm-page-summary">Showing 0 of 0 courses</span>
+              <div class="cm-page-btns" id="cm-page-btns"></div>
+              <div class="cm-rows-per-page">
+                Rows per page:
+                <select id="cm-rows-per-page">
+                  <option value="6">6</option>
+                  <option value="10" selected>10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Delete course modal ============
+         Shown instead of a plain window.confirm() when deleting a course,
+         so the admin can choose whether the course's program category
+         should be removed too, or kept (e.g. other courses still use it). -->
+    <div id="cm-delete-modal" class="cm-modal-overlay" hidden>
+      <div class="cm-modal" role="dialog" aria-modal="true" aria-labelledby="cm-delete-modal-title">
+        <h3 id="cm-delete-modal-title">Delete course</h3>
+        <p id="cm-delete-modal-body" class="cm-modal-body">Are you sure you want to delete this course?</p>
+        <div class="cm-modal-actions">
+          <button type="button" class="btn btn-secondary" id="cm-delete-modal-cancel">Cancel</button>
+          <button type="button" class="btn btn-secondary" id="cm-delete-modal-course-only">Delete course only</button>
+          <button type="button" class="btn btn-primary cm-modal-danger" id="cm-delete-modal-course-category" hidden>Delete course &amp; category</button>
+        </div>
+      </div>
+    </div>
+
+        <!-- ============ Walk-in Registration Modal ============ -->
+    <div id="walk-in-modal" class="walk-in-modal">
+      <div class="walk-in-modal-content">
+        <h2>📝 Walk-in Student Registration</h2>
+        
+        <div class="walk-in-note">
+          <strong>Note:</strong> A temporary password will be generated and sent to the student's email along with login credentials and certificate information.
+        </div>
+
+        <form id="walk-in-form" style="display: none;">
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-first-name">First Name *</label>
+              <input type="text" id="walk-in-first-name" placeholder="e.g., John" required />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-last-name">Last Name *</label>
+              <input type="text" id="walk-in-last-name" placeholder="e.g., Doe" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-email">Email Address *</label>
+            <input type="email" id="walk-in-email" placeholder="student@example.com" required />
+          </div>
+
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-phone">Phone Number</label>
+              <input type="tel" id="walk-in-phone" placeholder="+1 (555) 000-0000" />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-date">Registration Date *</label>
+              <input type="date" id="walk-in-date" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-course">Enroll in Course</label>
+            <select id="walk-in-course">
+              <option value="">-- Select a course (optional) --</option>
+            </select>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-notes">Additional Notes</label>
+            <textarea id="walk-in-notes" placeholder="Any additional information about the student..."></textarea>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label>
+              <input type="checkbox" id="walk-in-send-email" checked />
+              Send login credentials email to student
+            </label>
+          </div>
+
+          <div class="walk-in-modal-buttons">
+            <button type="button" class="btn-secondary" id="close-walkin-modal">Cancel</button>
+            <button type="submit" class="btn-primary">Create Account</button>
+          </div>
+        </form>
+
+        <div id="walk-in-loading" class="walk-in-loading">
+          <div class="walk-in-spinner"></div>
+          <p style="margin-top: 0.8rem; color: var(--muted);">Creating student account...</p>
+        </div>
+
+        <div id="walk-in-success" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+            <h3 style="margin: 0 0 0.5rem; color: #2BA84A;">Student Account Created!</h3>
+            <p id="walk-in-success-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="close-walkin-success" class="btn-primary" style="width: 100%; padding: 0.7rem;">Close</button>
+          </div>
+        </div>
+
+        <div id="walk-in-error" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: #E4483F;">❌</div>
+            <h3 style="margin: 0 0 0.5rem; color: #E4483F;">Registration Failed</h3>
+            <p id="walk-in-error-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="retry-walkin" class="btn-primary" style="width: 100%; padding: 0.7rem;">Try Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- script.js manages auth/session (login pill, logout button) -->
+    <script type="module" src="script.js"></script>
+    <script>
+      if (typeof updateHeaderAuthLink === 'function') { updateHeaderAuthLink(); }
+      // Mobile sidebar toggle
+      const adxShell = document.getElementById('adx-shell');
+      const adxHamburger = document.getElementById('adx-hamburger');
+      const adxBackdrop = document.getElementById('adx-backdrop');
+      adxHamburger?.addEventListener('click', () => adxShell.classList.toggle('adx-sidebar-open'));
+      adxBackdrop?.addEventListener('click', () => adxShell.classList.remove('adx-sidebar-open'));
+    </script>
+
+    <!-- This page's own module: guards the route, pulls live Firestore data,
+         and renders the stats, filters, table, and side widgets. -->
+    <script type="module">
+      import { db } from "./firebase-init.js";
+      import {
+        collection, getDocs, doc, updateDoc, deleteDoc, onSnapshot
+      } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+      /* ---------- Role-aware "Super Admin" branding ----------
+         This page is shared between admin.html and superadmin.html.
+         When it's opened by/for a super admin, swap the sidebar brand
+         label, Dashboard link, notification bell, and profile block
+         over to the Super Admin look instead of the default Admin one,
+         so the top nav reflects who's actually signed in.
+
+         Applied in two passes:
+         1) Synchronously, right away, if the link we arrived on already
+            says ?from=superadmin — this is the normal case (clicked from
+            the Super Admin sidebar) and needs no waiting, so there's no
+            flash of the default Admin look before this runs.
+         2) After auth is ready, as a fallback for direct loads/refreshes
+            that don't carry the query param, based on the real role. */
+      const applySuperAdminBranding = () => {
+        const dashboardHref = "superadmin.html";
+        document.querySelector(".adx-sidebar")?.classList.add("is-superadmin");
+        const brandSub = document.getElementById("adx-brand-sub");
+        if (brandSub) brandSub.textContent = "SUPER ADMIN";
+        const navDash = document.getElementById("adx-nav-dashboard");
+        if (navDash) {
+          navDash.href = dashboardHref;
+          navDash.innerHTML = '<span class="adx-nav-icon">👑</span> Dashboard';
+        }
+        const breadcrumbDash = document.getElementById("adx-breadcrumb-dashboard");
+        if (breadcrumbDash) breadcrumbDash.href = dashboardHref;
+        const bellLink = document.getElementById("adx-bell-link");
+        if (bellLink) bellLink.href = `${dashboardHref}#adx-notifications`;
+        const profileAvatar = document.getElementById("adx-profile-avatar");
+        const profileName = document.getElementById("adx-profile-name");
+        const profileRole = document.getElementById("adx-profile-role");
+        if (profileAvatar) profileAvatar.textContent = "S";
+        if (profileName) profileName.textContent = "Super Admin";
+        if (profileRole) profileRole.textContent = "Master Administrator";
+      };
+
+      const cameFromSuperAdmin = new URLSearchParams(window.location.search).get("from") === "superadmin";
+      if (cameFromSuperAdmin) applySuperAdminBranding();
+
+      /* ---------- Route guard: admins only ---------- */
+      const isLocalPreview =
+        location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+      const currentAuthForBranding = (window.getAuth && window.getAuth()) || null;
+      if (!cameFromSuperAdmin && currentAuthForBranding?.role === "superadmin") {
+        applySuperAdminBranding();
+      }
+
+      if (window.authReadyPromise) await window.authReadyPromise;
+
+      if (!isLocalPreview) {
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+          window.location.href = "login.html";
+        } else if (!window.isAdmin || !window.isAdmin()) {
+          window.location.href = "dashboard.html";
+        }
+      }
+
+      if (!cameFromSuperAdmin) {
+        const currentAuthForBrandingAfter = (window.getAuth && window.getAuth()) || null;
+        if (currentAuthForBrandingAfter?.role === "superadmin") applySuperAdminBranding();
+      }
+
+      /* ---------- Helpers ---------- */
+      const escapeHtml = (str) =>
+        String(str ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+      const fetchCollection = async (name) => {
+        try {
+          const snapshot = await getDocs(collection(db, name));
+          return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        } catch (error) {
+          console.error(`Failed to load "${name}" from Firestore`, error);
+          return [];
+        }
+      };
+
+      const initials = (name) => {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) return "?";
+        return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+      };
+
+      const timeAgo = (isoString) => {
+        if (!isoString) return "—";
+        const then = new Date(isoString).getTime();
+        if (Number.isNaN(then)) return "—";
+        const diffMs = Date.now() - then;
+        const minutes = Math.floor(diffMs / 60000);
+        if (minutes < 1) return "just now";
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days}d ago`;
+        return new Date(isoString).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      };
+
+      const fmtDateTime = (iso) => iso ? new Date(iso).toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+
+
+      /* ---------- Load all data in parallel ----------
+         `courses` and `categoriesRaw` are `let` (not `const`) because a
+         realtime listener further down keeps reassigning them whenever the
+         "courses"/"categories" collections change in Firestore — e.g. when
+         an instructor publishes a new course from add-course.html while an
+         admin already has this page open. Previously this page only ever
+         did a single one-time getDocs() read on load, so a course
+         published by an instructor (or even by the admin themself, from a
+         different tab) would not show up here until the page was manually
+         reloaded. */
+      let [courses, enrollments, categoriesRaw, instructors, notifications] = await Promise.all([
+        fetchCollection("courses"),
+        fetchCollection("enrollments"),
+        fetchCollection("categories"),
+        fetchCollection("instructors"),
+        fetchCollection("notifications")
+      ]);
+
+      // Enrollment docs are keyed loosely (email + course), and a
+      // long-standing bug let repeat clicks on "Enroll Now" write a fresh
+      // duplicate document each time instead of reusing the existing one.
+      // Counting raw documents therefore overcounts real enrolled students.
+      // Dedupe by (email, course) here so every count on this page reflects
+      // unique enrollments, regardless of how many duplicate rows exist in
+      // Firestore from before the write-side fix.
+      const uniqueEnrollmentKey = (e) => `${(e.email || "").toLowerCase()}|${e.course || ""}`;
+      const uniqueEnrollments = () => {
+        const seen = new Set();
+        const result = [];
+        for (const e of enrollments) {
+          const key = uniqueEnrollmentKey(e);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          result.push(e);
+        }
+        return result;
+      };
+      const enrollCountFor = (course) => uniqueEnrollments().filter((e) => e.course === course.title).length;
+      const moduleCountFor = (course) => Array.isArray(course.modules) ? course.modules.length : 0;
+      const statusOf = (course) => (course.status || "draft").toLowerCase();
+      // A course with no "active" field at all is treated as active (this
+      // matches the same default used by the student-facing catalog in
+      // script.js's mergeCoursesWithSaved, so a course hidden here is
+      // exactly the set of courses hidden from students under Program
+      // Categories, and vice versa).
+      const isActiveOf = (course) => course.active !== false;
+      // Instructors always get tagged with their uid on courses they create
+      // (see add-course.html / script.js's course-save handler); courses
+      // created by an admin never get an instructorId at all. That absence
+      // is the only signal we have to tell the two apart, since an admin
+      // account has no per-user "instructor" doc of its own.
+      const uploaderTypeOf = (course) => (course.instructorId ? "instructor" : "admin");
+      const uploaderNameOf = (course) =>
+        course.instructorId ? (course.instructorName || course.instructor || "Unassigned") : "Admin";
+
+      /* ---------- Stat cards ---------- */
+      const updateStatCards = () => {
+        document.getElementById("cm-stat-total").textContent = courses.length;
+        document.getElementById("cm-stat-published").textContent = courses.filter((c) => statusOf(c) === "published").length;
+        document.getElementById("cm-stat-pending").textContent = courses.filter((c) => statusOf(c) === "pending").length;
+        document.getElementById("cm-stat-draft").textContent = courses.filter((c) => statusOf(c) === "draft").length;
+        document.getElementById("cm-stat-instructors").textContent = instructors.filter((i) => i.active !== false).length;
+        document.getElementById("cm-stat-enrollments").textContent = uniqueEnrollments().length;
+      };
+      updateStatCards();
+
+      /* ---------- Notification bell ---------- */
+      const unreadCount = notifications.filter((n) => !n.read).length;
+      const bellCountEl = document.getElementById("adx-bell-count");
+      if (bellCountEl) bellCountEl.textContent = unreadCount;
+
+      /* ---------- Populate filter dropdowns ----------
+         Rebuilt (not just appended to) each time so a live update doesn't
+         pile up duplicate <option> entries, and the visitor's current
+         filter selection is preserved if it's still valid afterward. */
+      const cmCategory = document.getElementById("cm-category");
+      const cmInstructor = document.getElementById("cm-instructor");
+      const populateFilterDropdowns = () => {
+        const previousCategory = cmCategory.value;
+        const categoryNames = Array.from(new Set([
+          ...courses.map((c) => c.category).filter(Boolean),
+          ...categoriesRaw.map((c) => c.name).filter(Boolean)
+        ])).sort();
+        cmCategory.innerHTML = '<option value="">All Categories</option>' +
+          categoryNames.map((cat) => `<option value="${escapeHtml(cat)}">${escapeHtml(cat)}</option>`).join("");
+        if (categoryNames.includes(previousCategory)) cmCategory.value = previousCategory;
+
+        const previousInstructor = cmInstructor.value;
+        const instructorNames = Array.from(new Set(
+          courses.map((c) => uploaderNameOf(c)).filter(Boolean)
+        )).sort();
+        cmInstructor.innerHTML = '<option value="">All Instructors</option>' +
+          instructorNames.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+        if (instructorNames.includes(previousInstructor)) cmInstructor.value = previousInstructor;
+      };
+      populateFilterDropdowns();
+
+      /* ---------- Table rendering with pagination ---------- */
+      const tbody = document.getElementById("cm-course-tbody");
+      const pageSummary = document.getElementById("cm-page-summary");
+      const pageBtns = document.getElementById("cm-page-btns");
+      const rowsPerPageSelect = document.getElementById("cm-rows-per-page");
+
+      // Newest-first by default so a course just uploaded by an instructor
+      // or admin always lands on page 1 of the table, instead of being
+      // buried on a later page under "All Instructors" until a narrower
+      // filter happens to shrink the list enough to reveal it.
+      const byNewestFirst = (a, b) =>
+        new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0);
+
+      let filteredCourses = [...courses].sort(byNewestFirst);
+      let currentPage = 1;
+
+      const statusPillClass = (status) => ({
+        published: "is-ok", pending: "is-progress", draft: "is-muted", rejected: "is-bad"
+      }[status] || "is-muted");
+
+      const renderTable = () => {
+        const rowsPerPage = parseInt(rowsPerPageSelect.value, 10) || 10;
+        const totalPages = Math.max(1, Math.ceil(filteredCourses.length / rowsPerPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+
+        const start = (currentPage - 1) * rowsPerPage;
+        const pageItems = filteredCourses.slice(start, start + rowsPerPage);
+
+        if (!pageItems.length) {
+          tbody.innerHTML = '<tr><td colspan="8" class="adx-empty">No courses found.</td></tr>';
+        } else {
+          tbody.innerHTML = pageItems.map((course) => {
+            const status = statusOf(course);
+            const uploaderName = uploaderNameOf(course);
+            const uploaderType = uploaderTypeOf(course);
+            const active = isActiveOf(course);
+            return `<tr class="${active ? "" : "cm-row-inactive"}">
+              <td>
+                <div class="cm-course-cell">
+                  <div class="cm-course-thumb"></div>
+                  <div>
+                    <p class="cm-course-title">${escapeHtml(course.title || "Untitled course")}</p>
+                    <p class="cm-course-sub">${escapeHtml((course.description || "No description provided.").slice(0, 60))}${(course.description || "").length > 60 ? "…" : ""}</p>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <div class="cm-instructor-cell">
+                  <div class="cm-avatar">${initials(uploaderName)}</div>
+                  <div>
+                    <p class="cm-instructor-name">${escapeHtml(uploaderName)}</p>
+                    <span class="cm-uploader-tag cm-uploader-tag-${uploaderType}">${uploaderType === "admin" ? "Admin" : "Instructor"}</span>
+                  </div>
+                </div>
+              </td>
+              <td>${course.category ? `<span class="cm-cat-chip">${escapeHtml(course.category)}</span>` : "—"}</td>
+              <td>${enrollCountFor(course)}</td>
+              <td>${moduleCountFor(course)}</td>
+              <td>
+                <span class="adx-status-pill ${statusPillClass(status)}">${escapeHtml(status)}</span>
+                ${active ? "" : '<span class="adx-status-pill is-bad cm-inactive-pill">inactive</span>'}
+              </td>
+              <td>${fmtDateTime(course.updatedAt || course.createdAt)}</td>
+              <td>
+                <div class="cm-actions-cell">
+                  <a class="cm-icon-btn" title="Preview" href="course-detail.html?course=${encodeURIComponent(course.title || "")}">👁️</a>
+                  <a class="cm-icon-btn" title="Edit" href="add-course.html?edit=${encodeURIComponent(course.title || "")}">✏️</a>
+                  ${status === "pending" ? `
+                    <button class="cm-icon-btn is-ok" title="Approve" data-approve="${course.id}">✓</button>
+                    <button class="cm-icon-btn is-danger" title="Reject" data-reject="${course.id}">✕</button>
+                  ` : ""}
+                  <button class="cm-icon-btn ${active ? "is-danger" : "is-ok"}" title="${active ? "Deactivate (hide from Program Categories)" : "Activate (show in Program Categories)"}" data-toggle-active="${course.id}">${active ? "⏸️" : "▶️"}</button>
+                  <button class="cm-icon-btn is-danger" title="Delete" data-delete="${course.id}">🗑️</button>
+                </div>
+              </td>
+            </tr>`;
+          }).join("");
+        }
+
+        pageSummary.textContent = filteredCourses.length
+          ? `Showing ${start + 1} to ${Math.min(start + rowsPerPage, filteredCourses.length)} of ${filteredCourses.length} courses`
+          : "Showing 0 of 0 courses";
+
+        pageBtns.innerHTML = "";
+        const prevBtn = document.createElement("button");
+        prevBtn.className = "cm-page-btn"; prevBtn.textContent = "‹"; prevBtn.disabled = currentPage === 1;
+        prevBtn.addEventListener("click", () => { currentPage--; renderTable(); });
+        pageBtns.appendChild(prevBtn);
+
+        const maxButtons = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+        startPage = Math.max(1, endPage - maxButtons + 1);
+        for (let p = startPage; p <= endPage; p++) {
+          const btn = document.createElement("button");
+          btn.className = "cm-page-btn" + (p === currentPage ? " is-active" : "");
+          btn.textContent = p;
+          btn.addEventListener("click", () => { currentPage = p; renderTable(); });
+          pageBtns.appendChild(btn);
+        }
+
+        const nextBtn = document.createElement("button");
+        nextBtn.className = "cm-page-btn"; nextBtn.textContent = "›"; nextBtn.disabled = currentPage === totalPages;
+        nextBtn.addEventListener("click", () => { currentPage++; renderTable(); });
+        pageBtns.appendChild(nextBtn);
+
+        tbody.querySelectorAll("[data-approve]").forEach((btn) => {
+          btn.addEventListener("click", () => setCourseStatus(btn.getAttribute("data-approve"), "published"));
+        });
+        tbody.querySelectorAll("[data-reject]").forEach((btn) => {
+          btn.addEventListener("click", () => setCourseStatus(btn.getAttribute("data-reject"), "rejected"));
+        });
+        tbody.querySelectorAll("[data-delete]").forEach((btn) => {
+          btn.addEventListener("click", () => deleteCourse(btn.getAttribute("data-delete")));
+        });
+        tbody.querySelectorAll("[data-toggle-active]").forEach((btn) => {
+          btn.addEventListener("click", () => toggleCourseActive(btn.getAttribute("data-toggle-active")));
+        });
+      };
+
+      const applyFilters = () => {
+        const q = (document.getElementById("cm-search").value || "").toLowerCase();
+        const cat = (cmCategory.value || "").toLowerCase();
+        const instr = (cmInstructor.value || "").toLowerCase();
+        const st = (document.getElementById("cm-status").value || "").toLowerCase();
+
+        filteredCourses = courses.filter((c) => {
+          if (q && !((c.title || "").toLowerCase().includes(q) || (c.description || "").toLowerCase().includes(q))) return false;
+          if (cat && (c.category || "").toLowerCase() !== cat) return false;
+          if (instr && uploaderNameOf(c).toLowerCase() !== instr) return false;
+          if (st && statusOf(c) !== st) return false;
+          return true;
+        }).sort(byNewestFirst);
+        currentPage = 1;
+        renderTable();
+      };
+
+      ["cm-search"].forEach((id) => document.getElementById(id).addEventListener("input", applyFilters));
+      ["cm-category", "cm-instructor", "cm-status"].forEach((id) => document.getElementById(id).addEventListener("change", applyFilters));
+      rowsPerPageSelect.addEventListener("change", () => { currentPage = 1; renderTable(); });
+
+      /* ---------- "My Uploads" shortcut ----------
+         Courses created by an admin (rather than an instructor) never get
+         an instructorId, so uploaderNameOf() labels all of them "Admin"
+         (see uploaderTypeOf/uploaderNameOf above). This button is just a
+         one-click shortcut for the equivalent manual filter: set the
+         existing Instructor dropdown to "Admin" and re-apply. Clicking it
+         again (once it's active) clears the filter back to All Instructors,
+         so it also doubles as an on/off toggle. */
+      const myUploadsBtn = document.getElementById("cm-my-uploads-btn");
+      if (myUploadsBtn) {
+        myUploadsBtn.addEventListener("click", () => {
+          const isActive = myUploadsBtn.classList.contains("is-active");
+          if (isActive) {
+            cmInstructor.value = "";
+            myUploadsBtn.classList.remove("is-active");
+          } else {
+            // "Admin" only appears as an option once at least one
+            // admin-uploaded course exists; guard against it being absent.
+            const hasAdminOption = Array.from(cmInstructor.options).some((opt) => opt.value === "Admin");
+            if (hasAdminOption) {
+              cmInstructor.value = "Admin";
+              myUploadsBtn.classList.add("is-active");
+            } else if (typeof window.showToast === "function") {
+              window.showToast("You haven't uploaded any courses yet.", "info");
+            }
+          }
+          applyFilters();
+        });
+      }
+
+      /* ---------- Approve / Reject a pending course ---------- */
+      async function setCourseStatus(courseId, newStatus) {
+        try {
+          await updateDoc(doc(db, "courses", courseId), { status: newStatus, updatedAt: new Date().toISOString() });
+          const course = courses.find((c) => c.id === courseId);
+          if (course) course.status = newStatus;
+          document.getElementById("cm-stat-published").textContent = courses.filter((c) => statusOf(c) === "published").length;
+          document.getElementById("cm-stat-pending").textContent = courses.filter((c) => statusOf(c) === "pending").length;
+          renderTable();
+          if (typeof window.showToast === "function") {
+            window.showToast(newStatus === "published" ? "Course approved and published." : "Course rejected.", newStatus === "published" ? "success" : "error");
+          }
+        } catch (error) {
+          console.error("Failed to update course status", error);
+          alert("Could not update the course status. Please try again.");
+        }
+      }
+      window.__cmSetCourseStatus = setCourseStatus;
+
+      /* ---------- Activate / Deactivate a course ----------
+         Sets the same "active" field that script.js's
+         mergeCoursesWithSaved() already checks (active !== false) when it
+         builds the catalog shown on programs.html. So deactivating here
+         hides the course from Program Categories for students immediately,
+         without touching its approval status (a course can be "published"
+         but temporarily deactivated, then reactivated later without
+         needing to go through approval again). */
+      async function toggleCourseActive(courseId) {
+        const course = courses.find((c) => c.id === courseId);
+        if (!course) return;
+        const nowActive = !isActiveOf(course);
+        try {
+          await updateDoc(doc(db, "courses", courseId), { active: nowActive, updatedAt: new Date().toISOString() });
+          course.active = nowActive;
+          course.updatedAt = new Date().toISOString();
+          renderTable();
+          if (typeof window.showToast === "function") {
+            window.showToast(
+              nowActive ? `${course.title || "Course"} is now active and visible in Program Categories.` : `${course.title || "Course"} is now deactivated and hidden from Program Categories.`,
+              nowActive ? "success" : "info"
+            );
+          }
+        } catch (error) {
+          console.error("Failed to toggle course active state", error);
+          alert("Could not update the course. Please try again.");
+        }
+      }
+      window.__cmToggleCourseActive = toggleCourseActive;
+
+      /* ---------- Delete a course permanently ----------
+         Deleting used to go straight through a single window.confirm().
+         Now it opens a modal so the admin can choose between removing
+         just the course, or removing the course AND its program category
+         (the "categories" collection entry that populates the Category
+         filter/dropdown here and on Add Course). Deleting the category
+         does NOT delete other courses that happen to share that category
+         name — it only removes the category itself from that list, same
+         as script.js's removeSavedCategory does elsewhere on the site. */
+      const deleteModal = document.getElementById("cm-delete-modal");
+      const deleteModalTitle = document.getElementById("cm-delete-modal-title");
+      const deleteModalBody = document.getElementById("cm-delete-modal-body");
+      const deleteModalCancelBtn = document.getElementById("cm-delete-modal-cancel");
+      const deleteModalCourseOnlyBtn = document.getElementById("cm-delete-modal-course-only");
+      const deleteModalCourseCategoryBtn = document.getElementById("cm-delete-modal-course-category");
+      let pendingDeleteCourseId = null;
+
+      const closeDeleteModal = () => {
+        deleteModal.hidden = true;
+        pendingDeleteCourseId = null;
+      };
+      deleteModalCancelBtn.addEventListener("click", closeDeleteModal);
+      deleteModal.addEventListener("click", (e) => { if (e.target === deleteModal) closeDeleteModal(); });
+
+      function deleteCourse(courseId) {
+        const course = courses.find((c) => c.id === courseId);
+        if (!course) return;
+        const title = course.title || "this course";
+        const category = (course.category || "").trim();
+        const siblingCount = category
+          ? courses.filter((c) => c.id !== courseId && (c.category || "").trim().toLowerCase() === category.toLowerCase()).length
+          : 0;
+
+        pendingDeleteCourseId = courseId;
+        deleteModalTitle.textContent = `Delete "${title}"?`;
+
+        if (!category) {
+          deleteModalBody.textContent = "This permanently removes the course, its modules, and its exam questions. This cannot be undone. This course has no program category assigned.";
+          deleteModalCourseCategoryBtn.hidden = true;
+        } else {
+          deleteModalBody.textContent = siblingCount > 0
+            ? `This permanently removes the course, its modules, and its exam questions. This cannot be undone. This course's program category is "${category}", which is still used by ${siblingCount} other course${siblingCount === 1 ? "" : "s"} — deleting the category will remove it from the Category list here and on Add Course, but those other courses will keep "${category}" as their category value.`
+            : `This permanently removes the course, its modules, and its exam questions. This cannot be undone. No other course uses the "${category}" program category, so you can optionally remove that category too.`;
+          deleteModalCourseCategoryBtn.hidden = false;
+          deleteModalCourseCategoryBtn.textContent = `Delete course & "${category}" category`;
+        }
+
+        deleteModal.hidden = false;
+      }
+      window.__cmDeleteCourse = deleteCourse;
+
+      /* Removes the course itself, updating local state + stat cards. */
+      async function performCourseDelete(courseId) {
+        await deleteDoc(doc(db, "courses", courseId));
+        const idx = courses.findIndex((c) => c.id === courseId);
+        if (idx !== -1) courses.splice(idx, 1);
+        filteredCourses = filteredCourses.filter((c) => c.id !== courseId);
+
+        document.getElementById("cm-stat-total").textContent = courses.length;
+        document.getElementById("cm-stat-published").textContent = courses.filter((c) => statusOf(c) === "published").length;
+        document.getElementById("cm-stat-pending").textContent = courses.filter((c) => statusOf(c) === "pending").length;
+        document.getElementById("cm-stat-draft").textContent = courses.filter((c) => statusOf(c) === "draft").length;
+        renderTable();
+      }
+
+      /* Removes the matching doc from the "categories" collection, if one
+         exists for this name. Case/whitespace-insensitive match, same as
+         the rest of this page's category handling. */
+      async function performCategoryDelete(categoryName) {
+        const normalized = categoryName.trim().toLowerCase();
+        const match = categoriesRaw.find((c) => (c.name || "").trim().toLowerCase() === normalized);
+        if (!match) return;
+        await deleteDoc(doc(db, "categories", match.id));
+        categoriesRaw = categoriesRaw.filter((c) => c.id !== match.id);
+        populateFilterDropdowns();
+      }
+
+      deleteModalCourseOnlyBtn.addEventListener("click", async () => {
+        const courseId = pendingDeleteCourseId;
+        const course = courses.find((c) => c.id === courseId);
+        const title = course?.title || "this course";
+        closeDeleteModal();
+        try {
+          await performCourseDelete(courseId);
+          if (typeof window.showToast === "function") window.showToast(`Deleted course: ${title}`, "success");
+        } catch (error) {
+          console.error("Failed to delete course", error);
+          alert("Could not delete the course. Please try again.");
+        }
+      });
+
+      deleteModalCourseCategoryBtn.addEventListener("click", async () => {
+        const courseId = pendingDeleteCourseId;
+        const course = courses.find((c) => c.id === courseId);
+        const title = course?.title || "this course";
+        const category = (course?.category || "").trim();
+        closeDeleteModal();
+        try {
+          await performCourseDelete(courseId);
+          if (category) await performCategoryDelete(category);
+          if (typeof window.showToast === "function") {
+            window.showToast(category ? `Deleted course "${title}" and category "${category}".` : `Deleted course: ${title}`, "success");
+          }
+        } catch (error) {
+          console.error("Failed to delete course/category", error);
+          alert("Could not complete the deletion. Please try again.");
+        }
+      });
+
+      /* ---------- Export CSV / PDF ---------- */
+      const toCsvValue = (val) => `"${String(val ?? "").replace(/"/g, '""')}"`;
+      const buildCsv = (list) => {
+        const header = ["Title", "Instructor", "Category", "Students", "Modules", "Status", "Last Updated"];
+        const rows = list.map((c) => [
+          c.title || "", c.instructorName || c.instructor || "", c.category || "",
+          enrollCountFor(c), moduleCountFor(c), statusOf(c), c.updatedAt || c.createdAt || ""
+        ]);
+        return [header, ...rows].map((r) => r.map(toCsvValue).join(",")).join("\n");
+      };
+      const downloadCsv = (list, filename) => {
+        const blob = new Blob([buildCsv(list)], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      };
+      document.getElementById("cm-export-csv").addEventListener("click", () => downloadCsv(filteredCourses, "courses-export.csv"));
+      document.getElementById("cm-export-pdf").addEventListener("click", () => window.print());
+      // Guarded with optional chaining: this button doesn't exist in the
+      // current markup. Calling .addEventListener directly on the
+      // getElementById result threw an uncaught TypeError when the element
+      // was missing, which silently aborted the rest of this script — that
+      // is why the table below never got its first render (it stayed on
+      // "Loading courses…" until a filter change manually triggered
+      // renderTable()) and why the realtime onSnapshot listeners further
+      // down never got registered either.
+      document.getElementById("cm-export-courses-btn")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        downloadCsv(courses, "all-courses-export.csv");
+      });
+
+      /* ---------- Initial render ---------- */
+      renderTable();
+
+      /* ---------- Realtime updates ----------
+         Without this, a course an instructor (or the admin, from another
+         tab) publishes or edits only ever appears here after a manual page
+         reload, since everything above ran once off a single getDocs()
+         read. onSnapshot keeps pushing the current state of both
+         collections for as long as this page stays open, so newly
+         published/edited courses and newly added categories show up here
+         immediately, with no refresh required. */
+      onSnapshot(collection(db, "courses"), (snapshot) => {
+        courses = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        updateStatCards();
+        populateFilterDropdowns();
+        applyFilters();
+      }, (error) => console.error('Realtime courses listener failed', error));
+
+      onSnapshot(collection(db, "categories"), (snapshot) => {
+        categoriesRaw = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+        populateFilterDropdowns();
+      }, (error) => console.error('Realtime categories listener failed', error));
+          /* ---------- Walk-in Registration Modal ---------- */
+      const walkinModal = document.getElementById("walk-in-modal");
+      const openWalkinBtn = document.getElementById("open-walkin-modal");
+      const closeWalkinBtn = document.getElementById("close-walkin-modal");
+      const walkinForm = document.getElementById("walk-in-form");
+      const walkinLoading = document.getElementById("walk-in-loading");
+      const walkinSuccess = document.getElementById("walk-in-success");
+      const walkinError = document.getElementById("walk-in-error");
+
+      const walkinDateInput = document.getElementById("walk-in-date");
+      if (walkinDateInput) {
+        walkinDateInput.valueAsDate = new Date();
+      }
+
+      // Populate course dropdown (fetched independently so this modal
+      // works the same on every admin page, not just the dashboard)
+      const walkinCourseSelect = document.getElementById("walk-in-course");
+      if (walkinCourseSelect) {
+        getDocs(collection(db, "courses"))
+          .then((snapshot) => {
+            snapshot.docs.forEach((docSnap) => {
+              const c = docSnap.data();
+              const option = document.createElement("option");
+              option.value = c.title || "Untitled course";
+              option.textContent = c.title || "Untitled course";
+              walkinCourseSelect.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Failed to load courses for walk-in form", error);
+          });
+      }
+
+      const openWalkinModal = () => {
+        walkinModal.classList.add("is-open");
+        walkinForm.style.display = "block";
+        walkinLoading.classList.remove("is-active");
+        walkinSuccess.style.display = "none";
+        walkinError.style.display = "none";
+        walkinForm.reset();
+        if (walkinDateInput) walkinDateInput.valueAsDate = new Date();
+      };
+
+      const closeWalkinModal = () => {
+        walkinModal.classList.remove("is-open");
+      };
+
+      openWalkinBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openWalkinModal();
+      });
+      closeWalkinBtn?.addEventListener("click", closeWalkinModal);
+      document.getElementById("close-walkin-success")?.addEventListener("click", closeWalkinModal);
+      document.getElementById("retry-walkin")?.addEventListener("click", () => {
+        walkinForm.style.display = "block";
+        walkinError.style.display = "none";
+        walkinLoading.classList.remove("is-active");
+      });
+
+      walkinModal?.addEventListener("click", (e) => {
+        if (e.target === walkinModal) closeWalkinModal();
+      });
+
+      walkinForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const firstName = document.getElementById("walk-in-first-name")?.value.trim();
+        const lastName = document.getElementById("walk-in-last-name")?.value.trim();
+        const email = document.getElementById("walk-in-email")?.value.trim();
+        const phone = document.getElementById("walk-in-phone")?.value.trim() || "";
+        const enrollmentCourse = document.getElementById("walk-in-course")?.value || "";
+        const notes = document.getElementById("walk-in-notes")?.value.trim() || "";
+        const sendEmail = document.getElementById("walk-in-send-email")?.checked ?? true;
+
+        if (!firstName || !lastName || !email) {
+          alert("Please fill in first name, last name, and email.");
+          return;
+        }
+
+        walkinForm.style.display = "none";
+        walkinLoading.classList.add("is-active");
+
+        try {
+          const result = await window.createWalkinStudent({
+            firstName,
+            lastName,
+            email,
+            phone,
+            enrollmentCourse,
+            notes,
+            sendEmail
+          });
+
+          walkinLoading.classList.remove("is-active");
+          walkinSuccess.style.display = "block";
+
+          const successMsg = `
+            <strong>✓ ${result.fullName}</strong> registered successfully!<br/>
+            Email: ${result.email}<br/>
+            Certificate ID: ${result.certificateCode}<br/>
+            ${result.enrollmentCourse ? `Course: ${result.enrollmentCourse}` : ""}
+          `;
+          document.getElementById("walk-in-success-message").innerHTML = successMsg;
+
+          console.log("Walk-in Student Account Created:", result);
+          window.showToast?.(`Walk-in student ${result.fullName} registered successfully!`, "success");
+        } catch (error) {
+          console.error("Walk-in registration failed:", error);
+          walkinLoading.classList.remove("is-active");
+          walkinError.style.display = "block";
+          document.getElementById("walk-in-error-message").textContent = error.message || "Registration failed. Please try again.";
+          window.showToast?.(error.message || "Registration failed", "error");
+        }
+      });
+
+</script>
+  </body>
+</html>

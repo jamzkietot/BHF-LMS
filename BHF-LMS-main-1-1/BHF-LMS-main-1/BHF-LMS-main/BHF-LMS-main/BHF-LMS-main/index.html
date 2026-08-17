@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BHF Certification Academy</title>
+    <meta
+      name="description"
+      content="A certification-style training website inspired by BHF's polished brand and modern learning programs."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  </head>
+  <body data-page="home">
+    <!-- Header / Navigation -->
+    <header class="topbar">
+      <a class="brand" href="#home">
+        <img class="brand-logo" src="bhflogo.jpg" alt="BHF logo" />
+        <span class="brand-text-full">BHF Certification Academy</span>
+        <span class="brand-text-short">BHF</span>
+      </a>
+      <button id="nav-hamburger" class="nav-hamburger" type="button" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="nav-main-links">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav-links">
+        <div class="nav-main-links" id="nav-main-links">
+          <a href="index.html">Home</a>
+          <a href="programs.html">Programs</a>
+          <a href="#verify">Verify</a>
+        </div>
+        <div class="nav-account-links">
+          <button id="user-notifications-button" class="btn btn-secondary btn-notification" type="button" aria-label="Notifications" style="display:none;">🔔</button>
+          <a href="login.html" id="nav-auth-link" class="login-link">Login</a>
+          <a href="login.html" id="logout-button" class="btn btn-secondary" style="display:none;">Logout</a>
+          <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙</button>
+        </div>
+      </nav>
+    </header>
+
+    <main id="home">
+      <div id="certificate-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="certificate-modal-title">
+        <div class="dashboard-modal-card certificate-modal-card">
+          <button id="certificate-modal-close" class="dashboard-modal-close" type="button" aria-label="Close dialog">×</button>
+          <div class="certificate-modal-header">
+            <div class="certificate-modal-header-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><circle cx="11" cy="15" r="3"></circle><path d="m14.5 18 1.5 1.5"></path></svg>
+            </div>
+            <div class="certificate-modal-header-text">
+              <h3 id="certificate-modal-title">Certificate</h3>
+              <p class="certificate-modal-subtitle">View and manage your certificate of completion.</p>
+            </div>
+          </div>
+          <div id="certificate-modal-content">
+            <!-- Populated dynamically by the Verify tool -->
+          </div>
+        </div>
+      </div>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">🚀 ELEVATE YOUR CAREER</p>
+          <h1>Master in-demand skills. Earn credentials employers trust.</h1>
+          <p class="hero-subtitle">Industry-recognized certifications designed for busy professionals. Learn at your pace, prove your expertise, advance faster.</p>
+          <p class="hero-text">
+            From hospitality to technology, gain practical knowledge and verified credentials recognized by leading employers worldwide.
+          </p>
+          <p class="hero-welcome"></p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="programs.html">🎯 Start Learning Today</a>
+            <a class="btn btn-secondary" href="signup.html" id="hero-signup-btn">Create Free Account</a>
+            <a class="btn-link" href="#verify">↳ Or verify a certificate</a>
+          </div>
+        </div>
+        <div class="hero-card">
+          <div class="hero-card-media">
+            <img src="train.png" alt="Training session in a professional setting" />
+            <div class="hero-badge">Trusted by Employers</div>
+          </div>
+          <div class="hero-stats">
+            <div>
+              <strong data-count="50" data-suffix="+">0+</strong>
+              <span>Courses Available</span>
+            </div>
+            <div>
+              <strong data-count="10" data-suffix="k">0k</strong>
+              <span>Graduates</span>
+            </div>
+            <div>
+              <strong data-count="98" data-suffix="%">0%</strong>
+              <span>Success Rate</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- NEW: How It Works — quick 3-step overview -->
+      <section class="section how-it-works reveal">
+        <div class="section-heading">
+          <p class="eyebrow">🎓 YOUR PATH TO SUCCESS</p>
+          <h2>Get certified in 4 simple steps.</h2>
+          <p style="color: var(--muted); font-size: 1rem; margin-top: 0.5rem;">From sign-up to certification in as little as 4-8 weeks</p>
+        </div>
+        <div class="steps-grid">
+          <div class="step-card reveal">
+            <span class="step-number" style="background: var(--accent); color: white;">1</span>
+            <h3>Sign Up Free</h3>
+            <p>Create your account in 30 seconds. No credit card required.</p>
+          </div>
+          <div class="step-card reveal">
+            <span class="step-number" style="background: var(--cert-accent); color: white;">2</span>
+            <h3>Choose Your Program</h3>
+            <p>Select from 50+ professional courses aligned with your career goals.</p>
+          </div>
+          <div class="step-card reveal">
+            <span class="step-number" style="background: #2BA84A; color: white;">3</span>
+            <h3>Learn & Practice</h3>
+            <p>Complete interactive modules, real-world projects, and quizzes at your pace.</p>
+          </div>
+          <div class="step-card reveal">
+            <span class="step-number" style="background: #7C4DFF; color: white;">4</span>
+            <h3>Get Certified</h3>
+            <p>Pass your exam and earn a verified, shareable digital certificate.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Rest of your sections stay the same -->
+      <section class="section intro reveal" id="programs">
+        <div class="section-heading">
+          <p class="eyebrow">💼 FEATURED PROGRAMS</p>
+          <h2>Professional development for every career stage.</h2>
+          <p style="color: var(--muted); font-size: 1rem; margin-top: 0.5rem;">Our 4 most enrolled certification tracks</p>
+        </div>
+        <div class="cards-grid" id="home-programs-grid">
+          <!-- Populated dynamically by script.js: top 4 categories ranked by live enrollment count -->
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+          <a href="programs.html" class="btn btn-secondary">View All Programs →</a>
+        </div>
+      </section>
+
+      <!-- NEW: Testimonials — SAMPLE quotes, swap in real graduate feedback -->
+      <section class="section testimonials reveal">
+        <div class="section-heading">
+          <p class="eyebrow">⭐ SUCCESS STORIES</p>
+          <h2>See how our graduates are advancing their careers.</h2>
+          <p style="color: var(--muted); font-size: 1rem; margin-top: 0.5rem;">Real professionals. Real results. Real impact.</p>
+        </div>
+        <div class="testimonial-track">
+          <article class="testimonial-card reveal">
+            <p class="testimonial-quote">"The Hospitality Leadership track gave me practical tools I used the very next week at work. My team's guest satisfaction scores went up within a month."</p>
+            <div class="testimonial-author">
+              <img class="testimonial-avatar" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" alt="Alice Santos" />
+              <div>
+                <strong>Alice Santos</strong>
+                <span>Front Office Supervisor · Sample testimonial</span>
+              </div>
+            </div>
+          </article>
+          <article class="testimonial-card reveal">
+            <p class="testimonial-quote">"Clear modules, real-world case studies, and a certificate I could actually show employers. Operations Excellence was exactly what I needed."</p>
+            <div class="testimonial-author">
+              <img class="testimonial-avatar" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" alt="Marco Cruz" />
+              <div>
+                <strong>Marco Cruz</strong>
+                <span>Operations Coordinator · Sample testimonial</span>
+              </div>
+            </div>
+          </article>
+          <article class="testimonial-card reveal">
+            <p class="testimonial-quote">"I finished Customer Care while working full-time — the flexible pacing made it possible. Verifying my certificate online gave my manager instant confidence."</p>
+            <div class="testimonial-author">
+              <img class="testimonial-avatar" src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80" alt="Jana Reyes" />
+              <div>
+                <strong>Jana Reyes</strong>
+                <span>Guest Relations Lead · Sample testimonial</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section schedule-section reveal">
+        <div class="section-heading">
+          <p class="eyebrow">EXAM SCHEDULE</p>
+          <h2>Plan your certification milestones with confidence.</h2>
+        </div>
+        <div class="schedule-card" id="home-exam-schedule">
+          <p>Loading exam schedule…</p>
+        </div>
+      </section>
+
+      <!-- Verify a Certificate -->
+      <section class="verify-section" id="verify">
+        <div class="verify-container">
+          <div class="verify-content">
+            <p class="eyebrow">🔐 VERIFY CREDENTIALS</p>
+            <h2>Instant certificate verification for employers</h2>
+            <p class="verify-lead">Employers and managers can instantly verify the authenticity of any BHF certificate. Enter the certificate code below.</p>
+            <form id="verify-form">
+              <input
+                id="certificate-code"
+                name="certificate-code"
+                type="text"
+                placeholder="Enter certificate code"
+                title="Enter or paste your certificate code"
+                required
+                autocomplete="off"
+                inputmode="latin"
+              />
+              <button type="submit" class="btn btn-primary verify-btn">Verify Now</button>
+            </form>
+            <p id="verify-result" class="verify-result" aria-live="polite"></p>
+          </div>
+        </div>
+        <div id="verify-certificate-preview" class="verify-certificate-preview" hidden></div>
+      </section>
+
+    </main>
+
+    <footer class="footer" id="contact">
+      <div class="footer-grid">
+        <div class="footer-col footer-brand">
+          <img class="footer-logo" src="bhflogo.jpg" alt="BHF logo" />
+          <p class="footer-brand-name">BHF</p>
+          <p class="footer-brand-sub">Group of Companies</p>
+          <span class="footer-underline"></span>
+          <p class="footer-desc">Empowering employees through quality training, professional certification, and continuous learning.</p>
+        </div>
+
+        <div class="footer-col">
+          <span class="footer-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 10.5V16c0 1.1 2.7 2.5 6 2.5s6-1.4 6-2.5v-5.5"/><path d="M21 9v6"/><circle cx="21" cy="16.5" r="1"/></svg>
+          </span>
+          <h3>Our Platform</h3>
+          <span class="footer-underline"></span>
+          <p class="footer-desc">Your all-in-one platform for employee training, certification, and professional growth. Learn anytime, anywhere.</p>
+        </div>
+
+        <div class="footer-col">
+          <span class="footer-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="2.5" y="14" width="4" height="6" rx="1.5"/><rect x="17.5" y="14" width="4" height="6" rx="1.5"/><path d="M20 20a4 4 0 0 1-4 3h-2"/></svg>
+          </span>
+          <h3>Contact Us</h3>
+          <span class="footer-underline"></span>
+          <p class="footer-contact">
+            <a href="mailto:hrd.bhfbgo@gmail.com">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="m3.5 6.5 8.5 6 8.5-6"/></svg>
+              hrd.bhfbgo@gmail.com
+            </a>
+          </p>
+          <p class="footer-contact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4l1.5 4.5L7 10.5a12 12 0 0 0 6.5 6.5l1.5-2.5L20 16v4a1 1 0 0 1-1 1c-8.3 0-15-6.7-15-15a1 1 0 0 1 1-1Z"/></svg>
+            <a href="tel:+639177187582">0917 718 7582</a>
+          </p>
+          <p class="footer-contact">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.3"/></svg>
+            <a href="https://www.google.com/maps/place/217+Bonifacio+Residences/@16.4165544,120.5991646,17z/data=!3m1!4b1!4m6!3m5!1s0x3391a1f06a154c2f:0x6115f00fe12d79be!8m2!3d16.4165544!4d120.5991646!16s%2Fg%2F11rvlzsdjk?entry=ttu&g_ep=EgoyMDI2MDcyMS4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer">Barangay, 217 Upper Bonifacio St, Baguio, 2600 Benguet</a>
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <span class="footer-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.7 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.7-3.8-9S9.5 5.5 12 3Z"/></svg>
+          </span>
+          <h3>Follow Us</h3>
+          <span class="footer-underline"></span>
+          <div class="footer-social">
+            <a href="#" target="_blank" rel="noopener" aria-label="Facebook">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-7.6h2.6l.4-3h-3v-1.9c0-.87.24-1.46 1.5-1.46h1.6V4.35c-.28-.04-1.22-.12-2.32-.12-2.3 0-3.88 1.4-3.88 3.98v2.2H8.9v3h2.5V21h2.1Z"/></svg>
+            </a>
+            <a href="#" target="_blank" rel="noopener" aria-label="LinkedIn">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.94 8.5H4.1V20h2.84V8.5ZM5.52 4a1.64 1.64 0 1 0 0 3.28 1.64 1.64 0 0 0 0-3.28ZM20 20h-2.84v-5.9c0-1.4-.5-2.36-1.76-2.36-.96 0-1.53.65-1.78 1.27-.09.22-.11.53-.11.84V20H10.7s.04-9.86 0-10.88h2.83v1.54a2.8 2.8 0 0 1 2.55-1.4c1.86 0 3.26 1.22 3.26 3.83V20Z"/></svg>
+            </a>
+            <a href="#" target="_blank" rel="noopener" aria-label="YouTube">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.6 7.6a2.7 2.7 0 0 0-1.9-1.9C18 5.2 12 5.2 12 5.2s-6 0-7.7.5A2.7 2.7 0 0 0 2.4 7.6 28.3 28.3 0 0 0 2 12a28.3 28.3 0 0 0 .4 4.4 2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 0 0 1.9-1.9A28.3 28.3 0 0 0 22 12a28.3 28.3 0 0 0-.4-4.4ZM10 14.9V9.1L15.3 12 10 14.9Z"/></svg>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-bottom-content">
+          <p class="footer-copy">© 2026 BHF Group of Companies. All Rights Reserved.</p>
+        </div>
+        <span class="footer-legal-sep footer-bottom-sep">|</span>
+        <div class="footer-bottom-links">
+          <div class="footer-legal">
+            <a href="#">Privacy Policy</a>
+            <span class="footer-legal-sep">|</span>
+            <a href="#">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script type="module" src="script.js"></script>
+  </body>
+</html>

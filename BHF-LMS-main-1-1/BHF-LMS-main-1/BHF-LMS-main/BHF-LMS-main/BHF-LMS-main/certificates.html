@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Certificate Management | BHF Certification Academy</title>
+    <meta name="description" content="Manage issued certificates and upload course completion certificates for learners who passed." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <!-- Used to read the certificate ID straight off an uploaded certificate
+         file: pdf.js pulls the text layer out of text-based PDFs, and
+         Tesseract.js OCRs images (and scanned/flattened PDFs that have no
+         text layer). Both are loaded lazily-friendly via defer so they don't
+         block first paint of the page. -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" defer></script>
+    <style>
+      /* =========================================================
+         Admin Dashboard v2 — sidebar layout (shared with admin.html)
+         Scoped with the "adx-" prefix so nothing here collides with
+         the shared design system in style.css. Colors reuse the
+         existing CSS variables (--accent-dark, --accent, --cert-accent, etc).
+      ========================================================= */
+      * { box-sizing: border-box; }
+      body { background: var(--bg); font-family: 'Inter', sans-serif; }
+
+      .adx-shell { display: flex; min-height: 100vh; }
+
+      /* ---------- Sidebar ---------- */
+      .adx-sidebar {
+        width: 264px; flex-shrink: 0; background: var(--accent-dark); color: #fff;
+        display: flex; flex-direction: column; position: fixed; top: 0; left: 0; bottom: 0;
+        z-index: 40; transition: transform 0.25s ease;
+      }
+      .adx-sidebar.is-superadmin { background: linear-gradient(180deg, #0f1b2e 0%, #13233a 100%); }
+      .adx-sidebar.is-superadmin .adx-nav a.is-active { background: rgba(255,255,255,0.25); color: #fff; }
+      .adx-sidebar.is-superadmin .adx-nav a:hover { background: rgba(255,255,255,0.12); color: #fff; }
+      .adx-brand { display: flex; align-items: center; gap: 0.65rem; padding: 1.4rem 1.3rem; border-bottom: 1px solid rgba(255,255,255,0.08); }
+      .adx-brand img { width: 36px; height: 36px; border-radius: 10px; object-fit: cover; }
+      .adx-brand-text strong { display: block; font-size: 0.95rem; line-height: 1.2; }
+      .adx-brand-text span { font-size: 0.68rem; color: rgba(255,255,255,0.6); letter-spacing: 0.04em; }
+      .adx-nav { flex: 1; overflow-y: auto; padding: 0.85rem 0.75rem; display: flex; flex-direction: column; gap: 0.2rem; }
+      .adx-nav a {
+        display: flex; align-items: center; gap: 0.75rem; padding: 0.65rem 0.85rem; border-radius: 12px;
+        color: rgba(255,255,255,0.78); text-decoration: none; font-size: 0.88rem; font-weight: 600;
+        transition: background 0.15s ease, color 0.15s ease;
+      }
+      .adx-nav a .adx-nav-icon { font-size: 1.05rem; width: 22px; text-align: center; }
+      .adx-nav a:hover { background: rgba(255,255,255,0.08); color: #fff; }
+      .adx-nav a.is-active { background: var(--accent); color: var(--accent-dark); }
+      .adx-nav-sub { display: flex; flex-direction: column; gap: 0.15rem; margin: 0.2rem 0 0.35rem 1.1rem; }
+      .adx-nav-sub a { padding: 0.5rem 0.75rem; font-size: 0.78rem; color: rgba(255,255,255,0.72); }
+      .adx-sidebar-footer { padding: 0.85rem 1.3rem 1.3rem; border-top: 1px solid rgba(255,255,255,0.08); }
+      .adx-sidebar-footer a { display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.75); text-decoration: none; font-weight: 600; font-size: 0.88rem; padding: 0.5rem 0; }
+      .adx-sidebar-footer a:hover { color: #fff; }
+
+      /* ---------- Main column ---------- */
+      .adx-main { margin-left: 264px; flex: 1; min-width: 0; }
+      .adx-topbar {
+        position: sticky; top: 0; z-index: 30; background: #fff; border-bottom: 1px solid rgba(15,34,72,0.08);
+        display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.75rem;
+      }
+      .adx-topbar-left { display: flex; align-items: center; gap: 0.85rem; }
+      .adx-hamburger { display: none; background: none; border: none; font-size: 1.3rem; cursor: pointer; color: var(--accent-dark); }
+      .adx-topbar h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--accent-dark); margin: 0; }
+      .adx-topbar-right { display: flex; align-items: center; gap: 1.1rem; }
+      .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(15,34,72,0.12);
+        background: var(--surface-3);
+        color: var(--accent-dark);
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+      .adx-topbar-right .theme-toggle:hover {
+        background: var(--surface-2);
+        border-color: rgba(15,34,72,0.2);
+      }
+      .adx-bell {
+        position: relative; width: 40px; height: 40px; border-radius: 12px; background: var(--surface-3);
+        border: 1px solid rgba(15,34,72,0.08); display: grid; place-items: center; font-size: 1.1rem;
+        cursor: pointer; text-decoration: none; color: var(--accent-dark);
+      }
+      .adx-bell-count {
+        position: absolute; top: -4px; right: -4px; background: #E4483F; color: #fff; font-size: 0.62rem;
+        font-weight: 700; min-width: 17px; height: 17px; border-radius: 999px; display: grid; place-items: center; padding: 0 3px;
+      }
+      .adx-profile { display: flex; align-items: center; gap: 0.65rem; }
+      .adx-profile-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--accent-dark); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; }
+      .adx-profile-name { font-weight: 700; font-size: 0.88rem; color: var(--text); line-height: 1.1; }
+      .adx-profile-role { font-size: 0.72rem; color: var(--muted); }
+
+      .adx-content { padding: 1.5rem 1.75rem 4rem; max-width: 1900px; }
+
+      .adx-breadcrumb { font-size: 0.82rem; color: var(--muted); margin-bottom: 0.6rem; font-weight: 600; }
+      .adx-breadcrumb a { color: var(--cert-accent-dark); text-decoration: none; }
+      .adx-breadcrumb a:hover { text-decoration: underline; }
+
+      .adx-page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.4rem; }
+      .adx-page-head h2 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.3rem; font-size: 1.7rem; }
+      .adx-page-head p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+      .adx-page-head-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+      .adx-page-head-actions .btn { padding: 0.7rem 1.15rem; font-size: 0.85rem; }
+
+      /* ---------- Stat cards ---------- */
+      .adx-stats-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+      @media (max-width: 1350px) { .adx-stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+      @media (max-width: 700px) { .adx-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+      @media (max-width: 460px) { .adx-stats-grid { grid-template-columns: 1fr; } }
+      .adx-stat-card { background: #fff; border-radius: 20px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.06); padding: 1.1rem 1.15rem; display: flex; flex-direction: column; gap: 0.4rem; }
+      .adx-stat-top { display: flex; align-items: center; justify-content: space-between; }
+      .adx-stat-icon { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; font-size: 1.05rem; }
+      .adx-stat-value { font-family: 'Playfair Display', serif; font-size: 1.55rem; color: var(--accent-dark); line-height: 1; }
+      .adx-stat-label { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+      .adx-stat-trend { font-size: 0.68rem; font-weight: 700; color: #2BA84A; }
+      .adx-stat-trend.is-bad { color: #E4483F; }
+
+      /* ---------- Generic cards / grids ---------- */
+      .adx-grid-3 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+      @media (max-width: 1100px) { .adx-grid-3 { grid-template-columns: 1fr; } }
+      .adx-card { background: #fff; border-radius: 22px; border: 1px solid rgba(15,34,72,0.07); box-shadow: 0 10px 26px rgba(15,34,72,0.05); padding: 1.4rem 1.4rem 1.5rem; }
+      .adx-card h3 { font-family: 'Playfair Display', serif; color: var(--accent-dark); margin: 0 0 0.2rem; font-size: 1.05rem; }
+      .adx-card-sub { color: var(--muted); font-size: 0.8rem; margin: 0 0 1rem; }
+      .adx-card-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.4rem; }
+      .adx-card-head a { font-size: 0.78rem; font-weight: 700; color: var(--cert-accent-dark); text-decoration: none; cursor: pointer; }
+      .adx-card-head a:hover { text-decoration: underline; }
+      .adx-empty { color: var(--muted); font-size: 0.86rem; padding: 0.6rem 0; }
+
+      .adx-list { display: flex; flex-direction: column; gap: 0.55rem; }
+      .adx-list-item { display: flex; align-items: flex-start; gap: 0.65rem; padding: 0.65rem 0.8rem; border-radius: 14px; background: var(--surface-3); border: 1px solid rgba(15,34,72,0.05); }
+      .adx-list-item-icon { font-size: 1rem; flex-shrink: 0; margin-top: 0.05rem; }
+      .adx-list-item-title { font-weight: 700; color: var(--text); margin: 0 0 0.1rem; font-size: 0.84rem; }
+      .adx-list-item-meta { font-size: 0.73rem; color: var(--muted); margin: 0; }
+
+      .adx-course-row { margin-bottom: 0.95rem; }
+      .adx-course-row:last-child { margin-bottom: 0; }
+      .adx-course-row-head { display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 0.35rem; }
+      .adx-course-row-head span:first-child { font-weight: 700; color: var(--text); }
+      .adx-course-row-head span:last-child { color: var(--muted); font-size: 0.78rem; }
+      .adx-progress-track { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+      .adx-progress-fill { height: 100%; background: var(--cert-accent); border-radius: 999px; }
+
+      .adx-quick-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; }
+      .adx-quick-action {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; padding: 0.9rem 0.95rem;
+        border-radius: 16px; background: var(--surface-3); border: 1px solid rgba(15,34,72,0.07);
+        text-decoration: none; color: var(--accent-dark); font-weight: 700; font-size: 0.8rem; cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; font-family: inherit;
+      }
+      .adx-quick-action:hover { transform: translateY(-3px); border-color: rgba(255,213,0,0.6); box-shadow: 0 12px 24px rgba(15,34,72,0.1); }
+      .adx-quick-action .adx-qa-icon { font-size: 1.2rem; }
+
+      /* ---------- Tables ---------- */
+      .adx-table-wrap { overflow-x: auto; }
+      .adx-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; table-layout: fixed; }
+      .adx-table th, .adx-table td { white-space: normal; overflow-wrap: anywhere; }
+      .adx-table th { text-align: left; color: var(--muted); font-weight: 700; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.55rem; border-bottom: 2px solid rgba(15,34,72,0.08); white-space: nowrap; }
+      .adx-table td { padding: 0.6rem 0.55rem; border-bottom: 1px solid rgba(15,34,72,0.06); color: var(--text); vertical-align: middle; }
+      .adx-table tr:last-child td { border-bottom: none; }
+      .adx-table th:nth-child(1), .adx-table td:nth-child(1) { width: 20%; min-width: 160px; }
+      .adx-table th:nth-child(2), .adx-table td:nth-child(2) { width: 18%; min-width: 140px; }
+      .adx-table th:nth-child(3), .adx-table td:nth-child(3) { width: 24%; min-width: 180px; }
+      .adx-table th:nth-child(4), .adx-table td:nth-child(4) { width: 12%; min-width: 120px; }
+      .adx-table th:nth-child(5), .adx-table td:nth-child(5) { width: 12%; min-width: 120px; }
+      .adx-table th:nth-child(6), .adx-table td:nth-child(6) { width: 8%; min-width: 90px; }
+      .adx-table th:nth-child(7), .adx-table td:nth-child(7) { width: 8%; min-width: 90px; }
+      .adx-status-pill { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: rgba(43,108,176,0.1); color: var(--cert-accent-dark); font-size: 0.7rem; font-weight: 700; text-transform: capitalize; }
+      .adx-status-pill.is-ok { background: rgba(43,168,74,0.14); color: #2BA84A; }
+      .adx-status-pill.is-bad { background: rgba(228,72,63,0.12); color: #b33a3a; }
+      .adx-status-pill.is-muted { background: rgba(15,34,72,0.08); color: var(--muted); }
+
+      /* ---------- Mobile sidebar toggle ---------- */
+      .adx-backdrop { display: none; position: fixed; inset: 0; background: rgba(6,14,32,0.45); z-index: 35; }
+      @media (max-width: 900px) {
+        .adx-hamburger { display: inline-flex; }
+        .adx-sidebar { transform: translateX(-100%); }
+        .adx-main { margin-left: 0; }
+        .adx-shell.adx-sidebar-open .adx-sidebar { transform: translateX(0); }
+        .adx-shell.adx-sidebar-open .adx-backdrop { display: block; }
+      }
+
+      /* =========================================================
+         Certificate Management — page-specific ("ctf-" prefix)
+      ========================================================= */
+      .ctf-layout { display: grid; grid-template-columns: 1fr; gap: 1.25rem; align-items: start; margin-bottom: 1.25rem; }
+
+      /* Tabs */
+      .ctf-tabs { display: flex; gap: 0.3rem; background: #fff; border: 1px solid rgba(15,34,72,0.07); border-radius: 16px; padding: 0.35rem; margin-bottom: 1.1rem; box-shadow: 0 10px 26px rgba(15,34,72,0.05); }
+      .ctf-tab { flex: 1; text-align: center; padding: 0.65rem 0.9rem; border-radius: 12px; border: none; background: none; font-weight: 700; font-size: 0.86rem; color: var(--muted); cursor: pointer; font-family: inherit; transition: background 0.15s ease, color 0.15s ease; }
+      .ctf-tab:hover { color: var(--accent-dark); }
+      .ctf-tab.is-active { background: var(--accent-dark); color: #fff; }
+      .ctf-panel { display: none; }
+      .ctf-panel.is-active { display: block; }
+
+      /* Filter toolbar */
+      .ctf-toolbar { padding: 1rem 1.1rem; margin-bottom: 1.1rem; }
+      .ctf-toolbar-grid { display: grid; grid-template-columns: 1.7fr 1fr 1fr 1fr auto; gap: 0.65rem; align-items: end; }
+      @media (max-width: 1000px) { .ctf-toolbar-grid { grid-template-columns: 1fr 1fr; } }
+      @media (max-width: 560px) { .ctf-toolbar-grid { grid-template-columns: 1fr; } }
+      .ctf-field label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em; }
+      .ctf-field input[type="text"], .ctf-field input[type="search"], .ctf-field select {
+        width: 100%; padding: 0.62rem 0.8rem; border: 1.5px solid var(--border); border-radius: 10px;
+        background: var(--surface-3); color: var(--text); font: inherit; font-size: 0.84rem;
+      }
+      .ctf-field input:focus, .ctf-field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,213,0,0.15); }
+      .ctf-search-wrap { position: relative; }
+      .ctf-search-wrap span { position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; font-size: 0.85rem; }
+      .ctf-reset-btn { padding: 0.62rem 1rem; font-size: 0.82rem; border-radius: 10px; box-shadow: none; white-space: nowrap; }
+
+      /* Table card */
+      .ctf-table-card { padding: 1.2rem 1.2rem 0.6rem; }
+      .ctf-cert-cell { display: flex; align-items: center; gap: 0.55rem; }
+      .ctf-cert-icon { width: 30px; height: 30px; border-radius: 9px; background: rgba(255,213,0,0.18); color: #8a6d00; display: grid; place-items: center; font-size: 0.85rem; flex-shrink: 0; }
+      .ctf-student-name { font-weight: 700; color: var(--text); font-size: 0.85rem; }
+      .ctf-student-email { font-size: 0.72rem; color: var(--muted); }
+      .ctf-actions-cell { display: flex; align-items: center; gap: 0.3rem; }
+      .ctf-icon-btn { width: 29px; height: 29px; border-radius: 9px; border: 1px solid rgba(15,34,72,0.08); background: var(--surface-3); display: grid; place-items: center; cursor: pointer; font-size: 0.82rem; color: var(--text); transition: background 0.15s ease; }
+      .ctf-icon-btn:hover { background: var(--surface-2); }
+      .ctf-icon-btn.is-danger { color: #b33a3a; }
+      .ctf-icon-btn.is-danger:hover { background: rgba(228,72,63,0.12); }
+      .ctf-icon-btn.is-ok { color: #2BA84A; }
+      .ctf-icon-btn.is-ok:hover { background: rgba(43,168,74,0.12); }
+      .ctf-upload-btn { padding: 0.3rem 0.6rem; min-width: 68px; height: auto; border-radius: 10px; font-size: 0.78rem; }
+      .ctf-upload-btn:hover { background: var(--surface-2); }
+
+      .ctf-pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding: 1rem 0.2rem 1.2rem; font-size: 0.8rem; color: var(--muted); }
+      .ctf-page-btns { display: flex; align-items: center; gap: 0.3rem; }
+      .ctf-page-btn { min-width: 30px; height: 30px; padding: 0 0.4rem; border-radius: 8px; border: 1px solid rgba(15,34,72,0.1); background: #fff; color: var(--text); font-weight: 600; font-size: 0.8rem; cursor: pointer; }
+      .ctf-page-btn:hover:not(:disabled) { background: var(--surface-3); }
+      .ctf-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+      .ctf-page-btn.is-active { background: var(--accent-dark); color: #fff; border-color: var(--accent-dark); }
+      .ctf-rows-per-page { display: flex; align-items: center; gap: 0.5rem; }
+      .ctf-rows-per-page select { padding: 0.35rem 0.55rem; border-radius: 8px; border: 1px solid rgba(15,34,72,0.1); background: #fff; font: inherit; font-size: 0.8rem; }
+
+      /* Certificate management layout */
+      .ctf-template-card { display: flex; align-items: center; gap: 1rem; padding: 1.1rem; border-radius: 16px; background: var(--surface-3); border: 1px solid rgba(15,34,72,0.07); }
+      .ctf-template-thumb { width: 74px; height: 52px; border-radius: 8px; background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent-dark) 45%, var(--cert-lightblue) 45%, var(--cert-lightblue) 65%, var(--accent) 65%, var(--accent) 100%); flex-shrink: 0; box-shadow: 0 6px 14px rgba(15,34,72,0.18); }
+      .ctf-template-info h4 { margin: 0 0 0.2rem; font-size: 0.95rem; color: var(--text); }
+      .ctf-template-info p { margin: 0; font-size: 0.78rem; color: var(--muted); }
+
+      /* Verification panel */
+      .ctf-verify-box { max-width: 460px; margin: 0.5rem auto 0; text-align: center; }
+      .ctf-verify-box p.ctf-verify-lead { color: var(--muted); font-size: 0.88rem; margin: 0 0 1.1rem; }
+      .ctf-verify-form { display: flex; gap: 0.6rem; }
+      .ctf-verify-form input { flex: 1; padding: 0.85rem 1rem; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface-3); font: inherit; font-size: 0.9rem; text-align: center; letter-spacing: 1px; }
+      .ctf-verify-form input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,213,0,0.15); }
+      .ctf-verify-result { margin-top: 1.25rem; font-size: 0.88rem; }
+      .ctf-verify-preview { margin-top: 1.5rem; }
+
+      /* ---------- Template Editor (right column) ---------- */
+      .ctf-editor { position: sticky; top: 84px; }
+      .ctf-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+      .ctf-editor-head h3 { margin: 0; }
+      .ctf-editor-select { padding: 0.5rem 0.7rem; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface-3); font: inherit; font-size: 0.8rem; }
+      .ctf-editor-subtabs { display: flex; gap: 0.3rem; border-bottom: 1px solid rgba(15,34,72,0.08); margin-bottom: 1rem; }
+      .ctf-editor-subtab { padding: 0.55rem 0.9rem; border: none; background: none; font-weight: 700; font-size: 0.8rem; color: var(--muted); cursor: pointer; font-family: inherit; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+      .ctf-editor-subtab.is-active { color: var(--accent-dark); border-bottom-color: var(--accent); }
+      .ctf-editor-body { display: none; }
+      .ctf-editor-body.is-active { display: block; }
+
+      .ctf-elements-list { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.1rem; }
+      .ctf-element-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.65rem; border-radius: 10px; background: var(--surface-3); border: 1px solid rgba(15,34,72,0.05); font-size: 0.8rem; font-weight: 600; color: var(--text); }
+      .ctf-element-row .ctf-el-icon { font-size: 0.9rem; width: 18px; text-align: center; }
+      .ctf-element-row .ctf-el-drag { margin-left: auto; color: var(--muted); font-size: 0.75rem; }
+
+      .ctf-preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.6rem; }
+      .ctf-preview-toolbar-left, .ctf-preview-toolbar-right { display: flex; align-items: center; gap: 0.4rem; }
+      .ctf-mini-btn { padding: 0.4rem 0.65rem; font-size: 0.72rem; border-radius: 8px; border: 1px solid rgba(15,34,72,0.1); background: #fff; color: var(--text); cursor: pointer; font-family: inherit; font-weight: 600; }
+      .ctf-mini-btn:hover { background: var(--surface-3); }
+      .ctf-mini-btn.btn-primary-mini { background: var(--accent-dark); color: #fff; border-color: var(--accent-dark); }
+
+      .ctf-preview-frame { position: relative; width: 100%; border-radius: 16px; background: repeating-conic-gradient(var(--surface-2) 0% 25%, var(--surface-3) 0% 50%) 50% / 16px 16px; overflow: hidden; border: 1px solid rgba(15,34,72,0.08); }
+      .ctf-preview-scale-wrap { width: 100%; overflow: hidden; }
+      .ctf-preview-inner { transform-origin: top left; pointer-events: none; }
+
+      .ctf-content-form .form-group { margin-bottom: 0.9rem; }
+      .ctf-content-form label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; text-transform: uppercase; letter-spacing: 0.03em; }
+      .ctf-content-form input, .ctf-content-form textarea {
+        width: 100%; padding: 0.7rem 0.85rem; border: 1.5px solid var(--border); border-radius: 10px;
+        background: var(--surface-3); color: var(--text); font: inherit; font-size: 0.85rem; resize: vertical;
+      }
+      .ctf-content-form input:focus, .ctf-content-form textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,213,0,0.15); }
+      .ctf-editor-actions { display: flex; gap: 0.6rem; margin-top: 1rem; }
+      .ctf-editor-actions .btn { flex: 1; padding: 0.7rem 1rem; font-size: 0.84rem; }
+
+      /* Toast */
+      .ctf-toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: var(--accent-dark); color: #fff; padding: 0.85rem 1.3rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; box-shadow: 0 16px 40px rgba(15,34,72,0.25); z-index: 2000; opacity: 0; transform: translateY(12px); transition: all 0.25s ease; pointer-events: none; }
+      .ctf-toast.is-visible { opacity: 1; transform: translateY(0); }
+
+      /* Modal form bits reused from shared dashboard-modal */
+      .ctf-modal-form .form-group { margin-bottom: 1rem; }
+      .ctf-modal-form input, .ctf-modal-form select {
+        width: 100%; padding: 0.85rem 1rem; border: 1.5px solid var(--border); border-radius: 12px;
+        background: var(--surface-3); color: var(--text); font: inherit;
+      }
+      .ctf-modal-form input:focus, .ctf-modal-form select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(255,213,0,0.15); }
+      .ctf-modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem; }
+      #ctf-generate-modal .dashboard-modal-card {
+        max-width: 1100px;
+        width: min(1100px, calc(100vw - 40px));
+        padding: 1.6rem;
+      }
+      #ctf-generate-modal .ctf-modal-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        align-items: start;
+      }
+      @media (max-width: 1200px) {
+        #ctf-generate-modal .dashboard-modal-card {
+          width: min(100vw - 32px, 100%);
+        }
+      }
+      #ctf-generate-modal .ctf-modal-form {
+        grid-template-columns: 1fr 1fr;
+      }
+      @media (max-width: 960px) {
+        #ctf-generate-modal .ctf-modal-form {
+          grid-template-columns: 1fr;
+        }
+      }
+      #ctf-generate-modal .ctf-modal-form .form-group {
+        width: 100%;
+      }
+      #ctf-generate-modal .ctf-modal-form .ctf-modal-actions {
+        grid-column: 1 / -1;
+      }
+      #ctf-generate-modal .ctf-modal-form .ctf-modal-actions {
+        grid-column: 1 / -1;
+      }
+      #ctf-generate-modal .ctf-modal-form .form-group {
+        width: 100%;
+      }
+      #ctf-generate-modal .ctf-modal-form .form-group:nth-child(2) {
+        grid-column: 1 / -1;
+      }
+      #ctf-generate-modal .ctf-modal-form .ctf-modal-actions {
+        grid-column: 1 / -1;
+      }
+
+      .ctf-view-info { display: flex; flex-direction: column; gap: 0.9rem; height: 100%; }
+      .ctf-view-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.55rem 0; border-bottom: 1px solid rgba(15,34,72,0.08); font-size: 0.85rem; }
+      .ctf-view-row:last-child { border-bottom: none; }
+      .ctf-view-row span:first-child { color: var(--muted); font-weight: 600; }
+      .ctf-view-row span:last-child { font-weight: 700; color: var(--text); text-align: right; }
+      .ctf-view-actions { display: flex; flex-direction: column; gap: 0.6rem; margin-top: auto; }
+
+      .ctf-preview-card-outer { transform: scale(0.34); transform-origin: top left; width: 960px; }
+
+      /* ---------- Dark Mode ---------- */
+      body[data-theme="dark"] {
+        --adx-surface: #0f1b2e;
+        --adx-surface-2: #16253d;
+        --adx-surface-3: #101c2a;
+        --adx-text: #f3f7ff;
+        --adx-muted: #9fb0c8;
+        --adx-border: rgba(255,255,255,0.12);
+        --adx-shadow: 0 18px 40px rgba(0,0,0,0.4);
+      }
+
+      body[data-theme="dark"] .adx-topbar {
+        background: var(--adx-surface);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-topbar h1 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle {
+        display: inline-block !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        z-index: auto !important;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(22,37,61,0.8);
+        color: #f3f7ff;
+        border-radius: 999px;
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      body[data-theme="dark"] .adx-topbar-right .theme-toggle:hover {
+        background: rgba(30,45,70,0.95);
+      }
+
+      body[data-theme="dark"] .adx-bell {
+        background: rgba(16,28,42,0.8);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-name {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-profile-role {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-stat-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-stat-value {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-stat-label,
+      body[data-theme="dark"] .adx-card-sub {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-card {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-card h3 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-empty {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-list-item {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-title {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-list-item-meta {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-table-wrap {
+        background: var(--adx-surface);
+        border-color: var(--adx-border);
+        box-shadow: var(--adx-shadow);
+      }
+
+      body[data-theme="dark"] .adx-table th {
+        color: var(--adx-muted);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] .adx-table td {
+        color: var(--adx-text);
+        border-bottom-color: var(--adx-border);
+      }
+
+      body[data-theme="dark"] button,
+      body[data-theme="dark"] input,
+      body[data-theme="dark"] select,
+      body[data-theme="dark"] textarea {
+        background: var(--adx-surface-3);
+        border-color: var(--adx-border);
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-breadcrumb {
+        color: var(--adx-muted);
+      }
+
+      body[data-theme="dark"] .adx-page-head h2 {
+        color: var(--adx-text);
+      }
+
+      body[data-theme="dark"] .adx-page-head p {
+        color: var(--adx-muted);
+      }
+          /* ---------- Walk-in Registration Modal ---------- */
+      .walk-in-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+      }
+      .walk-in-modal.is-open {
+        display: flex;
+      }
+      .walk-in-modal-content {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 2rem;
+      }
+      body[data-theme="dark"] .walk-in-modal-content {
+        background: var(--adx-surface);
+        color: var(--adx-text);
+      }
+      .walk-in-modal h2 {
+        font-family: 'Playfair Display', serif;
+        color: var(--accent-dark);
+        margin: 0 0 1rem;
+        font-size: 1.4rem;
+      }
+      body[data-theme="dark"] .walk-in-modal h2 {
+        color: #f3f7ff;
+      }
+      .walk-in-form-group {
+        margin-bottom: 1rem;
+      }
+      .walk-in-form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.4rem;
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      body[data-theme="dark"] .walk-in-form-group label {
+        color: var(--adx-text);
+      }
+      .walk-in-form-group input,
+      .walk-in-form-group select,
+      .walk-in-form-group textarea {
+        width: 100%;
+        padding: 0.7rem;
+        border: 1px solid rgba(15,34,72,0.15);
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-family: inherit;
+        box-sizing: border-box;
+      }
+      body[data-theme="dark"] .walk-in-form-group input,
+      body[data-theme="dark"] .walk-in-form-group select,
+      body[data-theme="dark"] .walk-in-form-group textarea {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(255,255,255,0.12);
+        color: var(--adx-text);
+      }
+      .walk-in-form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+      }
+      .walk-in-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      @media (max-width: 600px) {
+        .walk-in-form-row { grid-template-columns: 1fr; }
+      }
+      .walk-in-modal-buttons {
+        display: flex;
+        gap: 0.8rem;
+        margin-top: 1.5rem;
+      }
+      .walk-in-modal-buttons button {
+        flex: 1;
+        padding: 0.7rem 1rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+      }
+      .walk-in-modal-buttons .btn-primary {
+        background: var(--accent-dark);
+        color: #fff;
+      }
+      .walk-in-modal-buttons .btn-primary:hover {
+        filter: brightness(1.1);
+      }
+      .walk-in-modal-buttons .btn-secondary {
+        background: rgba(15,34,72,0.08);
+        color: var(--accent-dark);
+      }
+      .walk-in-modal-buttons .btn-secondary:hover {
+        background: rgba(15,34,72,0.12);
+      }
+      body[data-theme="dark"] .walk-in-modal-buttons .btn-secondary {
+        background: rgba(255,255,255,0.1);
+        color: #f3f7ff;
+      }
+      .walk-in-note {
+        background: rgba(43,108,176,0.08);
+        border-left: 4px solid var(--cert-accent-dark);
+        padding: 0.8rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+      }
+      body[data-theme="dark"] .walk-in-note {
+        background: rgba(43,108,176,0.15);
+        color: var(--adx-text);
+      }
+      .walk-in-loading {
+        display: none;
+        text-align: center;
+        padding: 1rem;
+      }
+      .walk-in-loading.is-active {
+        display: block;
+      }
+      .walk-in-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(15,34,72,0.2);
+        border-top-color: var(--accent-dark);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      body[data-theme="dark"] .walk-in-spinner {
+        border-color: rgba(255,255,255,0.2);
+        border-top-color: #f3f7ff;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+</style>
+  </head>
+  <body data-page="admin-certificates">
+    <div class="adx-shell" id="adx-shell">
+      <div class="adx-backdrop" id="adx-backdrop"></div>
+
+      <!-- ============ Sidebar ============ -->
+      <aside class="adx-sidebar">
+        <a class="adx-brand" href="index.html" style="text-decoration:none;color:#fff;">
+          <img src="bhflogo.jpg" alt="BHF logo" />
+          <span class="adx-brand-text">
+            <strong>BHF</strong>
+            <span id="adx-brand-sub">CERTIFICATION ACADEMY</span>
+          </span>
+        </a>
+        <nav class="adx-nav" aria-label="Admin sections">
+          <a href="admin.html" id="adx-nav-dashboard"><span class="adx-nav-icon">📊</span> Dashboard</a>
+          <a href="manage-users.html"><span class="adx-nav-icon">👥</span> User Management</a>
+          <a href="manage-instructors.html"><span class="adx-nav-icon">👩‍🏫</span> Instructor Management</a>
+          <a href="manage-courses.html"><span class="adx-nav-icon">📘</span> Course Management</a>
+          <a href="quiz-management.html"><span class="adx-nav-icon">📝</span> Quiz Management</a>
+          <a href="certificates.html" class="is-active"><span class="adx-nav-icon">🏆</span> Certificates</a>
+          <a href="reports-analytics.html"><span class="adx-nav-icon">📈</span> Reports &amp; Analytics</a>
+          <a href="calendar.html"><span class="adx-nav-icon">📅</span> Calendar</a>
+          <a href="index.html"><span class="adx-nav-icon">🏠</span> Browse Home</a>
+          <div class="adx-nav-sub">
+            <a href="login.html?from=admin"><span class="adx-nav-icon">🔐</span> Login Page</a>
+            <a href="signup.html?from=admin"><span class="adx-nav-icon">📝</span> Create Account</a>
+            <a href="#" id="open-walkin-modal"><span class="adx-nav-icon">🧑‍🎓</span> Walk-in Registration</a>
+          </div>
+        </nav>
+        <div class="adx-sidebar-footer">
+          <a href="login.html" id="nav-auth-link" class="login-link" style="display:none;"><span class="adx-nav-icon">🔑</span> Login</a>
+          <a href="login.html" id="logout-button"><span class="adx-nav-icon">🚪</span> Logout</a>
+        </div>
+      </aside>
+
+      <!-- ============ Main column ============ -->
+      <div class="adx-main">
+        <header class="adx-topbar">
+          <div class="adx-topbar-left">
+            <button class="adx-hamburger" id="adx-hamburger" type="button" aria-label="Toggle menu">☰</button>
+            <h1>Certificate Management</h1>
+          </div>
+          <div class="adx-topbar-right">
+            <button id="bhf-theme-toggle" class="theme-toggle" type="button" aria-label="Toggle dark mode" title="Toggle dark mode">🌙 Dark mode</button>
+            <a href="admin.html#adx-notifications" class="adx-bell" aria-label="Notifications" id="adx-bell-link">
+              🔔
+              <span class="adx-bell-count" id="adx-bell-count">0</span>
+            </a>
+            <div class="adx-profile">
+              <div class="adx-profile-avatar" id="adx-profile-avatar">A</div>
+              <div>
+                <p class="adx-profile-name" id="adx-profile-name">Admin</p>
+                <p class="adx-profile-role" id="adx-profile-role">Administrator</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div class="adx-content">
+          <p class="adx-breadcrumb"><a href="admin.html" id="adx-breadcrumb-dashboard">Dashboard</a> &nbsp;›&nbsp; Certificate Management</p>
+
+          <div class="adx-page-head">
+            <div>
+              <h2>Certificate Management</h2>
+              <p>Manage issued certificates and upload certificates for learners who passed their course.</p>
+            </div>
+            <div class="adx-page-head-actions">
+              <button class="btn btn-secondary" id="ctf-go-verify" type="button">🔍 Verify Certificate</button>
+              <button class="btn btn-secondary" id="qa-export" type="button">⬇ Export Certificates</button>
+              <button class="btn btn-primary" id="ctf-open-generate" type="button">⬆ Upload Certificate</button>
+            </div>
+          </div>
+
+          <!-- ============ Stat cards ============ -->
+          <div class="adx-stats-grid">
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(255,213,0,0.2); color:#8a6d00;">🏆</div>
+                <span class="adx-stat-trend" id="ctf-stat-issued-trend">—</span>
+              </div>
+              <div class="adx-stat-value" id="ctf-stat-issued">0</div>
+              <div class="adx-stat-label">Certificates Issued</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">📄</div>
+              </div>
+              <div class="adx-stat-value" id="ctf-stat-templates">0</div>
+              <div class="adx-stat-label">Pending Uploads</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(124,77,255,0.14); color:#7C4DFF;">📅</div>
+              </div>
+              <div class="adx-stat-value" id="ctf-stat-month">0</div>
+              <div class="adx-stat-label">Issued This Month</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(228,72,63,0.12); color:#E4483F;">✕</div>
+              </div>
+              <div class="adx-stat-value" id="ctf-stat-revoked">0</div>
+              <div class="adx-stat-label">Revoked Certificates</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,168,74,0.14); color:#2BA84A;">✅</div>
+              </div>
+              <div class="adx-stat-value" id="ctf-stat-valid">0</div>
+              <div class="adx-stat-label"><span id="ctf-stat-valid-pct">0%</span> Valid</div>
+            </div>
+            <div class="adx-stat-card">
+              <div class="adx-stat-top">
+                <div class="adx-stat-icon" style="background:rgba(43,108,176,0.12); color:var(--cert-accent-dark);">📘</div>
+              </div>
+              <div class="adx-stat-value" id="ctf-stat-courses">0</div>
+              <div class="adx-stat-label">Courses Certified</div>
+            </div>
+          </div>
+
+          <!-- ============ Tabs + Editor layout ============ -->
+          <div class="ctf-layout">
+            <div class="ctf-left">
+              <div class="ctf-tabs">
+                <button class="ctf-tab is-active" type="button" data-ctf-tab="issued">Issued Certificates</button>
+                <button class="ctf-tab" type="button" data-ctf-tab="verify">Verification</button>
+              </div>
+
+              <!-- ---------- Issued Certificates panel ---------- -->
+              <div class="ctf-panel is-active" id="ctf-panel-issued">
+                <div class="adx-card ctf-toolbar">
+                  <div class="ctf-toolbar-grid">
+                    <div class="ctf-field ctf-search-wrap">
+                      <label for="ctf-search">Search</label>
+                      <input id="ctf-search" type="search" placeholder="Search by student name, certificate ID, email..." />
+                      <span>🔍</span>
+                    </div>
+                    <div class="ctf-field">
+                      <label for="ctf-filter-status">Status</label>
+                      <select id="ctf-filter-status">
+                        <option value="">All Status</option>
+                        <option value="valid">Valid</option>
+                        <option value="pending">Pending Upload</option>
+                        <option value="revoked">Revoked</option>
+                      </select>
+                    </div>
+                    <div class="ctf-field">
+                      <label for="ctf-filter-course">Course</label>
+                      <select id="ctf-filter-course"><option value="">All Courses</option></select>
+                    </div>
+                    <div class="ctf-field">
+                      <label for="ctf-filter-instructor">Instructor</label>
+                      <select id="ctf-filter-instructor"><option value="">All Instructors</option></select>
+                    </div>
+                    <button class="btn btn-secondary ctf-reset-btn" id="ctf-reset-filters" type="button">Reset</button>
+                  </div>
+                </div>
+
+                <div class="adx-card ctf-table-card">
+                  <div class="adx-card-head">
+                    <h3>Issued Certificates</h3>
+                  </div>
+                  <div class="adx-table-wrap">
+                    <table class="adx-table" id="ctf-table">
+                      <thead>
+                        <tr>
+                          <th>Certificate ID</th>
+                          <th>Student</th>
+                          <th>Course</th>
+                          <th>Date Issued</th>
+                          <th>Status</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody id="ctf-table-body">
+                        <tr><td colspan="6" class="adx-empty">Loading certificates…</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="ctf-pagination">
+                    <span id="ctf-pagination-label">Showing 0 of 0 certificates</span>
+                    <div class="ctf-page-btns" id="ctf-page-btns"></div>
+                    <div class="ctf-rows-per-page">
+                      Rows per page:
+                      <select id="ctf-rows-per-page">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ---------- Verification panel ---------- -->
+              <div class="ctf-panel" id="ctf-panel-verify">
+                <div class="adx-card">
+                  <div class="adx-card-head"><h3>Verify a Certificate</h3></div>
+                  <div class="ctf-verify-box">
+                    <p class="ctf-verify-lead">Enter a certificate code to confirm it was issued by BHF Certification Academy and check its status.</p>
+                    <form class="ctf-verify-form" id="ctf-verify-form">
+                      <input type="text" id="ctf-verify-input" placeholder="BHFXXXXXXXXXXXXX" autocomplete="off" />
+                      <button class="btn btn-primary" type="submit">Verify</button>
+                    </form>
+                    <div class="ctf-verify-result" id="ctf-verify-result"></div>
+                    <div class="ctf-verify-preview" id="ctf-verify-preview"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ============ Bottom row ============ -->
+          <div class="adx-grid-3">
+            <div class="adx-card">
+              <div class="adx-card-head">
+                <h3>Recent Certificate Activity</h3>
+                <a href="admin.html#adx-notifications">View All</a>
+              </div>
+              <div class="adx-list" id="ctf-activity-list">
+                <div class="adx-empty">Loading activity…</div>
+              </div>
+            </div>
+
+            <div class="adx-card">
+              <div class="adx-card-head"><h3>Top Courses by Certificates Issued</h3></div>
+              <div id="ctf-top-courses">
+                <div class="adx-empty">Loading…</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ View Certificate modal ============ -->
+    <div id="ctf-view-modal" class="dashboard-modal certificate-modal-card hidden" role="dialog" aria-modal="true">
+      <div class="dashboard-modal-card certificate-modal-card">
+        <button class="dashboard-modal-close" type="button" data-ctf-close aria-label="Close dialog">×</button>
+        <div class="certificate-modal-columns">
+          <div class="certificate-modal-left">
+            <div id="ctf-view-card-wrap" class="ctf-view-preview"></div>
+          </div>
+          <aside class="certificate-modal-right">
+            <div class="ctf-view-info">
+              <div>
+                <h3 style="margin:0 0 0.9rem; font-family:'Playfair Display', serif; color:var(--accent-dark);">Certificate Details</h3>
+                <div class="ctf-view-row"><span>Status</span><span id="ctf-view-status">—</span></div>
+                <div class="ctf-view-row"><span>Certificate ID</span><span id="ctf-view-id">—</span></div>
+                <div class="ctf-view-row"><span>Student</span><span id="ctf-view-name">—</span></div>
+                <div class="ctf-view-row"><span>Course</span><span id="ctf-view-course">—</span></div>
+                <div class="ctf-view-row"><span>Date Issued</span><span id="ctf-view-date">—</span></div>
+                <div class="ctf-view-row"><span>Valid Until</span><span id="ctf-view-expiry">—</span></div>
+              </div>
+              <div class="ctf-view-actions">
+                <button class="btn btn-primary" id="ctf-view-download" type="button">⬇ Download</button>
+                <button class="btn btn-secondary" id="ctf-view-print" type="button">🖨 Print</button>
+                <button class="btn btn-secondary" id="ctf-view-toggle-valid" type="button">Revoke Certificate</button>
+                <button class="btn btn-secondary" id="ctf-view-delete" type="button" style="color:#b33a3a; border-color:rgba(179,58,58,0.35);">🗑 Delete Certificate</button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ Upload Certificate modal ============ -->
+    <div id="ctf-generate-modal" class="dashboard-modal hidden" role="dialog" aria-modal="true" aria-labelledby="ctf-generate-title">
+      <div class="dashboard-modal-card">
+        <button class="dashboard-modal-close" type="button" data-ctf-close aria-label="Close dialog">×</button>
+        <h3 id="ctf-generate-title">Upload Certificate</h3>
+        <p class="adx-card-sub" id="ctf-generate-subtitle">Each learner who passes a course appears here as a separate certificate request. Upload the certificate file for that individual learner only.</p>
+        <form class="ctf-modal-form" id="ctf-generate-form">
+          <div class="form-group">
+            <label for="ctf-g-candidate">Passed learner</label>
+            <select id="ctf-g-candidate" required></select>
+          </div>
+          <div class="form-group">
+            <label for="ctf-g-code">Certificate ID</label>
+            <input id="ctf-g-code" type="text" placeholder="Enter or edit the certificate code" />
+            <p class="form-note">Leave blank to keep the existing certificate code for this learner. If the uploaded file has an ID printed on it, we'll try to read it automatically and fill it in here — double-check it before uploading.</p>
+            <p class="form-note" id="ctf-code-scan-note" style="display:none;"></p>
+          </div>
+          <div class="form-group">
+            <label for="ctf-g-file">Certificate file</label>
+            <input id="ctf-g-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" required />
+            <p class="form-note" id="ctf-file-note">Upload the learner’s certificate as a PDF or image file.</p>
+          </div>
+          <div class="form-group">
+            <label for="ctf-g-validity">Validity (days)</label>
+            <input id="ctf-g-validity" type="number" value="365" min="1" />
+          </div>
+          <div class="ctf-modal-actions">
+            <button type="button" class="btn btn-secondary" data-ctf-close>Cancel</button>
+            <button type="submit" class="btn btn-primary" id="ctf-generate-submit">Upload Certificate</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="ctf-toast" id="ctf-toast"></div>
+
+    <!-- Off-screen certificate card used for template preview / downloads -->
+    <div style="position:absolute; left:-99999px; top:0;" id="ctf-offscreen"></div>
+
+        <!-- ============ Walk-in Registration Modal ============ -->
+    <div id="walk-in-modal" class="walk-in-modal">
+      <div class="walk-in-modal-content">
+        <h2>📝 Walk-in Student Registration</h2>
+        
+        <div class="walk-in-note">
+          <strong>Note:</strong> A temporary password will be generated and sent to the student's email along with login credentials and certificate information.
+        </div>
+
+        <form id="walk-in-form" style="display: none;">
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-first-name">First Name *</label>
+              <input type="text" id="walk-in-first-name" placeholder="e.g., John" required />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-last-name">Last Name *</label>
+              <input type="text" id="walk-in-last-name" placeholder="e.g., Doe" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-email">Email Address *</label>
+            <input type="email" id="walk-in-email" placeholder="student@example.com" required />
+          </div>
+
+          <div class="walk-in-form-row">
+            <div class="walk-in-form-group">
+              <label for="walk-in-phone">Phone Number</label>
+              <input type="tel" id="walk-in-phone" placeholder="+1 (555) 000-0000" />
+            </div>
+            <div class="walk-in-form-group">
+              <label for="walk-in-date">Registration Date *</label>
+              <input type="date" id="walk-in-date" required />
+            </div>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-course">Enroll in Course</label>
+            <select id="walk-in-course">
+              <option value="">-- Select a course (optional) --</option>
+            </select>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label for="walk-in-notes">Additional Notes</label>
+            <textarea id="walk-in-notes" placeholder="Any additional information about the student..."></textarea>
+          </div>
+
+          <div class="walk-in-form-group">
+            <label>
+              <input type="checkbox" id="walk-in-send-email" checked />
+              Send login credentials email to student
+            </label>
+          </div>
+
+          <div class="walk-in-modal-buttons">
+            <button type="button" class="btn-secondary" id="close-walkin-modal">Cancel</button>
+            <button type="submit" class="btn-primary">Create Account</button>
+          </div>
+        </form>
+
+        <div id="walk-in-loading" class="walk-in-loading">
+          <div class="walk-in-spinner"></div>
+          <p style="margin-top: 0.8rem; color: var(--muted);">Creating student account...</p>
+        </div>
+
+        <div id="walk-in-success" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
+            <h3 style="margin: 0 0 0.5rem; color: #2BA84A;">Student Account Created!</h3>
+            <p id="walk-in-success-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="close-walkin-success" class="btn-primary" style="width: 100%; padding: 0.7rem;">Close</button>
+          </div>
+        </div>
+
+        <div id="walk-in-error" style="display: none;">
+          <div style="text-align: center; padding: 1rem;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem; color: #E4483F;">❌</div>
+            <h3 style="margin: 0 0 0.5rem; color: #E4483F;">Registration Failed</h3>
+            <p id="walk-in-error-message" style="color: var(--muted); margin: 0 0 1rem;"></p>
+            <button type="button" id="retry-walkin" class="btn-primary" style="width: 100%; padding: 0.7rem;">Try Again</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<!-- script.js manages auth/session (login pill, logout button) -->
+    <script type="module" src="script.js"></script>
+    <script>
+      if (typeof updateHeaderAuthLink === 'function') { updateHeaderAuthLink(); }
+      const adxShell = document.getElementById('adx-shell');
+      const adxHamburger = document.getElementById('adx-hamburger');
+      const adxBackdrop = document.getElementById('adx-backdrop');
+      adxHamburger?.addEventListener('click', () => adxShell.classList.toggle('adx-sidebar-open'));
+      adxBackdrop?.addEventListener('click', () => adxShell.classList.remove('adx-sidebar-open'));
+    </script>
+
+    <!-- This page's own module: guards the route, pulls live Firestore data,
+         renders stats/table/editor, and wires up the certificate template. -->
+    <script type="module">
+      import { db, auth } from "./firebase-init.js";
+      import {
+        collection, getDocs, doc, updateDoc, deleteDoc, addDoc
+      } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+      // script.js's bootstrap() looks for this exact global and calls it
+      // once the rest of the admin shell (auth check, sidebar, header) is
+      // ready — see the "if (page === 'admin-certificates')" block in
+      // script.js. Everything below used to run immediately as soon as
+      // this module was parsed, ahead of that shell setup, which is what
+      // caused the mis-timed/blank-looking renders. Wrapping it here makes
+      // this page wait its turn instead of racing the rest of bootstrap().
+      window.initAdminCertificates = async function initAdminCertificates() {
+
+      /* ---------- Role-aware "Super Admin" branding ----------
+         This page is shared between admin.html and superadmin.html.
+         When it's opened by/for a super admin, swap the sidebar brand
+         label, Dashboard link, notification bell, and profile block
+         over to the Super Admin look instead of the default Admin one,
+         so the top nav reflects who's actually signed in.
+
+         Applied in two passes:
+         1) Synchronously, right away, if the link we arrived on already
+            says ?from=superadmin — this is the normal case (clicked from
+            the Super Admin sidebar) and needs no waiting, so there's no
+            flash of the default Admin look before this runs.
+         2) After auth is ready, as a fallback for direct loads/refreshes
+            that don't carry the query param, based on the real role. */
+      const applySuperAdminBranding = () => {
+        const dashboardHref = "superadmin.html";
+        document.querySelector(".adx-sidebar")?.classList.add("is-superadmin");
+        const brandSub = document.getElementById("adx-brand-sub");
+        if (brandSub) brandSub.textContent = "SUPER ADMIN";
+        const navDash = document.getElementById("adx-nav-dashboard");
+        if (navDash) {
+          navDash.href = dashboardHref;
+          navDash.innerHTML = '<span class="adx-nav-icon">👑</span> Dashboard';
+        }
+        const breadcrumbDash = document.getElementById("adx-breadcrumb-dashboard");
+        if (breadcrumbDash) breadcrumbDash.href = dashboardHref;
+        const bellLink = document.getElementById("adx-bell-link");
+        if (bellLink) bellLink.href = `${dashboardHref}#adx-notifications`;
+        const profileAvatar = document.getElementById("adx-profile-avatar");
+        const profileName = document.getElementById("adx-profile-name");
+        const profileRole = document.getElementById("adx-profile-role");
+        if (profileAvatar) profileAvatar.textContent = "S";
+        if (profileName) profileName.textContent = "Super Admin";
+        if (profileRole) profileRole.textContent = "Master Administrator";
+      };
+
+      const cameFromSuperAdmin = new URLSearchParams(window.location.search).get("from") === "superadmin";
+      if (cameFromSuperAdmin) applySuperAdminBranding();
+
+      /* ---------- Route guard: admins only ---------- */
+      const isLocalPreview =
+        location.protocol === "file:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+      const currentAuthForBranding = (window.getAuth && window.getAuth()) || null;
+      if (!cameFromSuperAdmin && currentAuthForBranding?.role === "superadmin") {
+        applySuperAdminBranding();
+      }
+
+      if (window.authReadyPromise) await window.authReadyPromise;
+
+      if (!isLocalPreview) {
+        if (!window.isAuthenticated || !window.isAuthenticated()) {
+          window.location.href = "login.html";
+        } else if (!window.isAdmin || !window.isAdmin()) {
+          window.location.href = "dashboard.html";
+        }
+      }
+
+      if (!cameFromSuperAdmin) {
+        const currentAuthForBrandingAfter = (window.getAuth && window.getAuth()) || null;
+        if (currentAuthForBrandingAfter?.role === "superadmin") applySuperAdminBranding();
+      }
+
+      /* ---------- Helpers ---------- */
+      const escapeHtml = (str) => String(str ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[c]));
+
+      const fetchCollection = async (name) => {
+        try {
+          const snapshot = await getDocs(collection(db, name));
+          return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+        } catch (error) {
+          console.error(`Failed to load "${name}" from Firestore`, error);
+          return [];
+        }
+      };
+
+      const timeAgo = (isoString) => {
+        if (!isoString) return "";
+        const then = new Date(isoString).getTime();
+        if (Number.isNaN(then)) return "";
+        const diffMs = Date.now() - then;
+        const minutes = Math.floor(diffMs / 60000);
+        if (minutes < 1) return "just now";
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 30) return `${days}d ago`;
+        return new Date(isoString).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+      };
+
+      const showToast = (message) => {
+        const toast = document.getElementById('ctf-toast');
+        toast.textContent = message;
+        toast.classList.add('is-visible');
+        clearTimeout(showToast._t);
+        showToast._t = setTimeout(() => toast.classList.remove('is-visible'), 2600);
+      };
+
+      const isPendingUpload = (certificate) => certificate?.status === 'pending-upload';
+      const getDisplayName = (certificate) => certificate?.name || certificate?.fullName || 'Unnamed learner';
+
+      /* ---------- Recent Certificate Activity ----------
+         This panel used to only reflect "certificate" notifications —
+         which, before logCertificateActivity existed, meant just the
+         single notification created when a learner's quiz pass first
+         generates a pending certificate request (see
+         createNotification("certificate", ...) in script.js). That's a
+         different, much smaller feed than the dashboard's "Recent
+         Certificates" card (admin.html), which lists every certificate
+         in the certificates collection sorted by issuedAt — so the two
+         pages disagreed even after logCertificateActivity started
+         logging admin actions here.
+
+         To keep this panel in sync with the dashboard, it now merges
+         both sources: the certificate-type notifications (admin
+         uploads/revokes/restores/deletes) AND a synthesized "issued"
+         entry for every record in the certificates collection (same
+         data the dashboard reads), then sorts everything by timestamp
+         and keeps the latest 6. Whenever the dashboard shows recent
+         certificate activity, this list will too. */
+      const renderActivityList = () => {
+        const activityList = document.getElementById('ctf-activity-list');
+        if (!activityList) return;
+
+        const certNotifications = notifications
+          .filter((n) => n.type === 'certificate')
+          .map((n) => ({ message: n.message || 'Certificate activity', at: n.createdAt }));
+
+        const issuedActivity = certificates.map((c) => ({
+          message: `Certificate issued to ${getDisplayName(c)} — "${c.course || 'course'}"`,
+          at: c.issuedAt || c.date
+        }));
+
+        const combinedActivity = [...certNotifications, ...issuedActivity]
+          .sort((a, b) => new Date(b.at || 0) - new Date(a.at || 0))
+          .slice(0, 6);
+
+        activityList.innerHTML = combinedActivity.length
+          ? combinedActivity.map((item) => `
+              <div class="adx-list-item">
+                <span class="adx-list-item-icon">🏆</span>
+                <div>
+                  <p class="adx-list-item-title">${escapeHtml(item.message)}</p>
+                  <p class="adx-list-item-meta">${escapeHtml(timeAgo(item.at))}</p>
+                </div>
+              </div>`).join('')
+          : '<div class="adx-empty">No recent certificate activity yet.</div>';
+      };
+
+      const logCertificateActivity = async (message) => {
+        const entry = { type: 'certificate', message, read: false, createdAt: new Date().toISOString() };
+        try {
+          const ref = await addDoc(collection(db, 'notifications'), entry);
+          notifications.unshift({ id: ref.id, ...entry });
+        } catch (error) {
+          console.error('Failed to log certificate activity', error);
+          // Still show it locally even if the write failed, so the admin
+          // isn't left wondering whether their action actually happened.
+          notifications.unshift({ id: `local-${Date.now()}`, ...entry });
+        }
+        renderActivityList();
+      };
+
+      /* ---------- Load data ---------- */
+      const [certificates, courses, notifications] = await Promise.all([
+        fetchCollection("certificates"),
+        fetchCollection("courses"),
+        fetchCollection("notifications")
+      ]);
+
+      // Instructors always get tagged with their uid on courses they create;
+      // courses created by an admin never get an instructorId at all (same
+      // rule used by manage-courses.html's uploaderNameOf). Without this
+      // check, every admin-uploaded course fell through to "—" here even
+      // though it does have a legitimate uploader — the admin.
+      const courseInstructorMap = new Map(courses.map((c) => [
+        c.title,
+        c.instructorId ? (c.instructorName || c.instructor || "Unassigned") : "Admin"
+      ]));
+
+      /* ---------- Laurel-wreath certification badge, reused by every
+         certificate card (mirrors the seal on the reference template). ---------- */
+      const certificateBadgeSvg = `
+        <svg class="certificate-badge-icon" viewBox="0 0 200 190" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g stroke="var(--cert-accent)" stroke-width="2.4" stroke-linecap="round" fill="none">
+            <path d="M70 150 C40 150 20 130 18 100" />
+            <path d="M30 108 L18 100 L28 92" />
+            <path d="M35 122 L22 116 L30 106" />
+            <path d="M42 135 L28 132 L34 120" />
+            <path d="M52 145 L38 145 L42 132" />
+            <path d="M62 150 L48 152 L50 138" />
+          </g>
+          <g stroke="var(--cert-accent)" stroke-width="2.4" stroke-linecap="round" fill="none">
+            <path d="M130 150 C160 150 180 130 182 100" />
+            <path d="M170 108 L182 100 L172 92" />
+            <path d="M165 122 L178 116 L170 106" />
+            <path d="M158 135 L172 132 L166 120" />
+            <path d="M148 145 L162 145 L158 132" />
+            <path d="M138 150 L152 152 L150 138" />
+          </g>
+          <circle cx="100" cy="80" r="46" fill="var(--accent-dark)" />
+          <circle cx="100" cy="80" r="38" fill="#ffffff" stroke="var(--cert-accent)" stroke-width="2" />
+          <path d="M82 80 L94 92 L120 64" stroke="var(--cert-accent)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          <g fill="var(--cert-accent)">
+            <path d="M86 158 l2.4 5 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z" />
+            <path d="M100 162 l2.6 5.4 6 .9-4.3 4.2 1 6-5.3-2.8-5.3 2.8 1-6-4.3-4.2 6-.9z" />
+            <path d="M114 158 l2.4 5 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z" />
+          </g>
+        </svg>`;
+
+      /* ---------- Certificate card markup (mirrors course-detail.html's
+         real BHF certificate design) — used for the template preview,
+         the view modal, and downloads/prints. ---------- */
+      const buildCertificateCard = (id, record, template) => {
+        const name = escapeHtml(record?.name || "Juan Dela Cruz");
+        const course = escapeHtml(record?.course || "Sample Course");
+        const date = escapeHtml(record?.date || new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }));
+        const expiry = escapeHtml(record?.expiryDate || "—");
+        const code = escapeHtml(record?.code || "BHF0000000000000");
+        return `
+          <div class="certificate-card" id="${id}">
+            <div class="certificate-inner">
+              <div class="certificate-header">
+                <div class="certificate-logo-rounded"><span class="certificate-logo-text">BHF</span></div>
+                <div class="certificate-brand-text">
+                  <div class="certificate-brand-title">Baguio Home for the Faithful</div>
+                  <div class="certificate-brand-subtitle">Growing in Faith. Transforming Lives.</div>
+                </div>
+              </div>
+              <div class="certificate-title-block">
+                <h1 class="certificate-main-title">${escapeHtml(template.title)}</h1>
+                <p class="certificate-subtitle">${escapeHtml(template.subtitle)}</p>
+              </div>
+              <div class="certificate-body">
+                <h2 class="certificate-recipient">${name}</h2>
+                <p class="certificate-note">${escapeHtml(template.note)}</p>
+                <div class="certificate-program-row">
+                  <div class="certificate-program-text">
+                    <strong>${course}</strong>
+                    <p class="certificate-program-meta">${escapeHtml(template.programMeta)}</p>
+                  </div>
+                  ${certificateBadgeSvg}
+                </div>
+                <p class="certificate-valid-through">Valid Through <strong>${expiry}</strong></p>
+              </div>
+              <div class="certificate-footer">
+                <div class="certificate-footer-col certificate-footer-left">
+                  <p class="certificate-detail-label">Validate this certificate's authenticity at</p>
+                  <p class="certificate-verify-link">bhf-training-and-certificate.web.app</p>
+                  <p class="certificate-detail-label" style="margin-top:0.6rem;">Certificate ID <span class="certificate-id-value">${code}</span></p>
+                </div>
+                <div class="certificate-footer-col certificate-footer-right">
+                  <svg class="certificate-signature-svg" viewBox="0 0 180 50" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8,35 C16,10 24,42 32,18 C40,-4 46,40 54,22 C62,6 70,32 78,16 C86,2 92,34 100,20 C108,8 114,30 122,18 C128,10 134,24 140,16 C146,10 152,20 158,14" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" />
+                  </svg>
+                  <p class="certificate-detail certificate-signatory">${escapeHtml(template.signatory)}</p>
+                  <p class="certificate-detail-label">${escapeHtml(template.programLabel)}</p>
+                </div>
+              </div>
+            </div>
+            <div class="certificate-ribbon"></div>
+          </div>`;
+      };
+
+      /* ---------- Preview helper: show the ACTUAL uploaded certificate
+         file (image or PDF) whenever one exists for this record, instead
+         of always falling back to the generated placeholder template.
+         This is what powers the "Certificate Details" view modal and the
+         verification tab preview. ---------- */
+      const isPdfFile = (record) => {
+        const url = record?.certificateFileUrl || '';
+        const name = record?.certificateFileName || '';
+        return url.startsWith('data:application/pdf') || /\.pdf$/i.test(name);
+      };
+      const buildCertificatePreviewMarkup = (id, record, template) => {
+        const fileUrl = record?.certificateFileUrl;
+        if (fileUrl) {
+          if (isPdfFile(record)) {
+            return `
+              <div class="certificate-uploaded-file-wrapper" id="${id}">
+                <div class="certificate-uploaded-file">
+                  <iframe src="${fileUrl}" title="Uploaded certificate PDF" class="ctf-view-file-frame"></iframe>
+                </div>
+              </div>`;
+          }
+          return `
+            <div class="certificate-uploaded-file-wrapper" id="${id}">
+              <div class="certificate-uploaded-file">
+                <img src="${fileUrl}" alt="Uploaded certificate for ${escapeHtml(record?.name || getDisplayName(record) || '')}" class="ctf-view-file-image" />
+              </div>
+            </div>`;
+        }
+        return buildCertificateCard(id, record, template);
+      };
+
+      /* ---------- Certificate template (localStorage, shared with the
+         rest of the site via bhf_certificate_template) ---------- */
+      const CERT_TEMPLATE_STORE_KEY = "bhf_certificate_template";
+      const defaultCertificateTemplate = {
+        title: "BHF Certifications",
+        subtitle: "Certificate of Completion",
+        note: "Has successfully completed the certification requirements and is authorized as a",
+        programLabel: "Program Director",
+        programMeta: "Online Certification Program",
+        signatory: "Charles Wang"
+      };
+      const getCertificateTemplate = () => {
+        try {
+          const stored = localStorage.getItem(CERT_TEMPLATE_STORE_KEY);
+          return stored ? { ...defaultCertificateTemplate, ...JSON.parse(stored) } : { ...defaultCertificateTemplate };
+        } catch { return { ...defaultCertificateTemplate }; }
+      };
+      const saveCertificateTemplateLocal = (template) => {
+        localStorage.setItem(CERT_TEMPLATE_STORE_KEY, JSON.stringify({ ...defaultCertificateTemplate, ...template }));
+      };
+
+      let currentTemplate = getCertificateTemplate();
+
+      const renderPreview = () => {
+        const inner = document.getElementById('ctf-preview-inner');
+        if (!inner) return;
+        inner.innerHTML = buildCertificateCard('ctf-preview-card', {
+          name: "Juan Dela Cruz",
+          course: courses[0]?.title || "Foundations of Christian Faith",
+          date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+          expiryDate: "One year from issue",
+          code: "BHFSAMPLE00000001"
+        }, currentTemplate);
+        const scaleWrap = inner.parentElement;
+        const cardEl = document.getElementById('ctf-preview-card');
+        if (!scaleWrap || !cardEl) return;
+        requestAnimationFrame(() => {
+          const wrapWidth = scaleWrap.clientWidth || 320;
+          const scale = wrapWidth / 960;
+          inner.style.transform = `scale(${scale})`;
+          scaleWrap.style.height = `${(cardEl?.offsetHeight || 660) * scale}px`;
+        });
+      };
+
+      renderPreview();
+      window.addEventListener('resize', renderPreview);
+
+      /* Main tabs (Issued / Verification) */
+      document.querySelectorAll('[data-ctf-tab]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-ctf-tab]').forEach((b) => b.classList.remove('is-active'));
+          btn.classList.add('is-active');
+          const tab = btn.dataset.ctfTab;
+          document.getElementById('ctf-panel-issued').classList.toggle('is-active', tab === 'issued');
+          document.getElementById('ctf-panel-verify').classList.toggle('is-active', tab === 'verify');
+        });
+      });
+      const goToTab = (tab) => document.querySelector(`[data-ctf-tab="${tab}"]`)?.click();
+      document.getElementById('ctf-go-verify').addEventListener('click', () => goToTab('verify'));
+
+      /* ---------- Stat cards ---------- */
+      const now = new Date();
+      const isThisMonth = (iso) => {
+        const d = new Date(iso || 0);
+        return !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      };
+      const validCount = certificates.filter((c) => c.valid !== false).length;
+      const revokedCount = certificates.filter((c) => c.valid === false).length;
+      const monthCount = certificates.filter((c) => isThisMonth(c.issuedAt)).length;
+      const uniqueCourses = new Set(certificates.map((c) => c.course).filter(Boolean));
+
+      const pendingCount = certificates.filter((c) => isPendingUpload(c) || !c.certificateFileUrl).length;
+      document.getElementById('ctf-stat-issued').textContent = certificates.length;
+      document.getElementById('ctf-stat-templates').textContent = pendingCount;
+      document.getElementById('ctf-stat-issued-trend').textContent = monthCount ? `+${monthCount} this month` : '—';
+      document.getElementById('ctf-stat-month').textContent = monthCount;
+      document.getElementById('ctf-stat-revoked').textContent = revokedCount;
+      document.getElementById('ctf-stat-valid').textContent = validCount;
+      document.getElementById('ctf-stat-valid-pct').textContent = certificates.length ? `${((validCount / certificates.length) * 100).toFixed(1)}%` : '0%';
+      document.getElementById('ctf-stat-courses').textContent = uniqueCourses.size;
+
+      /* ---------- Filters (populate course/instructor dropdowns) ---------- */
+      const courseFilterSelect = document.getElementById('ctf-filter-course');
+      Array.from(uniqueCourses).sort().forEach((title) => {
+        if (!courseFilterSelect) return;
+        const opt = document.createElement('option');
+        opt.value = title; opt.textContent = title;
+        courseFilterSelect.appendChild(opt);
+      });
+      const instructorFilterSelect = document.getElementById('ctf-filter-instructor');
+      const uniqueInstructors = new Set(Array.from(uniqueCourses).map((t) => courseInstructorMap.get(t)).filter(Boolean));
+      Array.from(uniqueInstructors).sort().forEach((name) => {
+        if (!instructorFilterSelect) return;
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name;
+        instructorFilterSelect.appendChild(opt);
+      });
+
+      /* ---------- Table rendering with client-side filter + pagination ---------- */
+      let filteredCerts = [...certificates].sort((a, b) => new Date(b.issuedAt || 0) - new Date(a.issuedAt || 0));
+      let currentPage = 1;
+      let rowsPerPage = 10;
+
+      const applyFilters = () => {
+        const q = (document.getElementById('ctf-search').value || '').toLowerCase();
+        const status = document.getElementById('ctf-filter-status').value;
+        const course = document.getElementById('ctf-filter-course').value;
+        const instructor = document.getElementById('ctf-filter-instructor').value;
+        filteredCerts = certificates.filter((c) => {
+          if (q && !((c.name || '').toLowerCase().includes(q) || (c.email || '').toLowerCase().includes(q) || (c.code || '').toLowerCase().includes(q))) return false;
+          if (status === 'valid' && c.valid === false) return false;
+          if (status === 'revoked' && c.valid !== false) return false;
+          if (course && c.course !== course) return false;
+          if (instructor && courseInstructorMap.get(c.course) !== instructor) return false;
+          return true;
+        }).sort((a, b) => new Date(b.issuedAt || 0) - new Date(a.issuedAt || 0));
+        currentPage = 1;
+        renderTable();
+      };
+
+      const renderTable = () => {
+        const tbody = document.getElementById('ctf-table-body');
+        const total = filteredCerts.length;
+        const totalPages = Math.max(1, Math.ceil(total / rowsPerPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+        const start = (currentPage - 1) * rowsPerPage;
+        const pageItems = filteredCerts.slice(start, start + rowsPerPage);
+
+        if (!pageItems.length) {
+          tbody.innerHTML = '<tr><td colspan="6" class="adx-empty">No certificates found.</td></tr>';
+        } else {
+          tbody.innerHTML = pageItems.map((c) => {
+            const isValid = c.valid !== false;
+            const pending = isPendingUpload(c);
+            const statusLabel = pending ? 'Pending Upload' : (isValid ? 'Valid' : 'Revoked');
+            const statusClass = pending ? 'is-bad' : (isValid ? 'is-ok' : 'is-bad');
+            return `
+              <tr>
+                <td>
+                  <div class="ctf-cert-cell">
+                    <div class="ctf-cert-icon">🏆</div>
+                    <span style="font-family:'Courier New',monospace; font-size:0.78rem;">${escapeHtml(c.code || '—')}</span>
+                  </div>
+                </td>
+                <td>
+                  <div class="ctf-student-name">${escapeHtml(getDisplayName(c) || '—')}</div>
+                  <div class="ctf-student-email">${escapeHtml(c.email || '')}</div>
+                </td>
+                <td>${escapeHtml(c.course || '—')}</td>
+                <td>${escapeHtml(c.date || '—')}</td>
+                <td><span class="adx-status-pill ${statusClass}">${statusLabel}</span></td>
+                <td>
+                  <div class="ctf-actions-cell">
+                    <button class="ctf-icon-btn" title="View" data-ctf-view="${c.id}">👁</button>
+                    ${!c.certificateFileUrl
+                      ? `<button class="btn btn-secondary ctf-upload-btn" title="Upload certificate file" data-ctf-upload="${c.id}">⬆ Upload</button>`
+                      : `<button class="ctf-icon-btn" title="Download certificate file" data-ctf-download="${c.id}">⬇</button>
+                         <button class="ctf-icon-btn" title="Edit / re-upload certificate file" data-ctf-edit="${c.id}">✏️</button>`}
+                    <button class="ctf-icon-btn ${isValid ? 'is-danger' : 'is-ok'}" title="${isValid ? 'Revoke' : 'Restore'}" data-ctf-toggle="${c.id}">${isValid ? '🚫' : '♻'}</button>
+                    <button class="ctf-icon-btn is-danger" title="Delete certificate" data-ctf-delete="${c.id}">🗑</button>
+                  </div>
+                </td>
+              </tr>`;
+          }).join('');
+        }
+
+        document.getElementById('ctf-pagination-label').textContent =
+          total ? `Showing ${start + 1} to ${Math.min(start + rowsPerPage, total)} of ${total} certificates` : 'Showing 0 of 0 certificates';
+
+        const pageBtns = document.getElementById('ctf-page-btns');
+        let btns = '';
+        btns += `<button class="ctf-page-btn" data-ctf-page="prev" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+        for (let p = 1; p <= totalPages; p++) {
+          if (p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1) {
+            btns += `<button class="ctf-page-btn ${p === currentPage ? 'is-active' : ''}" data-ctf-page="${p}">${p}</button>`;
+          } else if (Math.abs(p - currentPage) === 2) {
+            btns += `<span style="padding:0 0.2rem;">…</span>`;
+          }
+        }
+        btns += `<button class="ctf-page-btn" data-ctf-page="next" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+        pageBtns.innerHTML = btns;
+      };
+
+      document.getElementById('ctf-page-btns').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-ctf-page]');
+        if (!btn) return;
+        const val = btn.dataset.ctfPage;
+        const totalPages = Math.max(1, Math.ceil(filteredCerts.length / rowsPerPage));
+        if (val === 'prev') currentPage = Math.max(1, currentPage - 1);
+        else if (val === 'next') currentPage = Math.min(totalPages, currentPage + 1);
+        else currentPage = Number(val);
+        renderTable();
+      });
+
+      document.getElementById('ctf-rows-per-page').addEventListener('change', (e) => {
+        rowsPerPage = Number(e.target.value);
+        currentPage = 1;
+        renderTable();
+      });
+
+      ['ctf-search', 'ctf-filter-status', 'ctf-filter-course', 'ctf-filter-instructor'].forEach((id) => {
+        document.getElementById(id).addEventListener('input', applyFilters);
+        document.getElementById(id).addEventListener('change', applyFilters);
+      });
+      document.getElementById('ctf-reset-filters').addEventListener('click', () => {
+        document.getElementById('ctf-search').value = '';
+        document.getElementById('ctf-filter-status').value = '';
+        document.getElementById('ctf-filter-course').value = '';
+        document.getElementById('ctf-filter-instructor').value = '';
+        applyFilters();
+      });
+
+      renderTable();
+
+      /* ---------- Row actions: view / download / revoke-restore ---------- */
+      const findCert = (id) => certificates.find((c) => c.id === id);
+
+      const openModal = (modal) => modal.classList.remove('hidden');
+      const closeModal = (modal) => modal.classList.add('hidden');
+      document.querySelectorAll('[data-ctf-close]').forEach((btn) => {
+        btn.addEventListener('click', () => btn.closest('.dashboard-modal').classList.add('hidden'));
+      });
+
+      const viewModal = document.getElementById('ctf-view-modal');
+      let activeCertId = null;
+
+      const deleteCertificate = async (id) => {
+        const c = findCert(id);
+        if (!c) return;
+        const confirmed = window.confirm(
+          `Delete the certificate for ${getDisplayName(c) || 'this learner'} (${c.course || 'course'})? This cannot be undone.`
+        );
+        if (!confirmed) return;
+        try {
+          // Temporary diagnostics: confirm what Firestore will actually see
+          // for this request (project, uid, email, and whether the ID token
+          // really carries the admin claim) before we even attempt the delete.
+          const u = auth.currentUser;
+          if (!u) {
+            console.warn('[ctf-delete-debug] auth.currentUser is null — no real Firebase session in this tab.');
+          } else {
+            const tokenResult = await u.getIdTokenResult();
+            console.log('[ctf-delete-debug] ' + JSON.stringify({
+              projectId: db?.app?.options?.projectId,
+              uid: u.uid,
+              authCurrentUserEmail: u.email,
+              idTokenEmailClaim: tokenResult.claims.email,
+              emailVerified: u.emailVerified,
+              certDocId: id
+            }, null, 2));
+          }
+
+          await deleteDoc(doc(db, 'certificates', id));
+          const idx = certificates.findIndex((cert) => cert.id === id);
+          if (idx !== -1) certificates.splice(idx, 1);
+          if (activeCertId === id) {
+            activeCertId = null;
+            closeModal(viewModal);
+          }
+          applyFilters();
+          document.getElementById('ctf-stat-issued').textContent = certificates.length;
+          document.getElementById('ctf-stat-valid').textContent = certificates.filter((x) => x.valid !== false).length;
+          document.getElementById('ctf-stat-revoked').textContent = certificates.filter((x) => x.valid === false).length;
+          showToast('Certificate deleted.');
+          await logCertificateActivity(`Certificate deleted for ${getDisplayName(c) || 'a learner'} — "${c.course || 'course'}"`);
+        } catch (err) {
+          console.error('[ctf-delete-debug] Failed to delete certificate: ' + JSON.stringify({ code: err?.code, message: err?.message, id }));
+          showToast(`Failed to delete certificate: ${err?.code || err?.message || 'Unknown error.'}`);
+        }
+      };
+
+      const openView = (id) => {
+        const c = findCert(id);
+        if (!c) return;
+        activeCertId = id;
+        const wrap = document.getElementById('ctf-view-card-wrap');
+        wrap.innerHTML = buildCertificatePreviewMarkup('ctf-modal-card', c, currentTemplate);
+        const isValid = c.valid !== false;
+        document.getElementById('ctf-view-status').innerHTML = `<span class="adx-status-pill ${isValid ? 'is-ok' : 'is-bad'}">${isValid ? 'Valid' : 'Revoked'}</span>`;
+        document.getElementById('ctf-view-id').textContent = c.code || '—';
+        document.getElementById('ctf-view-name').textContent = getDisplayName(c) || '—';
+        document.getElementById('ctf-view-course').textContent = c.course || '—';
+        document.getElementById('ctf-view-date').textContent = c.date || '—';
+        document.getElementById('ctf-view-expiry').textContent = c.expiryDate || '—';
+        document.getElementById('ctf-view-toggle-valid').textContent = isValid ? 'Revoke Certificate' : 'Restore Certificate';
+        document.getElementById('ctf-view-download').textContent = '⬇ Download PDF';
+        openModal(viewModal);
+      };
+
+      // Triggers a real file-save download for a certificate stored as a
+      // base64 data URI. We can't just window.open() a data: URL — modern
+      // browsers (Chrome especially) block new tabs from navigating
+      // straight to a data: URL for security reasons, so that silently did
+      // nothing. An <a download> element works reliably everywhere instead.
+      //
+      // The download is always a .pdf: if the admin uploaded a PDF it's
+      // saved as-is, and if they uploaded an image it gets wrapped into a
+      // one-page PDF via jsPDF (already loaded at the top of this page)
+      // rather than downloading as a raw .png/.jpg.
+      const triggerFileSave = (url, fileName) => {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+
+      const downloadCertificateFile = async (url, fileNameBase) => {
+        if (!url) return;
+        const name = fileNameBase || 'certificate';
+        const isPdf = /^data:application\/pdf/i.test(url);
+        if (isPdf) {
+          triggerFileSave(url, `${name}.pdf`);
+          return;
+        }
+        // Uploaded file is an image — wrap it into a single-page PDF.
+        if (window.jspdf && window.jspdf.jsPDF) {
+          try {
+            const img = await new Promise((resolve, reject) => {
+              const el = new Image();
+              el.onload = () => resolve(el);
+              el.onerror = () => reject(new Error('Could not load certificate image'));
+              el.src = url;
+            });
+            const { jsPDF } = window.jspdf;
+            const width = img.naturalWidth || img.width;
+            const height = img.naturalHeight || img.height;
+            const pdf = new jsPDF({
+              orientation: width >= height ? 'landscape' : 'portrait',
+              unit: 'px',
+              format: [width, height]
+            });
+            const imageFormat = /^data:image\/png/i.test(url) ? 'PNG' : 'JPEG';
+            pdf.addImage(url, imageFormat, 0, 0, width, height);
+            pdf.save(`${name}.pdf`);
+            return;
+          } catch (err) {
+            console.warn('Failed to wrap certificate image into a PDF, falling back to the raw file', err);
+          }
+        }
+        // jsPDF unavailable or failed — fall back to the raw image rather
+        // than failing silently.
+        const extension = (url.match(/^data:image\/(\w+)/i)?.[1] || 'png').replace('jpeg', 'jpg');
+        triggerFileSave(url, `${name}.${extension}`);
+      };
+
+      document.getElementById('ctf-table-body').addEventListener('click', async (e) => {
+        const viewBtn = e.target.closest('[data-ctf-view]');
+        const dlBtn = e.target.closest('[data-ctf-download]');
+        const uploadBtn = e.target.closest('[data-ctf-upload]');
+        const editBtn = e.target.closest('[data-ctf-edit]');
+        const toggleBtn = e.target.closest('[data-ctf-toggle]');
+        const deleteBtn = e.target.closest('[data-ctf-delete]');
+        if (viewBtn) { openView(viewBtn.dataset.ctfView); return; }
+        if (uploadBtn) {
+          openGenerate(uploadBtn.dataset.ctfUpload);
+          return;
+        }
+        if (editBtn) {
+          openGenerate(editBtn.dataset.ctfEdit, { editMode: true });
+          return;
+        }
+        if (deleteBtn) {
+          await deleteCertificate(deleteBtn.dataset.ctfDelete);
+          return;
+        }
+        if (dlBtn) {
+          const c = findCert(dlBtn.dataset.ctfDownload);
+          if (!c) return;
+          if (c.certificateFileUrl) {
+            await downloadCertificateFile(c.certificateFileUrl, `certificate-${(c.name || 'certificate').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`);
+            return;
+          }
+          const off = document.getElementById('ctf-offscreen');
+          off.innerHTML = buildCertificateCard('ctf-dl-card', c, currentTemplate);
+          if (window.downloadCertificate) await window.downloadCertificate('ctf-dl-card', `certificate-${(c.name || 'certificate').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`);
+          off.innerHTML = '';
+          return;
+        }
+        if (toggleBtn) {
+          const id = toggleBtn.dataset.ctfToggle;
+          const c = findCert(id);
+          if (!c) return;
+          const nextValid = c.valid === false;
+          try {
+            await updateDoc(doc(db, 'certificates', id), { valid: nextValid });
+            c.valid = nextValid;
+            showToast(nextValid ? 'Certificate restored.' : 'Certificate revoked.');
+            applyFilters();
+            document.getElementById('ctf-stat-valid').textContent = certificates.filter((x) => x.valid !== false).length;
+            document.getElementById('ctf-stat-revoked').textContent = certificates.filter((x) => x.valid === false).length;
+            await logCertificateActivity(`Certificate ${nextValid ? 'restored' : 'revoked'} for ${getDisplayName(c) || 'a learner'} — "${c.course || 'course'}"`);
+          } catch (err) {
+            console.error('Failed to update certificate status', err);
+            showToast('Could not update certificate.');
+          }
+        }
+      });
+
+      document.getElementById('ctf-view-download').addEventListener('click', async () => {
+        if (!activeCertId) return;
+        const c = findCert(activeCertId);
+        if (!c) return;
+        if (c.certificateFileUrl) {
+          await downloadCertificateFile(c.certificateFileUrl, `certificate-${(c.name || 'certificate').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`);
+          return;
+        }
+        if (window.downloadCertificate) await window.downloadCertificate('ctf-modal-card', `certificate-${(c.name || 'certificate').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`);
+      });
+      document.getElementById('ctf-view-print').addEventListener('click', () => {
+        if (window.printCertificate) window.printCertificate('ctf-modal-card');
+      });
+      document.getElementById('ctf-view-toggle-valid').addEventListener('click', async () => {
+        if (!activeCertId) return;
+        const c = findCert(activeCertId);
+        const nextValid = c.valid === false;
+        try {
+          await updateDoc(doc(db, 'certificates', activeCertId), { valid: nextValid });
+          c.valid = nextValid;
+          showToast(nextValid ? 'Certificate restored.' : 'Certificate revoked.');
+          closeModal(viewModal);
+          applyFilters();
+          await logCertificateActivity(`Certificate ${nextValid ? 'restored' : 'revoked'} for ${getDisplayName(c) || 'a learner'} — "${c.course || 'course'}"`);
+        } catch (err) {
+          console.error('Failed to update certificate status', err);
+          showToast('Could not update certificate.');
+        }
+      });
+      document.getElementById('ctf-view-delete').addEventListener('click', async () => {
+        if (!activeCertId) return;
+        await deleteCertificate(activeCertId);
+      });
+
+      /* ---------- Upload Certificate modal ---------- */
+      const generateModal = document.getElementById('ctf-generate-modal');
+      const candidateSelect = document.getElementById('ctf-g-candidate');
+      const codeInput = document.getElementById('ctf-g-code');
+      const fileInput = document.getElementById('ctf-g-file');
+      const populateCandidateOptions = (forceIncludeId = null) => {
+        const pending = certificates.filter((cert) => isPendingUpload(cert) || !cert.certificateFileUrl);
+        // When editing an already-uploaded certificate, that record won't
+        // be in the "pending" list — make sure it's still selectable.
+        const forced = forceIncludeId ? certificates.find((cert) => cert.id === forceIncludeId) : null;
+        const list = forced && !pending.some((cert) => cert.id === forced.id) ? [forced, ...pending] : pending;
+        candidateSelect.innerHTML = '';
+        if (!list.length) {
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.textContent = 'No passed learners need certificates yet.';
+          candidateSelect.appendChild(opt);
+          return;
+        }
+        list.forEach((cert) => {
+          const opt = document.createElement('option');
+          opt.value = cert.id;
+          const alreadyUploaded = cert.certificateFileUrl && !isPendingUpload(cert);
+          opt.textContent = `${getDisplayName(cert)} — ${cert.course || 'Course'}${alreadyUploaded ? ' (already uploaded)' : ''}`;
+          candidateSelect.appendChild(opt);
+        });
+      };
+      const updateCodeInput = () => {
+        const selected = certificates.find((cert) => cert.id === candidateSelect.value);
+        codeInput.value = selected?.code || '';
+      };
+      candidateSelect.addEventListener('change', updateCodeInput);
+
+      /* ---------- Auto-detect the Certificate ID printed on the
+         uploaded file ----------
+         The learner-facing certificate template always prints
+         "Certificate ID: <code>" somewhere on the page (see
+         script.js's downloadCertificate/printCertificate output), and
+         many outside designs label it "Certificate No." or just "ID:".
+         When the admin picks a file here, we try to read that text
+         straight off the file and drop it into the Certificate ID
+         field for them — they can still edit it before submitting. */
+      const codeScanNoteEl = document.getElementById('ctf-code-scan-note');
+      const setScanNote = (text, tone = 'info') => {
+        if (!codeScanNoteEl) return;
+        if (!text) {
+          codeScanNoteEl.style.display = 'none';
+          codeScanNoteEl.textContent = '';
+          return;
+        }
+        codeScanNoteEl.style.display = 'block';
+        codeScanNoteEl.textContent = text;
+        codeScanNoteEl.style.color = tone === 'success' ? 'var(--accent-dark, #2f6f4f)' : (tone === 'error' ? '#b33a3a' : '');
+      };
+
+      // Matches this system's own generated codes ("BHF" + 13
+      // alphanumerics — see generateCertificateCode in script.js) first,
+      // since that's the most reliable signal. Falls back to a labeled
+      // pattern covering the many ways third-party certificates phrase
+      // this ("Certificate ID:", "Verification NO.", "Credential Code:",
+      // "Cert #", "Reference ID", etc.), then a bare "ID: XXXX" pattern
+      // as a last resort. Every candidate must contain at least one
+      // digit — real certificate codes always do, and that single check
+      // is what stops the label word itself (e.g. plain "Certificates")
+      // from being picked up as its own code when nothing follows it.
+      const looksLikeRealCode = (candidate) => /\d/.test(candidate);
+      const findCertificateIdInText = (text) => {
+        if (!text) return null;
+        const cleaned = text.replace(/\s+/g, ' ');
+        const ownFormat = cleaned.match(/\bBHF[A-Z0-9]{8,}\b/i);
+        if (ownFormat) return ownFormat[0].toUpperCase();
+        // e.g. "Certificate ID: ABC123", "TP-Link Verification NO. 5FA07CFE77BB4064",
+        // "Credential Code #XYZ", "Reference Number: 12345"
+        const labeled = cleaned.match(
+          /\b(?:certificate|credential|verification|validation|reference|serial|cert)\b[^A-Za-z0-9]{0,3}(?:id|no\.?|number|code|#)?[^A-Za-z0-9]{0,3}([A-Z0-9][A-Z0-9-]{5,})/i
+        );
+        if (labeled && looksLikeRealCode(labeled[1])) return labeled[1].toUpperCase();
+        const bareId = cleaned.match(/\bID\s*[:#-]\s*([A-Z0-9][A-Z0-9-]{3,})/i);
+        if (bareId && looksLikeRealCode(bareId[1])) return bareId[1].toUpperCase();
+        return null;
+      };
+
+
+
+      const ensureOcrPdfWorker = () => {
+        if (window.pdfjsLib && pdfjsLib.GlobalWorkerOptions && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+      };
+
+      // Fast path: pull the real text layer out of a text-based PDF
+      // (no OCR needed, and far more accurate when it's available).
+      const extractPdfTextLayer = async (file) => {
+        if (!window.pdfjsLib || !pdfjsLib.getDocument) return '';
+        ensureOcrPdfWorker();
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+        let text = '';
+        const pageCount = Math.min(pdf.numPages, 3);
+        for (let i = 1; i <= pageCount; i += 1) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map((item) => item.str || '').join(' ') + ' ';
+        }
+        return text;
+      };
+
+      // Fallback for scanned/flattened PDFs (no text layer): render the
+      // first page to a canvas so it can be OCR'd like an image.
+      const renderPdfPageToDataUrl = async (file) => {
+        ensureOcrPdfWorker();
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 2 });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+        return canvas.toDataURL('image/png');
+      };
+
+      const ocrSource = async (source) => {
+        if (!window.Tesseract || !Tesseract.recognize) return '';
+        const { data } = await Tesseract.recognize(source, 'eng');
+        return data?.text || '';
+      };
+
+      // Orchestrates the whole "read the ID off this file" flow and
+      // returns the detected code, or null if nothing was found /
+      // detection wasn't possible (e.g. libraries failed to load).
+      const scanFileForCertificateId = async (file) => {
+        const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+        try {
+          if (isPdf) {
+            const layerText = await extractPdfTextLayer(file);
+            const fromLayer = findCertificateIdInText(layerText);
+            if (fromLayer) return fromLayer;
+            // No usable text layer (a scanned/flattened PDF) — fall back
+            // to rendering the page and OCR-ing it like an image.
+            const pageImage = await renderPdfPageToDataUrl(file);
+            const ocrText = await ocrSource(pageImage);
+            return findCertificateIdInText(ocrText);
+          }
+          const ocrText = await ocrSource(file);
+          return findCertificateIdInText(ocrText);
+        } catch (err) {
+          console.warn('Certificate ID auto-detection failed', err);
+          return null;
+        }
+      };
+
+      let scanRequestId = 0;
+      fileInput.addEventListener('change', async () => {
+        const file = fileInput.files?.[0];
+        if (!file) {
+          setScanNote('');
+          return;
+        }
+        const requestId = ++scanRequestId;
+        setScanNote('Scanning certificate for an ID…');
+        const detected = await scanFileForCertificateId(file);
+        // If the admin picked a different file (or closed the modal)
+        // while this scan was still running, drop the stale result.
+        if (requestId !== scanRequestId) return;
+        if (detected) {
+          codeInput.value = detected;
+          setScanNote(`Detected certificate ID "${detected}" from the file — double-check it before uploading.`, 'success');
+        } else {
+          setScanNote('Couldn’t read an ID off this file automatically. Using the system-generated code below — edit it if the file has a different one printed on it.');
+        }
+      });
+      const generateTitleEl = document.getElementById('ctf-generate-title');
+      const generateSubtitleEl = document.getElementById('ctf-generate-subtitle');
+      const generateSubmitEl = document.getElementById('ctf-generate-submit');
+      const openGenerate = (certificateId = null, { editMode = false } = {}) => {
+        populateCandidateOptions(editMode ? certificateId : null);
+        if (certificateId) {
+          candidateSelect.value = certificateId;
+        }
+        // In edit mode we're fixing a mistake on one specific certificate,
+        // so lock the learner dropdown to that record instead of letting
+        // it be changed to someone else by accident.
+        candidateSelect.disabled = editMode;
+        if (generateTitleEl) generateTitleEl.textContent = editMode ? 'Edit / Re-upload Certificate' : 'Upload Certificate';
+        if (generateSubtitleEl) generateSubtitleEl.textContent = editMode
+          ? 'Choose the corrected file below — it will replace the certificate currently on file for this learner.'
+          : 'Each learner who passes a course appears here as a separate certificate request. Upload the certificate file for that individual learner only.';
+        if (generateSubmitEl) generateSubmitEl.textContent = editMode ? 'Replace Certificate' : 'Upload Certificate';
+        updateCodeInput();
+        setScanNote('');
+        openModal(generateModal);
+      };
+      document.getElementById('ctf-open-generate').addEventListener('click', () => openGenerate());
+
+      document.getElementById('ctf-generate-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const certificateId = candidateSelect.value;
+        const file = fileInput.files?.[0];
+        const validityDays = Number(document.getElementById('ctf-g-validity').value) || 365;
+        // Previously this just did `return;` here with no feedback at all —
+        // if certificateId or file ever came back empty for any reason, the
+        // button would visibly do nothing, with no toast and no console
+        // output to explain why. Now it always tells you what's missing.
+        if (!certificateId) {
+          console.warn('Upload blocked: no candidate selected.', { certificateId, candidateSelectValue: candidateSelect.value });
+          showToast('Select a passed learner before uploading.');
+          return;
+        }
+        if (!file) {
+          console.warn('Upload blocked: no file chosen.');
+          showToast('Choose a certificate file before uploading.');
+          return;
+        }
+        // Certificates are stored directly inside the Firestore document as
+        // a base64 data URI instead of a separate Firebase Storage file.
+        // This avoids needing the Blaze billing plan, a Storage bucket, and
+        // CORS configuration just to upload a small image/PDF. The tradeoff
+        // is Firestore's 1MB-per-document limit, and base64 encoding adds
+        // ~37% overhead, so we cap the source file well under that.
+        const MAX_FILE_BYTES = 700 * 1024; // ~700KB
+        const isImageFile = file.type.startsWith('image/') || /\.(png|jpe?g|webp)$/i.test(file.name);
+        // Non-image files (PDFs) can't be resized/recompressed client-side,
+        // so those still need to already be under the limit.
+        if (!isImageFile && file.size > MAX_FILE_BYTES) {
+          showToast(`File is too large (${Math.round(file.size / 1024)}KB). Please upload a PDF under 700KB.`);
+          return;
+        }
+        const readFileAsDataUrl = (f) => new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+          reader.readAsDataURL(f);
+        });
+        // Any image, no matter how large, gets scaled down and
+        // re-encoded as JPEG until it fits under MAX_FILE_BYTES. This is
+        // what lets "any picture" work instead of being rejected outright.
+        const compressImageToDataUrl = (f, maxBytes) => new Promise((resolve, reject) => {
+          const img = new Image();
+          const objectUrl = URL.createObjectURL(f);
+          img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            let width = img.naturalWidth || img.width;
+            let height = img.naturalHeight || img.height;
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            const renderAt = (w, h, quality) => {
+              canvas.width = w;
+              canvas.height = h;
+              ctx.clearRect(0, 0, w, h);
+              // White background so transparent PNGs don't turn black
+              // once flattened to JPEG.
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, w, h);
+              ctx.drawImage(img, 0, 0, w, h);
+              return canvas.toDataURL('image/jpeg', quality);
+            };
+
+            let quality = 0.92;
+            let dataUrl = renderAt(width, height, quality);
+
+            // First pass: lower quality at the original dimensions.
+            while (dataUrl.length * 0.75 > maxBytes && quality > 0.4) {
+              quality -= 0.1;
+              dataUrl = renderAt(width, height, quality);
+            }
+
+            // Second pass: if still too big, start shrinking dimensions too.
+            let guard = 0;
+            while (dataUrl.length * 0.75 > maxBytes && guard < 12) {
+              width = Math.round(width * 0.85);
+              height = Math.round(height * 0.85);
+              quality = Math.max(quality, 0.6);
+              dataUrl = renderAt(width, height, quality);
+              guard++;
+            }
+
+            if (dataUrl.length * 0.75 > maxBytes) {
+              reject(new Error('Could not compress this image small enough. Try a simpler image.'));
+              return;
+            }
+            resolve(dataUrl);
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Could not read that image file.'));
+          };
+          img.src = objectUrl;
+        });
+        submitBtn.disabled = true;
+        const fileNote = document.getElementById('ctf-file-note');
+        try {
+          let fileUrl;
+          if (isImageFile && file.size > MAX_FILE_BYTES) {
+            if (fileNote) fileNote.textContent = 'Compressing image, please wait…';
+            fileUrl = await compressImageToDataUrl(file, MAX_FILE_BYTES);
+          } else {
+            fileUrl = await readFileAsDataUrl(file);
+          }
+          const targetRecord = certificates.find((cert) => cert.id === certificateId);
+          if (!targetRecord) throw new Error('Certificate request not found');
+          const manualCode = (codeInput.value || '').trim().toUpperCase();
+          const finalCode = manualCode || targetRecord.code || '';
+          if (!finalCode) {
+            showToast('Enter a certificate ID before uploading.');
+            submitBtn.disabled = false;
+            return;
+          }
+          await updateDoc(doc(db, 'certificates', certificateId), {
+            status: 'uploaded',
+            code: finalCode,
+            email: (targetRecord.email || '').trim().toLowerCase(),
+            certificateFileUrl: fileUrl,
+            certificateFileName: file.name,
+            uploadedAt: new Date().toISOString(),
+            uploadedBy: 'Admin',
+            validityDays,
+            valid: true
+          });
+          targetRecord.status = 'uploaded';
+          targetRecord.code = finalCode;
+          targetRecord.email = (targetRecord.email || '').trim().toLowerCase();
+          targetRecord.certificateFileUrl = fileUrl;
+          targetRecord.certificateFileName = file.name;
+          targetRecord.uploadedAt = new Date().toISOString();
+          targetRecord.uploadedBy = 'Admin';
+          targetRecord.valid = true;
+          document.getElementById('ctf-stat-issued').textContent = certificates.length;
+          applyFilters();
+          closeModal(generateModal);
+          e.target.reset();
+          document.getElementById('ctf-g-validity').value = 365;
+          setScanNote('');
+          showToast(`Certificate uploaded for ${targetRecord.name || 'the learner'}.`);
+          await logCertificateActivity(`Certificate uploaded for ${getDisplayName(targetRecord) || 'a learner'} — "${targetRecord.course || 'course'}"`);
+        } catch (err) {
+          console.error('Failed to upload certificate', err);
+          showToast(`Failed to upload certificate: ${err?.message || 'Unknown error.'}`);
+        } finally {
+          submitBtn.disabled = false;
+          if (fileNote) fileNote.textContent = 'Upload the learner’s certificate as a PDF or image file.';
+        }
+      });
+
+      /* ---------- Verification tab ---------- */
+      document.getElementById('ctf-verify-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const raw = document.getElementById('ctf-verify-input').value || '';
+        const code = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+        const resultEl = document.getElementById('ctf-verify-result');
+        const previewEl = document.getElementById('ctf-verify-preview');
+        const record = certificates.find((c) => c.code === code);
+        if (!record) {
+          resultEl.innerHTML = `<span style="color:#b33a3a; font-weight:700;">No matching certificate found. Double-check the code and try again.</span>`;
+          previewEl.innerHTML = '';
+          return;
+        }
+        const isValid = record.valid !== false;
+        resultEl.innerHTML = isValid
+          ? `<span style="color:#2BA84A; font-weight:700;">✅ Certificate verified and valid.</span>`
+          : `<span style="color:#b33a3a; font-weight:700;">⚠️ This certificate was revoked.</span>`;
+        previewEl.innerHTML = `<div class="ctf-preview-card-outer" style="margin:0 auto;">${buildCertificatePreviewMarkup('ctf-verify-card', record, currentTemplate)}</div>`;
+        // Scale the verify preview to fit its container.
+        requestAnimationFrame(() => {
+          const outer = previewEl.querySelector('.ctf-preview-card-outer');
+          const containerWidth = previewEl.clientWidth || 460;
+          const scale = Math.min(1, containerWidth / 960);
+          outer.style.transform = `scale(${scale})`;
+          outer.parentElement.style.height = `${660 * scale}px`;
+        });
+      });
+
+      /* ---------- Export CSV ---------- */
+      document.getElementById('qa-export').addEventListener('click', () => {
+        const rows = [['Certificate ID', 'Student', 'Email', 'Course', 'Instructor', 'Date Issued', 'Status']];
+        filteredCerts.forEach((c) => {
+          rows.push([
+            c.code || '', c.name || '', c.email || '', c.course || '',
+            courseInstructorMap.get(c.course) || '', c.date || '',
+            c.valid === false ? 'Revoked' : 'Valid'
+          ]);
+        });
+        const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `certificates-${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        showToast('Certificates exported.');
+      });
+
+      /* ---------- Recent activity (notifications + issued certificates) ---------- */
+      renderActivityList();
+
+      /* ---------- Top courses by certificates issued ---------- */
+      const courseCounts = new Map();
+      certificates.forEach((c) => {
+        if (!c.course) return;
+        courseCounts.set(c.course, (courseCounts.get(c.course) || 0) + 1);
+      });
+      const topCourses = Array.from(courseCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const maxCount = topCourses.length ? topCourses[0][1] : 1;
+      const topCoursesEl = document.getElementById('ctf-top-courses');
+      topCoursesEl.innerHTML = topCourses.length
+        ? topCourses.map(([title, count]) => `
+            <div class="adx-course-row">
+              <div class="adx-course-row-head"><span>${escapeHtml(title)}</span><span>${count} certificates</span></div>
+              <div class="adx-progress-track"><div class="adx-progress-fill" style="width:${(count / maxCount) * 100}%;"></div></div>
+            </div>`).join('')
+        : '<div class="adx-empty">No certificates issued yet.</div>';
+          /* ---------- Walk-in Registration Modal ---------- */
+      const walkinModal = document.getElementById("walk-in-modal");
+      const openWalkinBtn = document.getElementById("open-walkin-modal");
+      const closeWalkinBtn = document.getElementById("close-walkin-modal");
+      const walkinForm = document.getElementById("walk-in-form");
+      const walkinLoading = document.getElementById("walk-in-loading");
+      const walkinSuccess = document.getElementById("walk-in-success");
+      const walkinError = document.getElementById("walk-in-error");
+
+      const walkinDateInput = document.getElementById("walk-in-date");
+      if (walkinDateInput) {
+        walkinDateInput.valueAsDate = new Date();
+      }
+
+      // Populate course dropdown (fetched independently so this modal
+      // works the same on every admin page, not just the dashboard)
+      const walkinCourseSelect = document.getElementById("walk-in-course");
+      if (walkinCourseSelect) {
+        getDocs(collection(db, "courses"))
+          .then((snapshot) => {
+            snapshot.docs.forEach((docSnap) => {
+              const c = docSnap.data();
+              const option = document.createElement("option");
+              option.value = c.title || "Untitled course";
+              option.textContent = c.title || "Untitled course";
+              walkinCourseSelect.appendChild(option);
+            });
+          })
+          .catch((error) => {
+            console.error("Failed to load courses for walk-in form", error);
+          });
+      }
+
+      const openWalkinModal = () => {
+        walkinModal.classList.add("is-open");
+        walkinForm.style.display = "block";
+        walkinLoading.classList.remove("is-active");
+        walkinSuccess.style.display = "none";
+        walkinError.style.display = "none";
+        walkinForm.reset();
+        if (walkinDateInput) walkinDateInput.valueAsDate = new Date();
+      };
+
+      const closeWalkinModal = () => {
+        walkinModal.classList.remove("is-open");
+      };
+
+      openWalkinBtn?.addEventListener("click", (e) => {
+        e.preventDefault();
+        openWalkinModal();
+      });
+      closeWalkinBtn?.addEventListener("click", closeWalkinModal);
+      document.getElementById("close-walkin-success")?.addEventListener("click", closeWalkinModal);
+      document.getElementById("retry-walkin")?.addEventListener("click", () => {
+        walkinForm.style.display = "block";
+        walkinError.style.display = "none";
+        walkinLoading.classList.remove("is-active");
+      });
+
+      walkinModal?.addEventListener("click", (e) => {
+        if (e.target === walkinModal) closeWalkinModal();
+      });
+
+      walkinForm?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const firstName = document.getElementById("walk-in-first-name")?.value.trim();
+        const lastName = document.getElementById("walk-in-last-name")?.value.trim();
+        const email = document.getElementById("walk-in-email")?.value.trim();
+        const phone = document.getElementById("walk-in-phone")?.value.trim() || "";
+        const enrollmentCourse = document.getElementById("walk-in-course")?.value || "";
+        const notes = document.getElementById("walk-in-notes")?.value.trim() || "";
+        const sendEmail = document.getElementById("walk-in-send-email")?.checked ?? true;
+
+        if (!firstName || !lastName || !email) {
+          alert("Please fill in first name, last name, and email.");
+          return;
+        }
+
+        walkinForm.style.display = "none";
+        walkinLoading.classList.add("is-active");
+
+        try {
+          const result = await window.createWalkinStudent({
+            firstName,
+            lastName,
+            email,
+            phone,
+            enrollmentCourse,
+            notes,
+            sendEmail
+          });
+
+          walkinLoading.classList.remove("is-active");
+          walkinSuccess.style.display = "block";
+
+          const successMsg = `
+            <strong>✓ ${result.fullName}</strong> registered successfully!<br/>
+            Email: ${result.email}<br/>
+            Certificate ID: ${result.certificateCode}<br/>
+            ${result.enrollmentCourse ? `Course: ${result.enrollmentCourse}` : ""}
+          `;
+          document.getElementById("walk-in-success-message").innerHTML = successMsg;
+
+          console.log("Walk-in Student Account Created:", result);
+          window.showToast?.(`Walk-in student ${result.fullName} registered successfully!`, "success");
+        } catch (error) {
+          console.error("Walk-in registration failed:", error);
+          walkinLoading.classList.remove("is-active");
+          walkinError.style.display = "block";
+          document.getElementById("walk-in-error-message").textContent = error.message || "Registration failed. Please try again.";
+          window.showToast?.(error.message || "Registration failed", "error");
+        }
+      });
+
+      }; // end window.initAdminCertificates
+</script>
+  </body>
+</html>
